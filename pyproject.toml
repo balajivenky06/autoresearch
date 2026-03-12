@@ -14,6 +14,14 @@ dependencies = [
     "rustbpe>=0.1.0",
     "tiktoken>=0.11.0",
     "torch==2.9.1",
+    # Unit test generation experiment dependencies
+    "ollama>=0.4.0",
+    "datasets>=3.0.0",
+    "sentence-transformers>=3.0.0",
+    "scikit-learn>=1.5.0",
+    "nltk>=3.9.0",
+    "rouge>=1.0.1",
+    "beautifulsoup4>=4.12.0",
 ]
 
 [tool.uv.sources]
