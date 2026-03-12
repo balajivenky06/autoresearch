@@ -5,7 +5,7 @@ Mirrors train.py in the autoresearch repo.
 The agent modifies: METHOD, REASONING, prompts, and RAG config below.
 prepare_unitest.py is fixed — do NOT touch it.
 
-Usage: uv run train_unitest.py
+Usage: python train_unitest.py
 """
 
 import os
@@ -161,7 +161,14 @@ Return ONLY the merged test code:"""
 # Generation helpers
 # ---------------------------------------------------------------------------
 
-client = ollama.Client()
+_client = None
+
+def _get_client():
+    """Lazy Ollama client — safe to import even before Ollama server starts."""
+    global _client
+    if _client is None:
+        _client = ollama.Client()
+    return _client
 
 
 def _clean(raw: str) -> str:
@@ -182,7 +189,7 @@ def _extract_code_block(text: str) -> str:
 
 def _call(model: str, messages: list, temperature: float) -> str:
     try:
-        resp = client.chat(model=model, messages=messages, options={"temperature": temperature})
+        resp = _get_client().chat(model=model, messages=messages, options={"temperature": temperature})
         return resp.get("message", {}).get("content", "").strip()
     except Exception as e:
         print(f"  LLM error: {e}")

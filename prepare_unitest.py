@@ -5,7 +5,7 @@ DO NOT MODIFY. This is the fixed harness; train_unitest.py is the only file the 
 Mirrors prepare.py in the autoresearch repo but for unit test generation via LLM/RAG.
 
 Usage (one-time setup):
-    uv run prepare_unitest.py
+    python prepare_unitest.py
 """
 
 import os
@@ -13,7 +13,6 @@ import ast
 import re
 import time
 import pickle
-import hashlib
 import numpy as np
 from pathlib import Path
 
@@ -21,12 +20,15 @@ from pathlib import Path
 # Fixed constants — do not change
 # ---------------------------------------------------------------------------
 
-TIME_BUDGET     = 600       # seconds of generation time per experiment (10 min)
-NUM_EVAL_SAMPLES = 25       # fixed eval subset size for fair comparison across runs
-DATASET_SEED    = 42        # seed for reproducible subset selection
-CACHE_DIR       = Path.home() / ".cache" / "autoresearch_unitest"
-DATASET_CACHE   = CACHE_DIR / "eval_dataset.pkl"
-KB_CACHE        = CACHE_DIR / "knowledge_base.pkl"  # encoded testing docs
+TIME_BUDGET      = 600   # seconds of generation time per experiment (10 min)
+NUM_EVAL_SAMPLES = 25    # fixed eval subset size for fair comparison across runs
+DATASET_SEED     = 42    # seed for reproducible subset selection
+
+# Cache dir: /content/.cache in Colab, ~/.cache elsewhere
+_IN_COLAB = os.path.exists("/content")
+CACHE_DIR     = Path("/content/.cache/autoresearch_unitest") if _IN_COLAB else Path.home() / ".cache" / "autoresearch_unitest"
+DATASET_CACHE = CACHE_DIR / "eval_dataset.pkl"
+KB_CACHE      = CACHE_DIR / "knowledge_base.pkl"
 
 # Knowledge base URLs — testing documentation for RAG retrieval
 KNOWLEDGE_BASE_URLS = [
@@ -290,4 +292,4 @@ if __name__ == "__main__":
     kb, emb_model = build_knowledge_base(force_reload=True)
     print(f"   {len(kb.texts)} docs indexed.")
 
-    print("\nSetup complete. You can now run: uv run train_unitest.py")
+    print("\nSetup complete. You can now run: python train_unitest.py")
