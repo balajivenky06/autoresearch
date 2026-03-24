@@ -190,7 +190,11 @@ def _extract_code_block(text: str) -> str:
 def _call(model: str, messages: list, temperature: float) -> str:
     try:
         resp = _get_client().chat(model=model, messages=messages, options={"temperature": temperature})
-        return resp.get("message", {}).get("content", "").strip()
+        # ollama v0.4+ returns a ChatResponse object; older versions return a dict
+        try:
+            return resp.message.content.strip()
+        except AttributeError:
+            return resp.get("message", {}).get("content", "").strip()
     except Exception as e:
         print(f"  LLM error: {e}")
         return ""
@@ -274,23 +278,80 @@ def generate_plain_got(function_code: str) -> str:
         return "# ERROR: GoT generation failed"
     merged = _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": GOT_AGGREGATE_PROMPT.format(**{k: non_empty.get(k, "") for k in ["happy_path", "edge_cases", "error_handling"]})},
+        {"role": "user", "content": GOT_AGGREGATE_PROMPT.format_map(
+            {"happy_path": "", "edge_cases": "", "error_handling": "", **non_empty})},
     ], 0.2))
     return merged or "\n\n".join(non_empty.values())
 
 
-def _with_rag(base_fn, function_code: str) -> str:
-    """Wrap any base generation function with RAG context injection."""
+def _simple_rag_base(function_code: str) -> str:
+    """Simple RAG: retrieve context, then generate with base prompt."""
     context = _get_context(_make_query(function_code))
-
-    # Inject context as an extra user message before generation
-    messages = [
+    return _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": f"Relevant testing documentation:\n{context[:3000]}"},
         {"role": "user", "content": GENERATION_PROMPT.format(function_code=function_code)},
-    ]
-    # For non-base reasoning, re-use the base prompt but with context prepended
-    return _clean(_call(GENERATOR_MODEL, messages, TEMPERATURE))
+    ], TEMPERATURE))
+
+
+def _simple_rag_cot(function_code: str) -> str:
+    """Simple RAG + COT: retrieve context, then reason step-by-step."""
+    context = _get_context(_make_query(function_code))
+    raw = _call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": f"Relevant testing documentation:\n{context[:3000]}"},
+        {"role": "user", "content": COT_PROMPT.format(function_code=function_code)},
+    ], TEMPERATURE)
+    return _extract_code_block(raw)
+
+
+def _simple_rag_tot(function_code: str) -> str:
+    """Simple RAG + TOT: retrieve context, generate two candidates, select best."""
+    context = _get_context(_make_query(function_code))
+    ctx_msg = {"role": "user", "content": f"Relevant testing documentation:\n{context[:3000]}"}
+    candidate_a = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
+        {"role": "user", "content": TOT_DECOMPOSE_PROMPT.format(function_code=function_code)},
+    ], 0.7))
+    candidate_b = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
+        {"role": "user", "content": GENERATION_PROMPT.format(function_code=function_code)},
+    ], 0.3))
+    if not candidate_a.strip():
+        return candidate_b
+    if not candidate_b.strip():
+        return candidate_a
+    return _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": TOT_EVALUATE_PROMPT.format(
+            function_code=function_code, candidate_a=candidate_a, candidate_b=candidate_b)},
+    ], 0.0)) or candidate_a
+
+
+def _simple_rag_got(function_code: str) -> str:
+    """Simple RAG + GOT: retrieve context, generate per-axis, aggregate."""
+    context = _get_context(_make_query(function_code))
+    ctx_msg = {"role": "user", "content": f"Relevant testing documentation:\n{context[:3000]}"}
+    happy = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
+        {"role": "user", "content": TOT_DECOMPOSE_PROMPT.format(function_code=function_code)},
+    ], TEMPERATURE))
+    edges = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
+        {"role": "user", "content": TOT_EDGE_PROMPT.format(function_code=function_code)},
+    ], TEMPERATURE))
+    errors = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
+        {"role": "user", "content": f"Generate pytest tests for ERROR cases only (invalid inputs, exceptions).\n\nFunction:\n```python\n{function_code}\n```\n\nReturn ONLY test code:"},
+    ], TEMPERATURE))
+    non_empty = {k: v for k, v in [("happy_path", happy), ("edge_cases", edges), ("error_handling", errors)] if v.strip()}
+    if not non_empty:
+        return "# ERROR: GoT+RAG generation failed"
+    return _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": GOT_AGGREGATE_PROMPT.format_map(
+            {"happy_path": "", "edge_cases": "", "error_handling": "", **non_empty})},
+    ], 0.2)) or "\n\n".join(non_empty.values())
 
 
 def _iterative_critique(initial_tests: str, function_code: str) -> str:
@@ -319,18 +380,18 @@ def _iterative_critique(initial_tests: str, function_code: str) -> str:
 # ---------------------------------------------------------------------------
 
 GENERATORS = {
-    ("plain_llm",         "base"): generate_plain_base,
-    ("plain_llm",         "cot"):  generate_plain_cot,
-    ("plain_llm",         "tot"):  generate_plain_tot,
-    ("plain_llm",         "got"):  generate_plain_got,
-    ("simple_rag",        "base"): lambda c: _with_rag(generate_plain_base, c),
-    ("simple_rag",        "cot"):  lambda c: _with_rag(generate_plain_cot, c),
-    ("simple_rag",        "tot"):  lambda c: _with_rag(generate_plain_tot, c),
-    ("simple_rag",        "got"):  lambda c: _with_rag(generate_plain_got, c),
-    ("iterative_critique","base"): lambda c: _iterative_critique(generate_plain_base(c), c),
-    ("iterative_critique","cot"):  lambda c: _iterative_critique(generate_plain_cot(c), c),
-    ("iterative_critique","tot"):  lambda c: _iterative_critique(generate_plain_tot(c), c),
-    ("iterative_critique","got"):  lambda c: _iterative_critique(generate_plain_got(c), c),
+    ("plain_llm",          "base"): generate_plain_base,
+    ("plain_llm",          "cot"):  generate_plain_cot,
+    ("plain_llm",          "tot"):  generate_plain_tot,
+    ("plain_llm",          "got"):  generate_plain_got,
+    ("simple_rag",         "base"): _simple_rag_base,
+    ("simple_rag",         "cot"):  _simple_rag_cot,
+    ("simple_rag",         "tot"):  _simple_rag_tot,
+    ("simple_rag",         "got"):  _simple_rag_got,
+    ("iterative_critique", "base"): lambda c: _iterative_critique(generate_plain_base(c), c),
+    ("iterative_critique", "cot"):  lambda c: _iterative_critique(generate_plain_cot(c), c),
+    ("iterative_critique", "tot"):  lambda c: _iterative_critique(generate_plain_tot(c), c),
+    ("iterative_critique", "got"):  lambda c: _iterative_critique(generate_plain_got(c), c),
 }
 
 # ---------------------------------------------------------------------------

@@ -104,7 +104,7 @@ def make_eval_dataset(force_reload: bool = False) -> list:
     # Fixed reproducible subset
     rng = np.random.default_rng(DATASET_SEED)
     indices = rng.choice(len(combined), size=min(NUM_EVAL_SAMPLES, len(combined)), replace=False)
-    subset = [combined[i] for i in sorted(indices)]
+    subset = [combined[int(i)] for i in sorted(indices)]
 
     with open(DATASET_CACHE, "wb") as f:
         pickle.dump(subset, f)
@@ -131,7 +131,7 @@ class VectorStore:
         q_emb = model.encode([query])
         sims = cosine_similarity(q_emb, self.embeddings)[0]
         top_idx = np.argsort(sims)[::-1][:top_k]
-        return "\n\n---\n\n".join(self.texts[i] for i in top_idx)
+        return "\n\n---\n\n".join(self.texts[int(i)] for i in top_idx)
 
 
 def build_knowledge_base(force_reload: bool = False):
