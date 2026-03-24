@@ -207,6 +207,31 @@ def _count_test_funcs(code: str) -> int:
     return len(re.findall(r"^def test_", code or "", re.MULTILINE))
 
 
+_st_model_cache = None
+
+
+def _get_st_model():
+    global _st_model_cache
+    if _st_model_cache is None:
+        from sentence_transformers import SentenceTransformer
+        _st_model_cache = SentenceTransformer("all-MiniLM-L6-v2")
+    return _st_model_cache
+
+
+def _semantic_similarity(text_a: str, text_b: str) -> float:
+    """Cosine similarity between generated and reference tests using sentence-transformers."""
+    if not text_a.strip() or not text_b.strip():
+        return 0.0
+    try:
+        from sklearn.metrics.pairwise import cosine_similarity
+        model = _get_st_model()
+        embs = model.encode([text_a[:1000], text_b[:1000]])
+        score = cosine_similarity([embs[0]], [embs[1]])[0][0]
+        return float(max(0.0, score))
+    except Exception:
+        return 0.0
+
+
 def _edge_case_score(code: str) -> float:
     if not code:
         return 0.0
@@ -241,6 +266,9 @@ def evaluate_tests(generated: str, ground_truth: str, function_code: str) -> dic
     except Exception:
         pass
 
+    # Semantic similarity vs ground truth (sentence-transformers cosine similarity)
+    sem_sim = _semantic_similarity(generated, ground_truth)
+
     return {
         "syntactic_validity": syntax,
         "assertion_count":    float(asserts),
@@ -248,6 +276,7 @@ def evaluate_tests(generated: str, ground_truth: str, function_code: str) -> dic
         "edge_case_score":    edges,
         "assert_density":     assert_density,
         "rouge_1_f1":         rouge_score,
+        "semantic_sim":       sem_sim,
     }
 
 
@@ -257,10 +286,11 @@ def compute_val_score(metrics_list: list) -> float:
     Higher is better (opposite of val_bpb).
 
     Weights:
-      syntactic_validity : 0.35  (must be valid Python)
-      edge_case_score    : 0.30  (covers edge cases)
+      syntactic_validity : 0.30  (must be valid Python)
+      edge_case_score    : 0.25  (covers edge cases)
       assert_density     : 0.20  (meaningful assertions per test)
-      rouge_1_f1         : 0.15  (similarity to reference)
+      semantic_sim       : 0.15  (semantic similarity to reference via sentence-transformers)
+      rouge_1_f1         : 0.10  (lexical overlap with reference)
     """
     if not metrics_list:
         return 0.0
@@ -270,10 +300,11 @@ def compute_val_score(metrics_list: list) -> float:
         return sum(vals) / len(vals) if vals else 0.0
 
     score = (
-        0.35 * avg("syntactic_validity") +
-        0.30 * avg("edge_case_score") +
+        0.30 * avg("syntactic_validity") +
+        0.25 * avg("edge_case_score") +
         0.20 * avg("assert_density") +
-        0.15 * avg("rouge_1_f1")
+        0.15 * avg("semantic_sim") +
+        0.10 * avg("rouge_1_f1")
     )
     return round(score, 6)
 

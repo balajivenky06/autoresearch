@@ -48,6 +48,32 @@ Generate comprehensive pytest unit tests for the given Python function.
 - Each test function must start with 'test_'
 - Cover: happy path, edge cases (None, empty, zero, negatives), error cases (exceptions)
 - Use assert statements for all checks
+
+Example of high-quality pytest tests:
+```python
+import pytest
+
+def test_add_positive_numbers():
+    assert add(2, 3) == 5
+
+def test_add_zero():
+    assert add(0, 5) == 5
+    assert add(5, 0) == 5
+
+def test_add_negative():
+    assert add(-1, -2) == -3
+
+def test_add_floats():
+    assert add(1.5, 2.5) == pytest.approx(4.0)
+
+def test_add_invalid_type_raises():
+    with pytest.raises(TypeError):
+        add("a", 1)
+
+def test_add_none_raises():
+    with pytest.raises(TypeError):
+        add(None, 1)
+```
 """
 
 GENERATION_PROMPT = """Generate pytest unit tests for the following Python function.
@@ -355,24 +381,34 @@ def _simple_rag_got(function_code: str) -> str:
 
 
 def _iterative_critique(initial_tests: str, function_code: str) -> str:
-    """Critique tests, retrieve context if needed, refine."""
-    verdict = _call(HELPER_MODEL, [
-        {"role": "system", "content": "You are a strict QA reviewer."},
-        {"role": "user", "content": CRITIQUE_PROMPT.format(
-            function_code=function_code[:1500], tests=initial_tests[:2000])},
-    ], CRITIQUE_TEMPERATURE)
+    """Critique-refine loop: up to 2 rounds. RAG context only fetched when critique fails."""
+    tests = initial_tests
+    context = None  # lazy: only fetched if critique fails
 
-    if verdict.upper().startswith("HIGH QUALITY"):
-        return initial_tests
+    for _ in range(2):
+        verdict = _call(HELPER_MODEL, [
+            {"role": "system", "content": "You are a strict QA reviewer."},
+            {"role": "user", "content": CRITIQUE_PROMPT.format(
+                function_code=function_code[:1500], tests=tests[:2000])},
+        ], CRITIQUE_TEMPERATURE)
 
-    context = _get_context(_make_query(function_code))
-    refined = _clean(_call(GENERATOR_MODEL, [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": REFINE_PROMPT.format(
-            feedback=verdict, function_code=function_code[:1500],
-            tests=initial_tests[:2000], context=context[:3000])},
-    ], REFINE_TEMPERATURE))
-    return refined or initial_tests
+        if verdict.upper().startswith("HIGH QUALITY"):
+            return tests
+
+        if context is None:
+            context = _get_context(_make_query(function_code))
+
+        refined = _clean(_call(GENERATOR_MODEL, [
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": REFINE_PROMPT.format(
+                feedback=verdict, function_code=function_code[:1500],
+                tests=tests[:2000], context=context[:3000])},
+        ], REFINE_TEMPERATURE))
+
+        if refined:
+            tests = refined
+
+    return tests
 
 
 # ---------------------------------------------------------------------------
@@ -447,6 +483,7 @@ avg_syntax   = sum(m["syntactic_validity"] for m in metrics_list) / len(metrics_
 avg_edges    = sum(m["edge_case_score"] for m in metrics_list) / len(metrics_list)
 avg_asserts  = sum(m["assertion_count"] for m in metrics_list) / len(metrics_list)
 avg_rouge    = sum(m["rouge_1_f1"] for m in metrics_list) / len(metrics_list)
+avg_semsim   = sum(m.get("semantic_sim", 0.0) for m in metrics_list) / len(metrics_list)
 
 print("---")
 print(f"val_score:          {val_score:.6f}")
@@ -457,4 +494,5 @@ print(f"total_seconds:      {total_time:.1f}")
 print(f"avg_syntax_valid:   {avg_syntax:.4f}")
 print(f"avg_edge_coverage:  {avg_edges:.4f}")
 print(f"avg_assertions:     {avg_asserts:.1f}")
+print(f"avg_semantic_sim:   {avg_semsim:.4f}")
 print(f"avg_rouge_1:        {avg_rouge:.4f}")

@@ -35,10 +35,11 @@ Each experiment runs for a **fixed time budget of 600 seconds** (10 min generati
 **The goal: maximize `val_score`** (higher is better, range 0.0–1.0).
 
 The composite score weights:
-- `syntactic_validity` × 0.35 — generated tests must be valid Python
-- `edge_case_coverage` × 0.30 — tests must cover edge cases (None, empty, zero, etc.)
+- `syntactic_validity` × 0.30 — generated tests must be valid Python
+- `edge_case_coverage` × 0.25 — tests must cover edge cases (None, empty, zero, etc.)
 - `assert_density`     × 0.20 — meaningful assertions per test function
-- `rouge_1_f1`         × 0.15 — similarity to reference test suite
+- `semantic_sim`       × 0.15 — semantic similarity to reference (sentence-transformers cosine)
+- `rouge_1_f1`         × 0.10 — lexical overlap with reference test suite
 
 **Ideas to try** (in rough order of expected impact):
 1. Baseline: run as-is to establish baseline val_score
@@ -73,6 +74,7 @@ total_seconds:      487.3
 avg_syntax_valid:   0.8800
 avg_edge_coverage:  0.5200
 avg_assertions:     3.4
+avg_semantic_sim:   0.4120
 avg_rouge_1:        0.1230
 ```
 
