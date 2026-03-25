@@ -244,6 +244,143 @@ def plot_per_metric_bar(df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Chart 5: Noise Rate bar — avg_noise_rate per method (RAG methods only)
+# ---------------------------------------------------------------------------
+
+def plot_noise_rate(df: pd.DataFrame) -> None:
+    if "avg_noise_rate" not in df.columns:
+        print("  noise_rate.png SKIPPED — avg_noise_rate column missing from TSV")
+        return
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+    rag_methods = ["simple_rag", "iterative_critique"]
+    vals, labels, colors = [], [], []
+
+    for method in rag_methods:
+        sub = df[df["method_name"] == method]
+        if len(sub) == 0:
+            continue
+        # Use best run per method
+        best = sub.loc[sub["val_score"].idxmax()]
+        nr = pd.to_numeric(best.get("avg_noise_rate", float("nan")), errors="coerce")
+        if not np.isnan(nr):
+            vals.append(float(nr))
+            labels.append(METHOD_LABELS[method])
+            colors.append(COLORS[method])
+
+    if not vals:
+        print("  noise_rate.png SKIPPED — no valid noise_rate data")
+        return
+
+    bars = ax.bar(labels, vals, color=colors, alpha=0.85, width=0.4)
+    ax.axhline(0.3, color="red", linestyle="--", linewidth=1.2, label="Threshold (0.3)")
+    for bar, v in zip(bars, vals):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.005,
+                f"{v:.3f}", ha="center", va="bottom", fontsize=11, fontweight="bold")
+
+    ax.set_ylabel("Noise Rate (fraction irrelevant chunks)", fontsize=11)
+    ax.set_ylim(0, 1.05)
+    ax.set_title("Avg Noise Rate per RAG Method\n(Best Run)", fontsize=13, fontweight="bold")
+    ax.legend(fontsize=10)
+    ax.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / "noise_rate.png", dpi=150)
+    plt.close(fig)
+    print("  noise_rate.png")
+
+
+# ---------------------------------------------------------------------------
+# Chart 6: Cost breakdown — stacked bar (retrieval_secs + llm_secs) per method
+# ---------------------------------------------------------------------------
+
+def plot_cost_breakdown(df: pd.DataFrame) -> None:
+    has_cols = "avg_retrieval_secs" in df.columns and "avg_llm_secs" in df.columns
+    if not has_cols:
+        print("  cost_breakdown.png SKIPPED — cost columns missing from TSV")
+        return
+
+    best = _best_per_method(df)
+    if not best:
+        return
+
+    methods_present = list(best.keys())
+    labels   = [METHOD_LABELS[m] for m in methods_present]
+    ret_vals = [float(pd.to_numeric(best[m].get("avg_retrieval_secs", 0), errors="coerce") or 0)
+                for m in methods_present]
+    llm_vals = [float(pd.to_numeric(best[m].get("avg_llm_secs", 0), errors="coerce") or 0)
+                for m in methods_present]
+
+    x = np.arange(len(methods_present))
+    fig, ax = plt.subplots(figsize=(8, 5))
+
+    b1 = ax.bar(x, ret_vals, label="Retrieval", color="#5B9BD5", alpha=0.9)
+    b2 = ax.bar(x, llm_vals, bottom=ret_vals, label="LLM Inference", color="#ED7D31", alpha=0.9)
+
+    for i, (rv, lv) in enumerate(zip(ret_vals, llm_vals)):
+        total = rv + lv
+        if total > 0:
+            ax.text(i, total + 0.02, f"{total:.2f}s", ha="center", va="bottom",
+                    fontsize=10, fontweight="bold")
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=11)
+    ax.set_ylabel("Avg seconds per sample", fontsize=11)
+    ax.set_title("Cost Breakdown: Retrieval vs LLM Time\n(Best Run per Method)",
+                 fontsize=13, fontweight="bold")
+    ax.legend(fontsize=10)
+    ax.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / "cost_breakdown.png", dpi=150)
+    plt.close(fig)
+    print("  cost_breakdown.png")
+
+
+# ---------------------------------------------------------------------------
+# Chart 7: Faithfulness bar — avg_faithfulness per method (RAG only)
+# ---------------------------------------------------------------------------
+
+def plot_faithfulness(df: pd.DataFrame) -> None:
+    if "avg_faithfulness" not in df.columns:
+        print("  faithfulness.png SKIPPED — avg_faithfulness column missing from TSV")
+        return
+
+    best = _best_per_method(df)
+    if not best:
+        return
+
+    labels, vals, colors = [], [], []
+    for method in METHODS:
+        if method not in best:
+            continue
+        fv = pd.to_numeric(best[method].get("avg_faithfulness", float("nan")), errors="coerce")
+        if np.isnan(fv):
+            continue  # plain_llm has no context → NaN, skip
+        labels.append(METHOD_LABELS[method])
+        vals.append(float(fv))
+        colors.append(COLORS[method])
+
+    if not vals:
+        print("  faithfulness.png SKIPPED — no valid faithfulness data")
+        return
+
+    fig, ax = plt.subplots(figsize=(7, 4))
+    bars = ax.bar(labels, vals, color=colors, alpha=0.85, width=0.4)
+    for bar, v in zip(bars, vals):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.005,
+                f"{v:.3f}", ha="center", va="bottom", fontsize=11, fontweight="bold")
+
+    ax.set_ylabel("Faithfulness (token overlap with context)", fontsize=11)
+    ax.set_ylim(0, 1.05)
+    ax.set_title("Avg Faithfulness per Method\n(Best Run — NaN for Plain LLM)",
+                 fontsize=13, fontweight="bold")
+    ax.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / "faithfulness.png", dpi=150)
+    plt.close(fig)
+    print("  faithfulness.png")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -264,6 +401,9 @@ def main() -> None:
     plot_grouped_bar(df)
     plot_radar(df)
     plot_per_metric_bar(df)
+    plot_noise_rate(df)
+    plot_cost_breakdown(df)
+    plot_faithfulness(df)
 
     print(f"\nDone. Open {OUTPUT_DIR}/ to view charts.")
 

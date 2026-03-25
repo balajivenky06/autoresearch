@@ -12,11 +12,12 @@ import os
 import re
 import time
 
+import numpy as np
 import ollama
 
 from prepare_unitest import (
     TIME_BUDGET, make_eval_dataset, build_knowledge_base,
-    evaluate_tests, compute_val_score,
+    evaluate_tests, compute_val_score, compute_faithfulness,
 )
 
 # ---------------------------------------------------------------------------
@@ -197,6 +198,26 @@ def _get_client():
     return _client
 
 
+# ---------------------------------------------------------------------------
+# Per-sample diagnostic accumulators — reset before each sample in main loop
+# ---------------------------------------------------------------------------
+
+_noise_rate_buf: list  = []    # noise_rate per search_with_scores call this sample
+_retrieval_secs: float = 0.0   # cumulative retrieval time this sample
+_llm_secs:       float = 0.0   # cumulative LLM call time this sample
+_tokens_used:    int   = 0     # cumulative token count this sample
+_last_context:   str   = ""    # most recently retrieved context (for faithfulness)
+
+
+def _reset_sample_diagnostics():
+    global _noise_rate_buf, _retrieval_secs, _llm_secs, _tokens_used, _last_context
+    _noise_rate_buf = []
+    _retrieval_secs = 0.0
+    _llm_secs       = 0.0
+    _tokens_used    = 0
+    _last_context   = ""
+
+
 def _clean(raw: str) -> str:
     text = raw.strip()
     if text.startswith("```python"):
@@ -214,14 +235,23 @@ def _extract_code_block(text: str) -> str:
 
 
 def _call(model: str, messages: list, temperature: float) -> str:
+    global _llm_secs, _tokens_used
+    t0 = time.time()
     try:
         resp = _get_client().chat(model=model, messages=messages, options={"temperature": temperature})
+        _llm_secs += time.time() - t0
+        # Token counts: ollama v0.4+ exposes prompt_eval_count / eval_count
+        try:
+            _tokens_used += (resp.prompt_eval_count or 0) + (resp.eval_count or 0)
+        except AttributeError:
+            pass  # older dict-based response — skip token counting
         # ollama v0.4+ returns a ChatResponse object; older versions return a dict
         try:
             return resp.message.content.strip()
         except AttributeError:
             return resp.get("message", {}).get("content", "").strip()
     except Exception as e:
+        _llm_secs += time.time() - t0
         print(f"  LLM error: {e}")
         return ""
 
@@ -235,10 +265,16 @@ _emb_model = None
 
 
 def _get_context(query: str) -> str:
-    global _kb, _emb_model
+    global _kb, _emb_model, _retrieval_secs, _noise_rate_buf, _last_context
     if _kb is None:
         _kb, _emb_model = build_knowledge_base()
-    return _kb.search(query, _emb_model, top_k=TOP_K)
+    t0 = time.time()
+    context_str, noise_rate = _kb.search_with_scores(query, _emb_model, top_k=TOP_K)
+    _retrieval_secs += time.time() - t0
+    if not np.isnan(noise_rate):
+        _noise_rate_buf.append(noise_rate)
+    _last_context = context_str
+    return context_str
 
 
 def _make_query(function_code: str) -> str:
@@ -450,6 +486,7 @@ total_generation_time = 0.0
 step = 0
 
 for sample in dataset:
+    _reset_sample_diagnostics()
     t0 = time.time()
     fn_code = sample["function_code"]
     gt_tests = sample["ground_truth_tests"]
@@ -461,11 +498,20 @@ for sample in dataset:
         total_generation_time += dt
 
     metrics = evaluate_tests(tests, gt_tests, fn_code)
+
+    # Diagnostic metrics (not in val_score — used for RQ2/RQ3/RQ4 analysis)
+    metrics["noise_rate"]     = float(np.mean(_noise_rate_buf)) if _noise_rate_buf else float("nan")
+    metrics["faithfulness"]   = compute_faithfulness(tests, _last_context)
+    metrics["retrieval_secs"] = _retrieval_secs
+    metrics["llm_secs"]       = _llm_secs
+    metrics["tokens_used"]    = float(_tokens_used)
+
     metrics_list.append(metrics)
     step += 1
 
     val_so_far = compute_val_score(metrics_list)
-    print(f"\rstep {step:03d}/{len(dataset)} | val_score: {val_so_far:.6f} | dt: {dt:.1f}s | syntax: {metrics['syntactic_validity']:.0f} | edges: {metrics['edge_case_score']:.2f}    ", end="", flush=True)
+    noise_str = f"{metrics['noise_rate']:.2f}" if not np.isnan(metrics["noise_rate"]) else "N/A"
+    print(f"\rstep {step:03d}/{len(dataset)} | val_score: {val_so_far:.6f} | dt: {dt:.1f}s | syntax: {metrics['syntactic_validity']:.0f} | edges: {metrics['edge_case_score']:.2f} | noise: {noise_str}    ", end="", flush=True)
 
     if step > 2 and total_generation_time >= TIME_BUDGET:
         print(f"\nTime budget reached after {step} samples.")
@@ -495,6 +541,15 @@ avg_asserts  = sum(m["assertion_count"] for m in metrics_list) / len(metrics_lis
 avg_rouge    = sum(m["rouge_1_f1"] for m in metrics_list) / len(metrics_list)
 avg_semsim   = sum(m.get("semantic_sim", 0.0) for m in metrics_list) / len(metrics_list)
 
+# Diagnostic averages (NaN-safe — NaN means metric not applicable for this method)
+_noise_vals = [m["noise_rate"]   for m in metrics_list if not np.isnan(m.get("noise_rate",   float("nan")))]
+_faith_vals = [m["faithfulness"] for m in metrics_list if not np.isnan(m.get("faithfulness", float("nan")))]
+avg_noise_rate     = float(np.mean(_noise_vals)) if _noise_vals else float("nan")
+avg_faithfulness   = float(np.mean(_faith_vals)) if _faith_vals else float("nan")
+avg_retrieval_secs = sum(m.get("retrieval_secs", 0.0) for m in metrics_list) / len(metrics_list)
+avg_llm_secs       = sum(m.get("llm_secs",       0.0) for m in metrics_list) / len(metrics_list)
+avg_tokens         = sum(m.get("tokens_used",    0.0) for m in metrics_list) / len(metrics_list)
+
 print("---")
 print(f"val_score:          {val_score:.6f}")
 print(f"method:             {METHOD}/{REASONING}")
@@ -506,3 +561,8 @@ print(f"avg_edge_coverage:  {avg_edges:.4f}")
 print(f"avg_assertions:     {avg_asserts:.1f}")
 print(f"avg_semantic_sim:   {avg_semsim:.4f}")
 print(f"avg_rouge_1:        {avg_rouge:.4f}")
+print(f"avg_noise_rate:     {avg_noise_rate:.4f}" if not np.isnan(avg_noise_rate) else "avg_noise_rate:     nan")
+print(f"avg_faithfulness:   {avg_faithfulness:.4f}" if not np.isnan(avg_faithfulness) else "avg_faithfulness:   nan")
+print(f"avg_retrieval_secs: {avg_retrieval_secs:.3f}")
+print(f"avg_llm_secs:       {avg_llm_secs:.3f}")
+print(f"avg_tokens:         {avg_tokens:.1f}")

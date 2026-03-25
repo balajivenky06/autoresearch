@@ -84,7 +84,7 @@ Log to `results_unitest.tsv` (tab-separated, NOT comma-separated).
 
 Header and columns:
 ```
-commit	val_score	method	model	status	description	avg_syntax	avg_edge	avg_assert_density	avg_semantic_sim	avg_rouge
+commit	val_score	method	model	status	description	avg_syntax	avg_edge	avg_assert_density	avg_semantic_sim	avg_rouge	avg_noise_rate	avg_faithfulness	avg_retrieval_secs	avg_llm_secs	avg_tokens
 ```
 
 1. git commit hash (short, 7 chars)
@@ -93,20 +93,25 @@ commit	val_score	method	model	status	description	avg_syntax	avg_edge	avg_assert_
 4. model (e.g. `llama3.2:latest`)
 5. status: `keep`, `discard`, or `crash`
 6. short description of what was tried
-7–11. per-metric averages from the run log (`avg_syntax_valid`, `avg_edge_coverage`, `avg_assert_density` normalized by 5, `avg_semantic_sim`, `avg_rouge_1`) — use 0.0000 for crashes
+7–11. quality metrics: avg_syntax, avg_edge, avg_assert_density, avg_semantic_sim, avg_rouge — from `grep "^avg_syntax\|^avg_edge\|^avg_assert\|^avg_semantic\|^avg_rouge" run_unitest.log`
+12–16. diagnostic metrics (RQ2/RQ3/RQ4): avg_noise_rate, avg_faithfulness, avg_retrieval_secs, avg_llm_secs, avg_tokens — from `grep "^avg_noise\|^avg_faith\|^avg_retrieval\|^avg_llm\|^avg_tokens" run_unitest.log`
+    - avg_noise_rate: NaN for plain_llm (no retrieval) — higher = more corpus mismatch
+    - avg_faithfulness: NaN for plain_llm — fraction of generated tokens grounded in retrieved context
+    - avg_retrieval_secs / avg_llm_secs: cost breakdown (supports RQ4 Pareto analysis)
+    - avg_tokens: total tokens per sample (use 0 if ollama does not expose token counts)
 
-Extract columns 7–11 from run log with:
+Extract all diagnostic columns with:
 ```bash
 grep "^avg_" run_unitest.log
 ```
 
 Example:
 ```
-commit	val_score	method	model	status	description	avg_syntax	avg_edge	avg_assert_density	avg_semantic_sim	avg_rouge
-a1b2c3d	0.412300	plain_llm/base	llama3.2:latest	keep	baseline	0.8400	0.4500	0.5600	0.3800	0.1100
-b2c3d4e	0.489100	simple_rag/base	llama3.2:latest	keep	add RAG retrieval	0.8800	0.5200	0.6000	0.4200	0.1300
-c3d4e5f	0.521400	iterative_critique/cot	llama3.2:latest	keep	COT+critique improves edge coverage	0.9200	0.5800	0.6400	0.4600	0.1400
-d4e5f6g	0.498000	iterative_critique/got	llama3.2:latest	discard	GOT slower, no improvement	0.8800	0.5400	0.6000	0.4200	0.1200
+commit	val_score	method	model	status	description	avg_syntax	avg_edge	avg_assert_density	avg_semantic_sim	avg_rouge	avg_noise_rate	avg_faithfulness	avg_retrieval_secs	avg_llm_secs	avg_tokens
+a1b2c3d	0.412300	plain_llm/base	llama3.2:latest	keep	baseline	0.8400	0.4500	0.5600	0.3800	0.1100	nan	nan	0.000	12.340	850.0
+b2c3d4e	0.489100	simple_rag/base	llama3.2:latest	keep	add RAG retrieval	0.8800	0.5200	0.6000	0.4200	0.1300	0.3300	0.5200	0.420	11.200	920.0
+c3d4e5f	0.521400	iterative_critique/cot	llama3.2:latest	keep	COT+critique	0.9200	0.5800	0.6400	0.4600	0.1400	0.2800	0.5800	0.430	24.100	1840.0
+d4e5f6g	0.498000	iterative_critique/got	llama3.2:latest	discard	GOT slower	0.8800	0.5400	0.6000	0.4200	0.1200	0.3100	0.5400	0.440	31.500	2200.0
 ```
 
 ## The experiment loop
@@ -137,7 +142,10 @@ uv run visualize_unitest.py
 ```
 
 Outputs to `plots_unitest/`:
-- `heatmap.png`        — val_score grid: method × reasoning technique
-- `grouped_bar.png`    — val_score grouped bar (all 12 combinations)
-- `radar.png`          — per-metric radar: best run per method (requires extended TSV columns)
-- `per_metric_bar.png` — per-metric bar: best run per method (requires extended TSV columns)
+- `heatmap.png`         — val_score grid: method × reasoning technique
+- `grouped_bar.png`     — val_score grouped bar (all 12 combinations)
+- `radar.png`           — per-metric radar: best run per method (requires extended TSV columns)
+- `per_metric_bar.png`  — per-metric bar: best run per method (requires extended TSV columns)
+- `noise_rate.png`      — avg noise rate per RAG method (RQ2: when does retrieval hurt?)
+- `cost_breakdown.png`  — stacked retrieval + LLM time per method (RQ4: cost–quality Pareto)
+- `faithfulness.png`    — avg faithfulness per method (RQ3: grounding vs hallucination)

@@ -24,6 +24,8 @@ TIME_BUDGET      = 600   # seconds of generation time per experiment (10 min)
 NUM_EVAL_SAMPLES = 25    # fixed eval subset size for fair comparison across runs
 DATASET_SEED     = 42    # seed for reproducible subset selection
 
+NOISE_THRESHOLD  = 0.3   # cosine similarity below this → chunk is "noisy" (diagnostic only)
+
 # Cache dir: /content/.cache in Colab, ~/.cache elsewhere
 _IN_COLAB = os.path.exists("/content")
 CACHE_DIR     = Path("/content/.cache/autoresearch_unitest") if _IN_COLAB else Path.home() / ".cache" / "autoresearch_unitest"
@@ -125,15 +127,28 @@ class VectorStore:
         self.embeddings = embeddings  # shape: (N, dim)
         self.sources = sources
 
-    def search(self, query: str, model, top_k: int = 3) -> str:
-        """Return top_k most relevant text chunks concatenated."""
+    def search_with_scores(self, query: str, model, top_k: int = 3):
+        """Return (context_str, noise_rate).
+
+        context_str — top_k chunks joined by '---'.
+        noise_rate  — fraction of retrieved chunks with cosine sim < NOISE_THRESHOLD.
+                      Returns ('', nan) when the knowledge base is empty.
+        """
         if not self.texts:
-            return ""  # knowledge base is empty (all URLs failed to load)
+            return "", float("nan")
         from sklearn.metrics.pairwise import cosine_similarity
         q_emb = model.encode([query])
         sims = cosine_similarity(q_emb, self.embeddings)[0]
         top_idx = np.argsort(sims)[::-1][:top_k]
-        return "\n\n---\n\n".join(self.texts[int(i)] for i in top_idx)
+        top_sims = [float(sims[int(i)]) for i in top_idx]
+        context_str = "\n\n---\n\n".join(self.texts[int(i)] for i in top_idx)
+        noise_rate = sum(1 for s in top_sims if s < NOISE_THRESHOLD) / len(top_sims)
+        return context_str, noise_rate
+
+    def search(self, query: str, model, top_k: int = 3) -> str:
+        """Return top_k most relevant text chunks concatenated (discards noise_rate)."""
+        context_str, _ = self.search_with_scores(query, model, top_k=top_k)
+        return context_str
 
 
 def build_knowledge_base(force_reload: bool = False):
@@ -242,6 +257,21 @@ def _edge_case_score(code: str) -> float:
                 r"\bTypeError\b", r"\bIndexError\b"]
     hits = sum(1 for p in patterns if re.search(p, code))
     return min(1.0, hits / 4.0)
+
+
+def compute_faithfulness(generated: str, context: str) -> float:
+    """Token-overlap faithfulness: fraction of unique generated tokens present in context.
+
+    Returns NaN when context is empty (plain_llm has no retrieval context).
+    Higher is better — output is grounded in retrieved docs, not hallucinated.
+    """
+    if not generated or not generated.strip() or not context or not context.strip():
+        return float("nan")
+    gen_tokens = set(re.findall(r"\w+", generated.lower()))
+    ctx_tokens = set(re.findall(r"\w+", context.lower()))
+    if not gen_tokens:
+        return float("nan")
+    return len(gen_tokens & ctx_tokens) / len(gen_tokens)
 
 
 def evaluate_tests(generated: str, ground_truth: str, function_code: str) -> dict:
