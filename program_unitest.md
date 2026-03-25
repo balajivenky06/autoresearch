@@ -84,7 +84,7 @@ Log to `results_unitest.tsv` (tab-separated, NOT comma-separated).
 
 Header and columns:
 ```
-commit	val_score	method	model	status	description
+commit	val_score	method	model	status	description	avg_syntax	avg_edge	avg_assert_density	avg_semantic_sim	avg_rouge
 ```
 
 1. git commit hash (short, 7 chars)
@@ -93,14 +93,20 @@ commit	val_score	method	model	status	description
 4. model (e.g. `llama3.2:latest`)
 5. status: `keep`, `discard`, or `crash`
 6. short description of what was tried
+7–11. per-metric averages from the run log (`avg_syntax_valid`, `avg_edge_coverage`, `avg_assert_density` normalized by 5, `avg_semantic_sim`, `avg_rouge_1`) — use 0.0000 for crashes
+
+Extract columns 7–11 from run log with:
+```bash
+grep "^avg_" run_unitest.log
+```
 
 Example:
 ```
-commit	val_score	method	model	status	description
-a1b2c3d	0.412300	plain_llm/base	llama3.2:latest	keep	baseline
-b2c3d4e	0.489100	simple_rag/base	llama3.2:latest	keep	add RAG retrieval
-c3d4e5f	0.521400	iterative_critique/cot	llama3.2:latest	keep	COT+critique improves edge coverage
-d4e5f6g	0.498000	iterative_critique/got	llama3.2:latest	discard	GOT slower, no improvement over COT
+commit	val_score	method	model	status	description	avg_syntax	avg_edge	avg_assert_density	avg_semantic_sim	avg_rouge
+a1b2c3d	0.412300	plain_llm/base	llama3.2:latest	keep	baseline	0.8400	0.4500	0.5600	0.3800	0.1100
+b2c3d4e	0.489100	simple_rag/base	llama3.2:latest	keep	add RAG retrieval	0.8800	0.5200	0.6000	0.4200	0.1300
+c3d4e5f	0.521400	iterative_critique/cot	llama3.2:latest	keep	COT+critique improves edge coverage	0.9200	0.5800	0.6400	0.4600	0.1400
+d4e5f6g	0.498000	iterative_critique/got	llama3.2:latest	discard	GOT slower, no improvement	0.8800	0.5400	0.6000	0.4200	0.1200
 ```
 
 ## The experiment loop
@@ -121,3 +127,17 @@ LOOP FOREVER:
 **Timeout**: If a run exceeds 15 minutes, kill it and treat as crash.
 
 **NEVER STOP**: Run until manually interrupted. Do not ask for permission to continue.
+
+## Visualizations
+
+After logging results to `results_unitest.tsv`, generate PhD comparison charts:
+
+```bash
+uv run visualize_unitest.py
+```
+
+Outputs to `plots_unitest/`:
+- `heatmap.png`        — val_score grid: method × reasoning technique
+- `grouped_bar.png`    — val_score grouped bar (all 12 combinations)
+- `radar.png`          — per-metric radar: best run per method (requires extended TSV columns)
+- `per_metric_bar.png` — per-metric bar: best run per method (requires extended TSV columns)
