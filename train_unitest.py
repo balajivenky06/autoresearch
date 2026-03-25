@@ -472,7 +472,13 @@ GENERATORS = {
 # Checkpoint helpers — resume from last completed sample on Colab restarts
 # ---------------------------------------------------------------------------
 
-_CKPT_DIR = Path(".checkpoints")
+# Checkpoint directory: Google Drive on Colab, local otherwise.
+# On Colab, mount Drive first:  from google.colab import drive; drive.mount('/content/drive')
+_IN_COLAB = os.path.exists("/content")
+_CKPT_DIR = (
+    Path("/content/drive/MyDrive/autoresearch_checkpoints") if _IN_COLAB
+    else Path(".checkpoints")
+)
 
 
 def _ckpt_path() -> Path:
@@ -481,7 +487,7 @@ def _ckpt_path() -> Path:
 
 
 def _save_checkpoint(metrics_list: list, step: int) -> None:
-    _CKPT_DIR.mkdir(exist_ok=True)
+    _CKPT_DIR.mkdir(parents=True, exist_ok=True)
     with open(_ckpt_path(), "wb") as f:
         pickle.dump({"metrics_list": metrics_list, "step": step,
                      "method": METHOD, "reasoning": REASONING,
