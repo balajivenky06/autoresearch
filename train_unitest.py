@@ -9,8 +9,10 @@ Usage: python train_unitest.py
 """
 
 import os
+import pickle
 import re
 import time
+from pathlib import Path
 
 import numpy as np
 import ollama
@@ -467,6 +469,50 @@ GENERATORS = {
 }
 
 # ---------------------------------------------------------------------------
+# Checkpoint helpers — resume from last completed sample on Colab restarts
+# ---------------------------------------------------------------------------
+
+_CKPT_DIR = Path(".checkpoints")
+
+
+def _ckpt_path() -> Path:
+    safe_model = GENERATOR_MODEL.replace(":", "-").replace("/", "-")
+    return _CKPT_DIR / f"{METHOD}_{REASONING}_{safe_model}.pkl"
+
+
+def _save_checkpoint(metrics_list: list, step: int) -> None:
+    _CKPT_DIR.mkdir(exist_ok=True)
+    with open(_ckpt_path(), "wb") as f:
+        pickle.dump({"metrics_list": metrics_list, "step": step,
+                     "method": METHOD, "reasoning": REASONING,
+                     "model": GENERATOR_MODEL}, f)
+
+
+def _load_checkpoint() -> tuple:
+    """Return (metrics_list, step) from checkpoint, or ([], 0) if none/mismatch."""
+    p = _ckpt_path()
+    if not p.exists():
+        return [], 0
+    try:
+        with open(p, "rb") as f:
+            data = pickle.load(f)
+        if (data.get("method") == METHOD and
+                data.get("reasoning") == REASONING and
+                data.get("model") == GENERATOR_MODEL):
+            print(f"Checkpoint found: resuming from sample {data['step']} / already done.")
+            return data["metrics_list"], data["step"]
+    except Exception as e:
+        print(f"Checkpoint load failed ({e}), starting fresh.")
+    return [], 0
+
+
+def _clear_checkpoint() -> None:
+    p = _ckpt_path()
+    if p.exists():
+        p.unlink()
+
+
+# ---------------------------------------------------------------------------
 # Main experiment loop
 # ---------------------------------------------------------------------------
 
@@ -482,11 +528,18 @@ if __name__ == "__main__":
     if generate_fn is None:
         raise ValueError(f"Unknown METHOD/REASONING combo: {METHOD}/{REASONING}")
 
-    metrics_list = []
+    # Resume from checkpoint if available (handles Colab disconnects)
+    metrics_list, start_step = _load_checkpoint()
     total_generation_time = 0.0
-    step = 0
+    step = start_step
 
-    for sample in dataset:
+    if start_step > 0:
+        print(f"Resuming from step {start_step}/{len(dataset)} — {start_step} samples already evaluated.")
+
+    for i, sample in enumerate(dataset):
+        if i < start_step:
+            continue  # already processed in a previous run
+
         _reset_sample_diagnostics()
         t0 = time.time()
         fn_code = sample["function_code"]
@@ -509,6 +562,9 @@ if __name__ == "__main__":
 
         metrics_list.append(metrics)
         step += 1
+
+        # Save after every sample — safe to interrupt at any point
+        _save_checkpoint(metrics_list, step)
 
         val_so_far = compute_val_score(metrics_list)
         noise_str = f"{metrics['noise_rate']:.2f}" if not np.isnan(metrics["noise_rate"]) else "N/A"
@@ -550,6 +606,9 @@ if __name__ == "__main__":
     avg_retrieval_secs = sum(m.get("retrieval_secs", 0.0) for m in metrics_list) / len(metrics_list)
     avg_llm_secs       = sum(m.get("llm_secs",       0.0) for m in metrics_list) / len(metrics_list)
     avg_tokens         = sum(m.get("tokens_used",    0.0) for m in metrics_list) / len(metrics_list)
+
+    # Experiment complete — remove checkpoint so next run starts fresh
+    _clear_checkpoint()
 
     print("---")
     print(f"val_score:          {val_score:.6f}")
