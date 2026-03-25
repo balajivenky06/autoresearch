@@ -19,8 +19,10 @@ AGENTS.md
 # Experimental code/artifacts
 dev/
 
-# Results file
+# Results files
 results.tsv
+results_unitest.tsv
+summary_all_experiments.csv
 
 # Experiment checkpoints (resume state for Colab disconnects)
 .checkpoints/

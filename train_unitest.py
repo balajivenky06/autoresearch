@@ -26,7 +26,7 @@ from prepare_unitest import (
 # Hyperparameters — edit these directly (no CLI flags needed)
 # ---------------------------------------------------------------------------
 
-METHOD    = "iterative_critique"
+METHOD    = "plain_llm"
 # Options: "plain_llm" | "simple_rag" | "iterative_critique"
 
 REASONING = "base"
@@ -39,6 +39,9 @@ TEMPERATURE          = 0.5
 CRITIQUE_TEMPERATURE = 0.0
 REFINE_TEMPERATURE   = 0.3
 TOP_K                = 3   # number of docs to retrieve (for RAG methods)
+
+# Set to an integer (e.g. 3) for a quick local trial; None = use full dataset / time budget
+MAX_SAMPLES          = None
 
 # ---------------------------------------------------------------------------
 # Prompts — edit these freely
@@ -576,6 +579,10 @@ if __name__ == "__main__":
         noise_str = f"{metrics['noise_rate']:.2f}" if not np.isnan(metrics["noise_rate"]) else "N/A"
         print(f"\rstep {step:03d}/{len(dataset)} | val_score: {val_so_far:.6f} | dt: {dt:.1f}s | syntax: {metrics['syntactic_validity']:.0f} | edges: {metrics['edge_case_score']:.2f} | noise: {noise_str}    ", end="", flush=True)
 
+        if MAX_SAMPLES is not None and step >= MAX_SAMPLES:
+            print(f"\nMAX_SAMPLES limit ({MAX_SAMPLES}) reached.")
+            break
+
         if step > 2 and total_generation_time >= TIME_BUDGET:
             print(f"\nTime budget reached after {step} samples.")
             break
@@ -598,11 +605,12 @@ if __name__ == "__main__":
         print(f"total_seconds:      {total_time:.1f}")
         raise SystemExit("No samples evaluated — dataset may be empty or corrupted.")
 
-    avg_syntax   = sum(m["syntactic_validity"] for m in metrics_list) / len(metrics_list)
-    avg_edges    = sum(m["edge_case_score"] for m in metrics_list) / len(metrics_list)
-    avg_asserts  = sum(m["assertion_count"] for m in metrics_list) / len(metrics_list)
-    avg_rouge    = sum(m["rouge_1_f1"] for m in metrics_list) / len(metrics_list)
-    avg_semsim   = sum(m.get("semantic_sim", 0.0) for m in metrics_list) / len(metrics_list)
+    avg_syntax        = sum(m["syntactic_validity"] for m in metrics_list) / len(metrics_list)
+    avg_edges         = sum(m["edge_case_score"] for m in metrics_list) / len(metrics_list)
+    avg_asserts       = sum(m["assertion_count"] for m in metrics_list) / len(metrics_list)
+    avg_assert_density= sum(m["assert_density"] for m in metrics_list) / len(metrics_list)
+    avg_rouge         = sum(m["rouge_1_f1"] for m in metrics_list) / len(metrics_list)
+    avg_semsim        = sum(m.get("semantic_sim", 0.0) for m in metrics_list) / len(metrics_list)
 
     # Diagnostic averages (NaN-safe — NaN means metric not applicable for this method)
     _noise_vals = [m["noise_rate"]   for m in metrics_list if not np.isnan(m.get("noise_rate",   float("nan")))]
@@ -622,13 +630,45 @@ if __name__ == "__main__":
     print(f"model:              {GENERATOR_MODEL}")
     print(f"samples_evaluated:  {step}")
     print(f"total_seconds:      {total_time:.1f}")
-    print(f"avg_syntax_valid:   {avg_syntax:.4f}")
-    print(f"avg_edge_coverage:  {avg_edges:.4f}")
+    print(f"avg_syntax:         {avg_syntax:.4f}")
+    print(f"avg_edge:           {avg_edges:.4f}")
+    print(f"avg_assert_density: {avg_assert_density:.4f}")
     print(f"avg_assertions:     {avg_asserts:.1f}")
     print(f"avg_semantic_sim:   {avg_semsim:.4f}")
-    print(f"avg_rouge_1:        {avg_rouge:.4f}")
+    print(f"avg_rouge:          {avg_rouge:.4f}")
     print(f"avg_noise_rate:     {avg_noise_rate:.4f}" if not np.isnan(avg_noise_rate) else "avg_noise_rate:     nan")
     print(f"avg_faithfulness:   {avg_faithfulness:.4f}" if not np.isnan(avg_faithfulness) else "avg_faithfulness:   nan")
     print(f"avg_retrieval_secs: {avg_retrieval_secs:.3f}")
     print(f"avg_llm_secs:       {avg_llm_secs:.3f}")
     print(f"avg_tokens:         {avg_tokens:.1f}")
+
+    # -----------------------------------------------------------------------
+    # Write / append one row to results_unitest.tsv
+    # -----------------------------------------------------------------------
+    import csv
+    tsv_path = "results_unitest.tsv"
+    _nan_str = lambda v: f"{v:.4f}" if not np.isnan(v) else "nan"
+    result_row = {
+        "method":             f"{METHOD}/{REASONING}",
+        "model":              GENERATOR_MODEL,
+        "status":             "ok",
+        "val_score":          f"{val_score:.6f}",
+        "avg_syntax":         f"{avg_syntax:.4f}",
+        "avg_edge":           f"{avg_edges:.4f}",
+        "avg_assert_density": f"{avg_assert_density:.4f}",
+        "avg_semantic_sim":   f"{avg_semsim:.4f}",
+        "avg_rouge":          f"{avg_rouge:.4f}",
+        "avg_noise_rate":     _nan_str(avg_noise_rate),
+        "avg_faithfulness":   _nan_str(avg_faithfulness),
+        "avg_retrieval_secs": f"{avg_retrieval_secs:.3f}",
+        "avg_llm_secs":       f"{avg_llm_secs:.3f}",
+        "avg_tokens":         f"{avg_tokens:.1f}",
+        "samples_evaluated":  str(step),
+    }
+    _write_header = not os.path.exists(tsv_path) or os.path.getsize(tsv_path) == 0
+    with open(tsv_path, "a", newline="") as _f:
+        _writer = csv.DictWriter(_f, fieldnames=list(result_row.keys()), delimiter="\t")
+        if _write_header:
+            _writer.writeheader()
+        _writer.writerow(result_row)
+    print(f"Results appended → {tsv_path}")
