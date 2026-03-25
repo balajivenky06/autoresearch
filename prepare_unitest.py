@@ -127,6 +127,8 @@ class VectorStore:
 
     def search(self, query: str, model, top_k: int = 3) -> str:
         """Return top_k most relevant text chunks concatenated."""
+        if not self.texts:
+            return ""  # knowledge base is empty (all URLs failed to load)
         from sklearn.metrics.pairwise import cosine_similarity
         q_emb = model.encode([query])
         sims = cosine_similarity(q_emb, self.embeddings)[0]

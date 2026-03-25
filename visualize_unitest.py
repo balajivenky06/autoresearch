@@ -56,6 +56,9 @@ METRIC_LABELS = ["Syntax\nValidity", "Edge\nCoverage", "Assert\nDensity", "Seman
 def load_results() -> pd.DataFrame:
     df = pd.read_csv(RESULTS_FILE, sep="\t")
 
+    if df.empty:
+        return df  # caller handles empty case
+
     # Parse "plain_llm/base" style method column into two columns
     if "/" in str(df["method"].iloc[0]):
         df[["method_name", "reasoning"]] = df["method"].str.split("/", n=1, expand=True)
@@ -140,7 +143,7 @@ def plot_grouped_bar(df: pd.DataFrame) -> None:
                     f"{v:.3f}", ha="center", va="bottom", fontsize=7.5,
                 )
 
-    ax.set_xticks(x + width)
+    ax.set_xticks(x + width * 1.5)  # center under all 3 bars
     ax.set_xticklabels([REASONING_LABELS.get(r, r) for r in REASONINGS], fontsize=11)
     ax.set_xlabel("Reasoning Technique", fontsize=11)
     ax.set_ylabel("val_score", fontsize=11)
@@ -226,7 +229,7 @@ def plot_per_metric_bar(df: pd.DataFrame) -> None:
                     f"{v:.2f}", ha="center", va="bottom", fontsize=8,
                 )
 
-    ax.set_xticks(x + width)
+    ax.set_xticks(x + width * 1.5)  # center under all 3 bars
     ax.set_xticklabels(METRIC_LABELS, fontsize=11)
     ax.set_ylabel("Score", fontsize=11)
     ax.set_ylim(0, 1.12)

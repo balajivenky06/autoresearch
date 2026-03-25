@@ -479,6 +479,16 @@ print()  # newline
 
 val_score = compute_val_score(metrics_list)
 total_time = time.time() - t_start
+
+if not metrics_list:
+    print("---")
+    print("val_score:          0.000000")
+    print(f"method:             {METHOD}/{REASONING}")
+    print(f"model:              {GENERATOR_MODEL}")
+    print("samples_evaluated:  0")
+    print(f"total_seconds:      {total_time:.1f}")
+    raise SystemExit("No samples evaluated — dataset may be empty or corrupted.")
+
 avg_syntax   = sum(m["syntactic_validity"] for m in metrics_list) / len(metrics_list)
 avg_edges    = sum(m["edge_case_score"] for m in metrics_list) / len(metrics_list)
 avg_asserts  = sum(m["assertion_count"] for m in metrics_list) / len(metrics_list)
