@@ -5,16 +5,25 @@ Run after experiments:
     python visualize_unitest.py
     uv run visualize_unitest.py       # if using uv
 
-Outputs 4 charts to plots_unitest/:
-  heatmap.png         — val_score grid: method × reasoning
-  grouped_bar.png     — val_score grouped bar by reasoning
-  radar.png           — per-metric radar (best run per method)
-  per_metric_bar.png  — per-metric bar (best run per method)
+Outputs charts to plots_unitest/:
+  Single-model charts (Charts 1-7):
+    heatmap.png           — val_score grid: method × reasoning
+    grouped_bar.png       — val_score grouped bar by reasoning
+    radar.png             — per-metric radar (best run per method)
+    per_metric_bar.png    — per-metric bar (best run per method)
+    noise_rate.png        — avg noise rate per RAG method (RQ2)
+    cost_breakdown.png    — stacked retrieval + LLM time (RQ4)
+    faithfulness.png      — token-overlap faithfulness per method (RQ3)
 
-Radar and per-metric charts require the extended TSV format with metric columns.
+  Cross-model charts (Charts 8-10, requires ≥2 models in TSV):
+    model_val_score.png   — val_score grouped by method × model
+    model_faithfulness.png — faithfulness grouped by method × model
+    model_rank_stability.png — method ranking lines across models
+
 See program_unitest.md for the full TSV column spec.
 """
 
+import math
 import sys
 import numpy as np
 import pandas as pd
@@ -381,6 +390,150 @@ def plot_faithfulness(df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Chart 8: val_score grouped by method × model (cross-model)
+# ---------------------------------------------------------------------------
+
+def plot_model_val_score(df: pd.DataFrame) -> None:
+    models = sorted(df["model"].unique()) if "model" in df.columns else []
+    if len(models) < 2:
+        print("  model_val_score.png SKIPPED — need ≥2 models in TSV")
+        return
+
+    x     = np.arange(len(METHODS))
+    width = 0.8 / len(models)
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    for i, model in enumerate(models):
+        vals = []
+        for method in METHODS:
+            sub = df[(df["model"] == model) & (df["method_name"] == method)]
+            vals.append(float(sub["val_score"].max()) if not sub.empty else 0.0)
+        offset = (i - len(models) / 2 + 0.5) * width
+        bars = ax.bar(x + offset, vals, width * 0.9, label=model, alpha=0.85)
+        for bar, v in zip(bars, vals):
+            if v > 0:
+                ax.text(bar.get_x() + bar.get_width() / 2,
+                        bar.get_height() + 0.005,
+                        f"{v:.3f}", ha="center", va="bottom", fontsize=7)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([METHOD_LABELS[m] for m in METHODS], fontsize=11)
+    ax.set_ylabel("val_score", fontsize=11)
+    ax.set_ylim(0, 1.1)
+    ax.set_title("val_score by Method × Model\n(Best run per method/model)",
+                 fontsize=13, fontweight="bold")
+    ax.legend(title="Model", fontsize=9, title_fontsize=9)
+    ax.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / "model_val_score.png", dpi=150)
+    plt.close(fig)
+    print("  model_val_score.png")
+
+
+# ---------------------------------------------------------------------------
+# Chart 9: faithfulness grouped by method × model (cross-model)
+# ---------------------------------------------------------------------------
+
+def plot_model_faithfulness(df: pd.DataFrame) -> None:
+    if "avg_faithfulness" not in df.columns:
+        print("  model_faithfulness.png SKIPPED — avg_faithfulness missing")
+        return
+    models = sorted(df["model"].unique()) if "model" in df.columns else []
+    if len(models) < 2:
+        print("  model_faithfulness.png SKIPPED — need ≥2 models in TSV")
+        return
+
+    rag_methods = ["simple_rag", "iterative_critique"]
+    x     = np.arange(len(rag_methods))
+    width = 0.8 / len(models)
+
+    fig, ax = plt.subplots(figsize=(8, 5))
+    has_data = False
+    for i, model in enumerate(models):
+        vals = []
+        for method in rag_methods:
+            sub = df[(df["model"] == model) & (df["method_name"] == method)]
+            if sub.empty:
+                vals.append(float("nan"))
+                continue
+            fv = pd.to_numeric(sub["avg_faithfulness"], errors="coerce").max()
+            vals.append(float(fv))
+        offset = (i - len(models) / 2 + 0.5) * width
+        for j, v in enumerate(vals):
+            if not math.isnan(v):
+                has_data = True
+                ax.bar(x[j] + offset, v, width * 0.9,
+                       label=model if j == 0 else "", alpha=0.85)
+                ax.text(x[j] + offset, v + 0.005, f"{v:.3f}",
+                        ha="center", va="bottom", fontsize=7)
+
+    if not has_data:
+        print("  model_faithfulness.png SKIPPED — no faithfulness data")
+        plt.close(fig)
+        return
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([METHOD_LABELS[m] for m in rag_methods], fontsize=11)
+    ax.set_ylabel("Faithfulness (token overlap)", fontsize=11)
+    ax.set_ylim(0, 1.1)
+    ax.set_title("Faithfulness by Method × Model\n(RAG methods only)",
+                 fontsize=13, fontweight="bold")
+    ax.legend(title="Model", fontsize=9, title_fontsize=9)
+    ax.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / "model_faithfulness.png", dpi=150)
+    plt.close(fig)
+    print("  model_faithfulness.png")
+
+
+# ---------------------------------------------------------------------------
+# Chart 10: Rank stability — method rankings across models (line plot)
+# ---------------------------------------------------------------------------
+
+def plot_model_rank_stability(df: pd.DataFrame) -> None:
+    models = sorted(df["model"].unique()) if "model" in df.columns else []
+    if len(models) < 2:
+        print("  model_rank_stability.png SKIPPED — need ≥2 models in TSV")
+        return
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    for method in METHODS:
+        ranks, x_labels = [], []
+        for model in models:
+            sub = df[df["model"] == model]
+            if sub.empty:
+                continue
+            scores = {}
+            for m in METHODS:
+                r = sub[sub["method_name"] == m]
+                scores[m] = float(r["val_score"].max()) if not r.empty else 0.0
+            sorted_methods = sorted(scores, key=scores.get, reverse=True)
+            rank = sorted_methods.index(method) + 1 if method in sorted_methods else 3
+            ranks.append(rank)
+            x_labels.append(model)
+
+        ax.plot(x_labels, ranks, "o-", linewidth=2.5, markersize=9,
+                label=METHOD_LABELS[method], color=COLORS[method])
+        for xi, rank in enumerate(ranks):
+            ax.text(xi, rank - 0.1, str(rank), ha="center", va="bottom",
+                    fontsize=9, fontweight="bold", color=COLORS[method])
+
+    ax.set_yticks([1, 2, 3])
+    ax.set_yticklabels(["1st (best)", "2nd", "3rd (worst)"], fontsize=10)
+    ax.invert_yaxis()
+    ax.set_xlabel("Model", fontsize=11)
+    ax.set_ylabel("Rank (by val_score)", fontsize=11)
+    ax.set_title("Method Ranking Stability Across Models\n(Flat lines = findings generalize)",
+                 fontsize=13, fontweight="bold")
+    ax.legend(fontsize=10)
+    ax.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / "model_rank_stability.png", dpi=150)
+    plt.close(fig)
+    print("  model_rank_stability.png")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -404,6 +557,12 @@ def main() -> None:
     plot_noise_rate(df)
     plot_cost_breakdown(df)
     plot_faithfulness(df)
+
+    # Cross-model charts (auto-skipped if only 1 model in TSV)
+    print("\n  --- Cross-model charts ---")
+    plot_model_val_score(df)
+    plot_model_faithfulness(df)
+    plot_model_rank_stability(df)
 
     print(f"\nDone. Open {OUTPUT_DIR}/ to view charts.")
 
