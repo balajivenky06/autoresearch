@@ -259,19 +259,9 @@ def _edge_case_score(code: str) -> float:
     return min(1.0, hits / 4.0)
 
 
-def compute_faithfulness(generated: str, context: str) -> float:
-    """Token-overlap faithfulness: fraction of unique generated tokens present in context.
-
-    Returns NaN when context is empty (plain_llm has no retrieval context).
-    Higher is better — output is grounded in retrieved docs, not hallucinated.
-    """
-    if not generated or not generated.strip() or not context or not context.strip():
-        return float("nan")
-    gen_tokens = set(re.findall(r"\w+", generated.lower()))
-    ctx_tokens = set(re.findall(r"\w+", context.lower()))
-    if not gen_tokens:
-        return float("nan")
-    return len(gen_tokens & ctx_tokens) / len(gen_tokens)
+# Unified faithfulness metric — single source of truth for all PhD tasks.
+# Defined in faithfulness.py so docstring and test-oracle tasks use identical formula.
+from faithfulness import compute_faithfulness  # noqa: F401 (re-exported for train_unitest.py)
 
 
 def evaluate_tests(generated: str, ground_truth: str, function_code: str) -> dict:
