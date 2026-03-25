@@ -470,99 +470,100 @@ GENERATORS = {
 # Main experiment loop
 # ---------------------------------------------------------------------------
 
-t_start = time.time()
+if __name__ == "__main__":
+    t_start = time.time()
 
-dataset = make_eval_dataset()
-print(f"Eval dataset: {len(dataset)} samples")
-print(f"Method: {METHOD} | Reasoning: {REASONING} | Model: {GENERATOR_MODEL}")
-print(f"Time budget: {TIME_BUDGET}s")
+    dataset = make_eval_dataset()
+    print(f"Eval dataset: {len(dataset)} samples")
+    print(f"Method: {METHOD} | Reasoning: {REASONING} | Model: {GENERATOR_MODEL}")
+    print(f"Time budget: {TIME_BUDGET}s")
 
-generate_fn = GENERATORS.get((METHOD, REASONING))
-if generate_fn is None:
-    raise ValueError(f"Unknown METHOD/REASONING combo: {METHOD}/{REASONING}")
+    generate_fn = GENERATORS.get((METHOD, REASONING))
+    if generate_fn is None:
+        raise ValueError(f"Unknown METHOD/REASONING combo: {METHOD}/{REASONING}")
 
-metrics_list = []
-total_generation_time = 0.0
-step = 0
+    metrics_list = []
+    total_generation_time = 0.0
+    step = 0
 
-for sample in dataset:
-    _reset_sample_diagnostics()
-    t0 = time.time()
-    fn_code = sample["function_code"]
-    gt_tests = sample["ground_truth_tests"]
+    for sample in dataset:
+        _reset_sample_diagnostics()
+        t0 = time.time()
+        fn_code = sample["function_code"]
+        gt_tests = sample["ground_truth_tests"]
 
-    tests = generate_fn(fn_code)
-    dt = time.time() - t0
+        tests = generate_fn(fn_code)
+        dt = time.time() - t0
 
-    if step > 2:
-        total_generation_time += dt
+        if step > 2:
+            total_generation_time += dt
 
-    metrics = evaluate_tests(tests, gt_tests, fn_code)
+        metrics = evaluate_tests(tests, gt_tests, fn_code)
 
-    # Diagnostic metrics (not in val_score — used for RQ2/RQ3/RQ4 analysis)
-    metrics["noise_rate"]     = float(np.mean(_noise_rate_buf)) if _noise_rate_buf else float("nan")
-    metrics["faithfulness"]   = compute_faithfulness(tests, _last_context)
-    metrics["retrieval_secs"] = _retrieval_secs
-    metrics["llm_secs"]       = _llm_secs
-    metrics["tokens_used"]    = float(_tokens_used)
+        # Diagnostic metrics (not in val_score — used for RQ2/RQ3/RQ4 analysis)
+        metrics["noise_rate"]     = float(np.mean(_noise_rate_buf)) if _noise_rate_buf else float("nan")
+        metrics["faithfulness"]   = compute_faithfulness(tests, _last_context)
+        metrics["retrieval_secs"] = _retrieval_secs
+        metrics["llm_secs"]       = _llm_secs
+        metrics["tokens_used"]    = float(_tokens_used)
 
-    metrics_list.append(metrics)
-    step += 1
+        metrics_list.append(metrics)
+        step += 1
 
-    val_so_far = compute_val_score(metrics_list)
-    noise_str = f"{metrics['noise_rate']:.2f}" if not np.isnan(metrics["noise_rate"]) else "N/A"
-    print(f"\rstep {step:03d}/{len(dataset)} | val_score: {val_so_far:.6f} | dt: {dt:.1f}s | syntax: {metrics['syntactic_validity']:.0f} | edges: {metrics['edge_case_score']:.2f} | noise: {noise_str}    ", end="", flush=True)
+        val_so_far = compute_val_score(metrics_list)
+        noise_str = f"{metrics['noise_rate']:.2f}" if not np.isnan(metrics["noise_rate"]) else "N/A"
+        print(f"\rstep {step:03d}/{len(dataset)} | val_score: {val_so_far:.6f} | dt: {dt:.1f}s | syntax: {metrics['syntactic_validity']:.0f} | edges: {metrics['edge_case_score']:.2f} | noise: {noise_str}    ", end="", flush=True)
 
-    if step > 2 and total_generation_time >= TIME_BUDGET:
-        print(f"\nTime budget reached after {step} samples.")
-        break
+        if step > 2 and total_generation_time >= TIME_BUDGET:
+            print(f"\nTime budget reached after {step} samples.")
+            break
 
-print()  # newline
+    print()  # newline
 
-# ---------------------------------------------------------------------------
-# Final summary
-# ---------------------------------------------------------------------------
+    # -----------------------------------------------------------------------
+    # Final summary
+    # -----------------------------------------------------------------------
 
-val_score = compute_val_score(metrics_list)
-total_time = time.time() - t_start
+    val_score = compute_val_score(metrics_list)
+    total_time = time.time() - t_start
 
-if not metrics_list:
+    if not metrics_list:
+        print("---")
+        print("val_score:          0.000000")
+        print(f"method:             {METHOD}/{REASONING}")
+        print(f"model:              {GENERATOR_MODEL}")
+        print("samples_evaluated:  0")
+        print(f"total_seconds:      {total_time:.1f}")
+        raise SystemExit("No samples evaluated — dataset may be empty or corrupted.")
+
+    avg_syntax   = sum(m["syntactic_validity"] for m in metrics_list) / len(metrics_list)
+    avg_edges    = sum(m["edge_case_score"] for m in metrics_list) / len(metrics_list)
+    avg_asserts  = sum(m["assertion_count"] for m in metrics_list) / len(metrics_list)
+    avg_rouge    = sum(m["rouge_1_f1"] for m in metrics_list) / len(metrics_list)
+    avg_semsim   = sum(m.get("semantic_sim", 0.0) for m in metrics_list) / len(metrics_list)
+
+    # Diagnostic averages (NaN-safe — NaN means metric not applicable for this method)
+    _noise_vals = [m["noise_rate"]   for m in metrics_list if not np.isnan(m.get("noise_rate",   float("nan")))]
+    _faith_vals = [m["faithfulness"] for m in metrics_list if not np.isnan(m.get("faithfulness", float("nan")))]
+    avg_noise_rate     = float(np.mean(_noise_vals)) if _noise_vals else float("nan")
+    avg_faithfulness   = float(np.mean(_faith_vals)) if _faith_vals else float("nan")
+    avg_retrieval_secs = sum(m.get("retrieval_secs", 0.0) for m in metrics_list) / len(metrics_list)
+    avg_llm_secs       = sum(m.get("llm_secs",       0.0) for m in metrics_list) / len(metrics_list)
+    avg_tokens         = sum(m.get("tokens_used",    0.0) for m in metrics_list) / len(metrics_list)
+
     print("---")
-    print("val_score:          0.000000")
+    print(f"val_score:          {val_score:.6f}")
     print(f"method:             {METHOD}/{REASONING}")
     print(f"model:              {GENERATOR_MODEL}")
-    print("samples_evaluated:  0")
+    print(f"samples_evaluated:  {step}")
     print(f"total_seconds:      {total_time:.1f}")
-    raise SystemExit("No samples evaluated — dataset may be empty or corrupted.")
-
-avg_syntax   = sum(m["syntactic_validity"] for m in metrics_list) / len(metrics_list)
-avg_edges    = sum(m["edge_case_score"] for m in metrics_list) / len(metrics_list)
-avg_asserts  = sum(m["assertion_count"] for m in metrics_list) / len(metrics_list)
-avg_rouge    = sum(m["rouge_1_f1"] for m in metrics_list) / len(metrics_list)
-avg_semsim   = sum(m.get("semantic_sim", 0.0) for m in metrics_list) / len(metrics_list)
-
-# Diagnostic averages (NaN-safe — NaN means metric not applicable for this method)
-_noise_vals = [m["noise_rate"]   for m in metrics_list if not np.isnan(m.get("noise_rate",   float("nan")))]
-_faith_vals = [m["faithfulness"] for m in metrics_list if not np.isnan(m.get("faithfulness", float("nan")))]
-avg_noise_rate     = float(np.mean(_noise_vals)) if _noise_vals else float("nan")
-avg_faithfulness   = float(np.mean(_faith_vals)) if _faith_vals else float("nan")
-avg_retrieval_secs = sum(m.get("retrieval_secs", 0.0) for m in metrics_list) / len(metrics_list)
-avg_llm_secs       = sum(m.get("llm_secs",       0.0) for m in metrics_list) / len(metrics_list)
-avg_tokens         = sum(m.get("tokens_used",    0.0) for m in metrics_list) / len(metrics_list)
-
-print("---")
-print(f"val_score:          {val_score:.6f}")
-print(f"method:             {METHOD}/{REASONING}")
-print(f"model:              {GENERATOR_MODEL}")
-print(f"samples_evaluated:  {step}")
-print(f"total_seconds:      {total_time:.1f}")
-print(f"avg_syntax_valid:   {avg_syntax:.4f}")
-print(f"avg_edge_coverage:  {avg_edges:.4f}")
-print(f"avg_assertions:     {avg_asserts:.1f}")
-print(f"avg_semantic_sim:   {avg_semsim:.4f}")
-print(f"avg_rouge_1:        {avg_rouge:.4f}")
-print(f"avg_noise_rate:     {avg_noise_rate:.4f}" if not np.isnan(avg_noise_rate) else "avg_noise_rate:     nan")
-print(f"avg_faithfulness:   {avg_faithfulness:.4f}" if not np.isnan(avg_faithfulness) else "avg_faithfulness:   nan")
-print(f"avg_retrieval_secs: {avg_retrieval_secs:.3f}")
-print(f"avg_llm_secs:       {avg_llm_secs:.3f}")
-print(f"avg_tokens:         {avg_tokens:.1f}")
+    print(f"avg_syntax_valid:   {avg_syntax:.4f}")
+    print(f"avg_edge_coverage:  {avg_edges:.4f}")
+    print(f"avg_assertions:     {avg_asserts:.1f}")
+    print(f"avg_semantic_sim:   {avg_semsim:.4f}")
+    print(f"avg_rouge_1:        {avg_rouge:.4f}")
+    print(f"avg_noise_rate:     {avg_noise_rate:.4f}" if not np.isnan(avg_noise_rate) else "avg_noise_rate:     nan")
+    print(f"avg_faithfulness:   {avg_faithfulness:.4f}" if not np.isnan(avg_faithfulness) else "avg_faithfulness:   nan")
+    print(f"avg_retrieval_secs: {avg_retrieval_secs:.3f}")
+    print(f"avg_llm_secs:       {avg_llm_secs:.3f}")
+    print(f"avg_tokens:         {avg_tokens:.1f}")

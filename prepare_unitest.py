@@ -50,7 +50,7 @@ KNOWLEDGE_BASE_URLS = [
 
 def _load_humaneval():
     from datasets import load_dataset
-    ds = load_dataset("openai/openai_humaneval", split="test", trust_remote_code=True)
+    ds = load_dataset("openai/openai_humaneval", split="test")
     rows = []
     for item in ds:
         full_code = item["prompt"] + item["canonical_solution"]
@@ -66,7 +66,7 @@ def _load_humaneval():
 
 def _load_mbpp():
     from datasets import load_dataset
-    ds = load_dataset("google-research-datasets/mbpp", "sanitized", split="test", trust_remote_code=True)
+    ds = load_dataset("google-research-datasets/mbpp", "sanitized", split="test")
     rows = []
     for item in ds:
         tests = "\n".join(item.get("test_list", []))
