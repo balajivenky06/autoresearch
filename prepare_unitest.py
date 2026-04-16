@@ -21,16 +21,17 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 
 TIME_BUDGET      = 600   # seconds of generation time per experiment (10 min)
-NUM_EVAL_SAMPLES = 25    # fixed eval subset size for fair comparison across runs
+NUM_EVAL_SAMPLES = 100   # fixed eval subset size — 100 samples meets journal-quality bar
 DATASET_SEED     = 42    # seed for reproducible subset selection
+CACHE_VERSION    = "v2"  # bump to bust stale caches after config changes
 
 NOISE_THRESHOLD  = 0.3   # cosine similarity below this → chunk is "noisy" (diagnostic only)
 
 # Cache dir: /content/.cache in Colab, ~/.cache elsewhere
 _IN_COLAB = os.path.exists("/content")
 CACHE_DIR     = Path("/content/.cache/autoresearch_unitest") if _IN_COLAB else Path.home() / ".cache" / "autoresearch_unitest"
-DATASET_CACHE = CACHE_DIR / "eval_dataset.pkl"
-KB_CACHE      = CACHE_DIR / "knowledge_base.pkl"
+DATASET_CACHE = CACHE_DIR / f"eval_dataset_{CACHE_VERSION}.pkl"
+KB_CACHE      = CACHE_DIR / f"knowledge_base_{CACHE_VERSION}.pkl"
 
 # Knowledge base URLs — testing documentation for RAG retrieval
 KNOWLEDGE_BASE_URLS = [
@@ -242,7 +243,7 @@ def _semantic_similarity(text_a: str, text_b: str) -> float:
     try:
         from sklearn.metrics.pairwise import cosine_similarity
         model = _get_st_model()
-        embs = model.encode([text_a[:1000], text_b[:1000]])
+        embs = model.encode([text_a[:4000], text_b[:4000]])
         score = cosine_similarity([embs[0]], [embs[1]])[0][0]
         return float(max(0.0, score))
     except Exception:
@@ -259,9 +260,9 @@ def _edge_case_score(code: str) -> float:
     return min(1.0, hits / 4.0)
 
 
-# Unified faithfulness metric — single source of truth for all PhD tasks.
+# Unified faithfulness metrics — single source of truth for all PhD tasks.
 # Defined in faithfulness.py so docstring and test-oracle tasks use identical formula.
-from faithfulness import compute_faithfulness  # noqa: F401 (re-exported for train_unitest.py)
+from faithfulness import compute_faithfulness, llm_judge_faithfulness  # noqa: F401 (re-exported)
 
 
 def evaluate_tests(generated: str, ground_truth: str, function_code: str) -> dict:

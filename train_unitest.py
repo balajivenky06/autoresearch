@@ -19,7 +19,7 @@ import ollama
 
 from prepare_unitest import (
     TIME_BUDGET, make_eval_dataset, build_knowledge_base,
-    evaluate_tests, compute_val_score, compute_faithfulness,
+    evaluate_tests, compute_val_score, compute_faithfulness, llm_judge_faithfulness,
 )
 
 # ---------------------------------------------------------------------------
@@ -32,16 +32,22 @@ METHOD    = "plain_llm"
 REASONING = "base"
 # Options: "base" | "cot" | "tot" | "got"
 
-GENERATOR_MODEL = "llama3.2:latest"   # Ollama model for generation
-HELPER_MODEL    = "llama3.2:latest"   # Ollama model for critique/rewrite
+GENERATOR_MODEL = "llama3.2:1b"   # Ollama model for generation
+HELPER_MODEL    = "llama3.2:1b"   # Ollama model for critique/rewrite
 
 TEMPERATURE          = 0.5
 CRITIQUE_TEMPERATURE = 0.0
 REFINE_TEMPERATURE   = 0.3
 TOP_K                = 3   # number of docs to retrieve (for RAG methods)
 
+# ToT/GoT branch temperatures — named constants for ablation transparency
+TOT_TEMP_EXPLORE    = 0.7   # high diversity for first ToT branch / GoT sub-axes
+TOT_TEMP_REFINE     = 0.3   # moderate for second ToT branch
+TOT_TEMP_SELECT     = 0.0   # deterministic for ToT selection step
+GOT_TEMP_AGGREGATE  = 0.2   # near-deterministic for GoT merge step
+
 # Set to an integer (e.g. 3) for a quick local trial; None = use full dataset / time budget
-MAX_SAMPLES          = None
+MAX_SAMPLES          = 1
 
 # ---------------------------------------------------------------------------
 # Prompts — edit these freely
@@ -212,6 +218,7 @@ _retrieval_secs: float = 0.0   # cumulative retrieval time this sample
 _llm_secs:       float = 0.0   # cumulative LLM call time this sample
 _tokens_used:    int   = 0     # cumulative token count this sample
 _last_context:   str   = ""    # most recently retrieved context (for faithfulness)
+_sample_errors:  int   = 0     # number of samples with empty/failed generation
 
 
 def _reset_sample_diagnostics():
@@ -247,7 +254,10 @@ def _call(model: str, messages: list, temperature: float) -> str:
         _llm_secs += time.time() - t0
         # Token counts: ollama v0.4+ exposes prompt_eval_count / eval_count
         try:
-            _tokens_used += (resp.prompt_eval_count or 0) + (resp.eval_count or 0)
+            added = (resp.prompt_eval_count or 0) + (resp.eval_count or 0)
+            _tokens_used += added
+            if added == 0:
+                print("  WARNING: token counts are zero — ensure Ollama ≥ v0.4 for accurate cost tracking")
         except AttributeError:
             pass  # older dict-based response — skip token counting
         # ollama v0.4+ returns a ChatResponse object; older versions return a dict
@@ -309,11 +319,11 @@ def generate_plain_tot(function_code: str) -> str:
     candidate_a = _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": TOT_DECOMPOSE_PROMPT.format(function_code=function_code)},
-    ], 0.7))
+    ], TOT_TEMP_EXPLORE))
     candidate_b = _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": GENERATION_PROMPT.format(function_code=function_code)},
-    ], 0.3))
+    ], TOT_TEMP_REFINE))
     if not candidate_a.strip():
         return candidate_b
     if not candidate_b.strip():
@@ -322,7 +332,7 @@ def generate_plain_tot(function_code: str) -> str:
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": TOT_EVALUATE_PROMPT.format(
             function_code=function_code, candidate_a=candidate_a, candidate_b=candidate_b)},
-    ], 0.0))
+    ], TOT_TEMP_SELECT))
     return best or candidate_a
 
 
@@ -347,7 +357,7 @@ def generate_plain_got(function_code: str) -> str:
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": GOT_AGGREGATE_PROMPT.format_map(
             {"happy_path": "", "edge_cases": "", "error_handling": "", **non_empty})},
-    ], 0.2))
+    ], GOT_TEMP_AGGREGATE))
     return merged or "\n\n".join(non_empty.values())
 
 
@@ -379,11 +389,11 @@ def _simple_rag_tot(function_code: str) -> str:
     candidate_a = _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
         {"role": "user", "content": TOT_DECOMPOSE_PROMPT.format(function_code=function_code)},
-    ], 0.7))
+    ], TOT_TEMP_EXPLORE))
     candidate_b = _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
         {"role": "user", "content": GENERATION_PROMPT.format(function_code=function_code)},
-    ], 0.3))
+    ], TOT_TEMP_REFINE))
     if not candidate_a.strip():
         return candidate_b
     if not candidate_b.strip():
@@ -392,7 +402,7 @@ def _simple_rag_tot(function_code: str) -> str:
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": TOT_EVALUATE_PROMPT.format(
             function_code=function_code, candidate_a=candidate_a, candidate_b=candidate_b)},
-    ], 0.0)) or candidate_a
+    ], TOT_TEMP_SELECT)) or candidate_a
 
 
 def _simple_rag_got(function_code: str) -> str:
@@ -418,7 +428,7 @@ def _simple_rag_got(function_code: str) -> str:
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": GOT_AGGREGATE_PROMPT.format_map(
             {"happy_path": "", "edge_cases": "", "error_handling": "", **non_empty})},
-    ], 0.2)) or "\n\n".join(non_empty.values())
+    ], GOT_TEMP_AGGREGATE)) or "\n\n".join(non_empty.values())
 
 
 def _iterative_critique(initial_tests: str, function_code: str) -> str:
@@ -475,11 +485,15 @@ GENERATORS = {
 # Checkpoint helpers — resume from last completed sample on Colab restarts
 # ---------------------------------------------------------------------------
 
-# Checkpoint directory: Google Drive on Colab, local otherwise.
-# On Colab, mount Drive first:  from google.colab import drive; drive.mount('/content/drive')
+# Checkpoint directory:
+#   Colab  → Google Drive (survives VM disconnects automatically)
+#   Local  → .checkpoints/ (survives process kills, not reboots)
+#
+# IMPORTANT: Must match CHECKPOINTS_DIR in unitest_colab.ipynb so the
+# notebook's Drive restore logic and train_unitest.py point to the same folder.
 _IN_COLAB = os.path.exists("/content")
 _CKPT_DIR = (
-    Path("/content/drive/MyDrive/autoresearch_checkpoints") if _IN_COLAB
+    Path("/content/drive/MyDrive/PhD_autoresearch/checkpoints") if _IN_COLAB
     else Path(".checkpoints")
 )
 
@@ -527,6 +541,7 @@ def _clear_checkpoint() -> None:
 
 if __name__ == "__main__":
     t_start = time.time()
+    run_status = "ok"
 
     dataset = make_eval_dataset()
     print(f"Eval dataset: {len(dataset)} samples")
@@ -541,6 +556,7 @@ if __name__ == "__main__":
     metrics_list, start_step = _load_checkpoint()
     total_generation_time = 0.0
     step = start_step
+    _sample_errors = 0
 
     if start_step > 0:
         print(f"Resuming from step {start_step}/{len(dataset)} — {start_step} samples already evaluated.")
@@ -554,7 +570,15 @@ if __name__ == "__main__":
         fn_code = sample["function_code"]
         gt_tests = sample["ground_truth_tests"]
 
-        tests = generate_fn(fn_code)
+        try:
+            tests = generate_fn(fn_code)
+        except Exception as e:
+            print(f"\n  Generation error on sample {i}: {e}")
+            tests = ""
+
+        if not tests or not tests.strip():
+            _sample_errors += 1
+
         dt = time.time() - t0
 
         if step > 2:
@@ -563,11 +587,12 @@ if __name__ == "__main__":
         metrics = evaluate_tests(tests, gt_tests, fn_code)
 
         # Diagnostic metrics (not in val_score — used for RQ2/RQ3/RQ4 analysis)
-        metrics["noise_rate"]     = float(np.mean(_noise_rate_buf)) if _noise_rate_buf else float("nan")
-        metrics["faithfulness"]   = compute_faithfulness(tests, _last_context)
-        metrics["retrieval_secs"] = _retrieval_secs
-        metrics["llm_secs"]       = _llm_secs
-        metrics["tokens_used"]    = float(_tokens_used)
+        metrics["noise_rate"]           = float(np.mean(_noise_rate_buf)) if _noise_rate_buf else float("nan")
+        metrics["faithfulness"]         = compute_faithfulness(tests, _last_context)
+        metrics["llm_judge_faithfulness"] = llm_judge_faithfulness(tests, _last_context, fn_code)
+        metrics["retrieval_secs"]       = _retrieval_secs
+        metrics["llm_secs"]             = _llm_secs
+        metrics["tokens_used"]          = float(_tokens_used)
 
         metrics_list.append(metrics)
         step += 1
@@ -613,16 +638,19 @@ if __name__ == "__main__":
     avg_semsim        = sum(m.get("semantic_sim", 0.0) for m in metrics_list) / len(metrics_list)
 
     # Diagnostic averages (NaN-safe — NaN means metric not applicable for this method)
-    _noise_vals = [m["noise_rate"]   for m in metrics_list if not np.isnan(m.get("noise_rate",   float("nan")))]
-    _faith_vals = [m["faithfulness"] for m in metrics_list if not np.isnan(m.get("faithfulness", float("nan")))]
-    avg_noise_rate     = float(np.mean(_noise_vals)) if _noise_vals else float("nan")
-    avg_faithfulness   = float(np.mean(_faith_vals)) if _faith_vals else float("nan")
+    _noise_vals      = [m["noise_rate"]             for m in metrics_list if not np.isnan(m.get("noise_rate",             float("nan")))]
+    _faith_vals      = [m["faithfulness"]           for m in metrics_list if not np.isnan(m.get("faithfulness",           float("nan")))]
+    _judge_vals      = [m["llm_judge_faithfulness"] for m in metrics_list if not np.isnan(m.get("llm_judge_faithfulness", float("nan")))]
+    avg_noise_rate           = float(np.mean(_noise_vals))  if _noise_vals  else float("nan")
+    avg_faithfulness         = float(np.mean(_faith_vals))  if _faith_vals  else float("nan")
+    avg_llm_judge_faith      = float(np.mean(_judge_vals))  if _judge_vals  else float("nan")
     avg_retrieval_secs = sum(m.get("retrieval_secs", 0.0) for m in metrics_list) / len(metrics_list)
     avg_llm_secs       = sum(m.get("llm_secs",       0.0) for m in metrics_list) / len(metrics_list)
     avg_tokens         = sum(m.get("tokens_used",    0.0) for m in metrics_list) / len(metrics_list)
 
-    # Experiment complete — remove checkpoint so next run starts fresh
-    _clear_checkpoint()
+    # Determine run status: crash if >50% of samples failed generation
+    if _sample_errors > len(metrics_list) * 0.5:
+        run_status = "partial"
 
     print("---")
     print(f"val_score:          {val_score:.6f}")
@@ -637,7 +665,8 @@ if __name__ == "__main__":
     print(f"avg_semantic_sim:   {avg_semsim:.4f}")
     print(f"avg_rouge:          {avg_rouge:.4f}")
     print(f"avg_noise_rate:     {avg_noise_rate:.4f}" if not np.isnan(avg_noise_rate) else "avg_noise_rate:     nan")
-    print(f"avg_faithfulness:   {avg_faithfulness:.4f}" if not np.isnan(avg_faithfulness) else "avg_faithfulness:   nan")
+    print(f"avg_faithfulness:       {avg_faithfulness:.4f}" if not np.isnan(avg_faithfulness) else "avg_faithfulness:       nan")
+    print(f"avg_llm_judge_faith:    {avg_llm_judge_faith:.4f}" if not np.isnan(avg_llm_judge_faith) else "avg_llm_judge_faith:    nan")
     print(f"avg_retrieval_secs: {avg_retrieval_secs:.3f}")
     print(f"avg_llm_secs:       {avg_llm_secs:.3f}")
     print(f"avg_tokens:         {avg_tokens:.1f}")
@@ -649,21 +678,22 @@ if __name__ == "__main__":
     tsv_path = "results_unitest.tsv"
     _nan_str = lambda v: f"{v:.4f}" if not np.isnan(v) else "nan"
     result_row = {
-        "method":             f"{METHOD}/{REASONING}",
-        "model":              GENERATOR_MODEL,
-        "status":             "ok",
-        "val_score":          f"{val_score:.6f}",
-        "avg_syntax":         f"{avg_syntax:.4f}",
-        "avg_edge":           f"{avg_edges:.4f}",
-        "avg_assert_density": f"{avg_assert_density:.4f}",
-        "avg_semantic_sim":   f"{avg_semsim:.4f}",
-        "avg_rouge":          f"{avg_rouge:.4f}",
-        "avg_noise_rate":     _nan_str(avg_noise_rate),
-        "avg_faithfulness":   _nan_str(avg_faithfulness),
-        "avg_retrieval_secs": f"{avg_retrieval_secs:.3f}",
-        "avg_llm_secs":       f"{avg_llm_secs:.3f}",
-        "avg_tokens":         f"{avg_tokens:.1f}",
-        "samples_evaluated":  str(step),
+        "method":                   f"{METHOD}/{REASONING}",
+        "model":                    GENERATOR_MODEL,
+        "status":                   run_status,
+        "val_score":                f"{val_score:.6f}",
+        "avg_syntax":               f"{avg_syntax:.4f}",
+        "avg_edge":                 f"{avg_edges:.4f}",
+        "avg_assert_density":       f"{avg_assert_density:.4f}",
+        "avg_semantic_sim":         f"{avg_semsim:.4f}",
+        "avg_rouge":                f"{avg_rouge:.4f}",
+        "avg_noise_rate":           _nan_str(avg_noise_rate),
+        "avg_faithfulness":         _nan_str(avg_faithfulness),
+        "avg_llm_judge_faithfulness": _nan_str(avg_llm_judge_faith),
+        "avg_retrieval_secs":       f"{avg_retrieval_secs:.3f}",
+        "avg_llm_secs":             f"{avg_llm_secs:.3f}",
+        "avg_tokens":               f"{avg_tokens:.1f}",
+        "samples_evaluated":        str(step),
     }
     _write_header = not os.path.exists(tsv_path) or os.path.getsize(tsv_path) == 0
     with open(tsv_path, "a", newline="") as _f:
@@ -672,3 +702,8 @@ if __name__ == "__main__":
             _writer.writeheader()
         _writer.writerow(result_row)
     print(f"Results appended → {tsv_path}")
+
+    # Clear checkpoint AFTER TSV is safely written.
+    # Ordering matters: if TSV write fails, the checkpoint survives so the
+    # experiment can be re-run and will resume from the last saved sample.
+    _clear_checkpoint()

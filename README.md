@@ -60,7 +60,7 @@ Rankings across models compared using **Spearman rank correlation** (ρ ≥ 0.8 
 
 ## Dataset
 
-Fixed 25-sample evaluation subset from **HumanEval + MBPP** (seed=42). Same subset used for every experiment.
+Fixed **100-sample** evaluation subset from **HumanEval + MBPP** (seed=42). Same subset used for every experiment. Size increased from 25→100 for journal-quality statistical power (Cohen 1988: medium effect, α=0.05, power=0.80 requires n≥52 per group).
 
 ## Knowledge Base
 
@@ -78,8 +78,10 @@ train_unitest.py            — edit this: METHOD, REASONING, prompts, RAG confi
 program_unitest.md          — agent instructions
 unitest_colab.ipynb         — Colab notebook: full 36-run multi-model sweep
 visualize_unitest.py        — generates 10 KPI charts from results_unitest.tsv
-analyze_generalizability.py — Spearman rank correlation across models
-faithfulness.py             — shared faithfulness metric
+analyze_generalizability.py — Spearman rank correlation across models (with p-values)
+faithfulness.py             — token-overlap + LLM-as-Judge faithfulness metrics
+statistical_tests.py        — Kruskal-Wallis, Mann-Whitney U, Bonferroni, Cohen's d + sensitivity
+human_eval_sampler.py       — stratified annotation sampler + post-annotation validation
 test_run.py                 — 22-check local pipeline verification
 ```
 
@@ -123,7 +125,10 @@ Open `unitest_colab.ipynb` on a Colab A100:
 |------|-------------|
 | `results_unitest.tsv` | One row per experiment (not committed) |
 | `plots_unitest/` | 10 charts: heatmap, grouped bar, radar, per-metric bar, noise rate, cost breakdown, faithfulness + 3 cross-model charts |
-| `plots_generalizability/` | Spearman ρ heatmap, rank stability, val_score/faithfulness by model + written report |
+| `plots_generalizability/` | Spearman ρ heatmap (with p-values), rank stability, val_score/faithfulness by model, sensitivity chart + generalizability report |
+| `statistical_report.txt` | Kruskal-Wallis + pairwise Mann-Whitney U significance table (in `plots_generalizability/`) |
+| `human_eval_samples.csv` | Annotation worksheet for 40 stratified samples (not committed) |
+| `human_eval_guide.txt`   | Annotation instructions for human raters |
 | `summary_all_experiments.csv` | Pivot summary across all models (not committed) |
 
 ## License

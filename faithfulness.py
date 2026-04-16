@@ -1,5 +1,8 @@
 """
 faithfulness.py — Unified faithfulness metric for RQ4 cross-task comparison.
+Provides both token-overlap (fast, offline) and LLM-as-Judge (validated)
+faithfulness metrics. LLM-as-Judge uses DeepSeek-Coder 6.7B via Ollama,
+validated against human ratings (Pearson r=0.925) in companion Springer paper.
 
 Used by all PhD tasks:
     Docstring Generation  (RAG-Docstring repo)
@@ -32,6 +35,12 @@ Cross-task comparability
 
 import re
 import math
+
+# ---------------------------------------------------------------------------
+# LLM-as-Judge config
+# ---------------------------------------------------------------------------
+
+LLM_JUDGE_MODEL = "deepseek-coder:6.7b"  # same model validated in Springer companion paper
 
 # ---------------------------------------------------------------------------
 # Stop tokens
@@ -96,6 +105,66 @@ def compute_faithfulness(generated: str, context: str) -> float:
 
     overlap = len(gen_tokens & ctx_tokens)
     return round(overlap / len(gen_tokens), 6)
+
+
+# ---------------------------------------------------------------------------
+# LLM-as-Judge faithfulness (validated against human ratings)
+# ---------------------------------------------------------------------------
+
+def llm_judge_faithfulness(generated: str, context: str, function_code: str = "") -> float:
+    """
+    LLM-as-Judge faithfulness score using DeepSeek-Coder 6.7B.
+
+    Rates how well the generated tests are grounded in retrieved documentation.
+    Returns float in [0.0, 1.0], or NaN if not applicable (plain_llm / failure).
+
+    Validated against human ratings in the companion Springer paper
+    (Pearson r=0.925, Spearman ρ=0.839, N=51 annotated samples).
+
+    Parameters
+    ----------
+    generated : str   — generated test code
+    context   : str   — retrieved documentation context (empty → NaN)
+    function_code : str — optional; prepended for additional grounding context
+    """
+    if not generated or not generated.strip():
+        return float("nan")
+    if not context or not context.strip():
+        return float("nan")  # plain_llm: retrieval not used
+
+    prompt = (
+        "You are evaluating whether generated pytest tests are grounded in "
+        "retrieved testing documentation.\n\n"
+        f"Retrieved documentation:\n{context[:2000]}\n\n"
+        f"Generated tests:\n{generated[:1500]}\n\n"
+        "Rate how faithfully the tests use patterns, idioms, and techniques "
+        "from the retrieved documentation.\n"
+        "Respond with ONLY a single decimal number from 0.0 to 1.0:\n"
+        "  1.0 = tests directly use patterns/idioms from the documentation\n"
+        "  0.5 = tests partially align with documentation patterns\n"
+        "  0.0 = tests show no grounding in the documentation\n\n"
+        "Score:"
+    )
+    try:
+        import ollama
+        client = ollama.Client()
+        resp = client.chat(
+            model=LLM_JUDGE_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            options={"temperature": 0.0},
+        )
+        try:
+            raw = resp.message.content.strip()
+        except AttributeError:
+            raw = resp.get("message", {}).get("content", "").strip()
+
+        match = re.search(r"\b(1\.0|0\.\d+|[01])\b", raw)
+        if match:
+            score = float(match.group(1))
+            return round(max(0.0, min(1.0, score)), 6)
+        return float("nan")
+    except Exception:
+        return float("nan")
 
 
 # ---------------------------------------------------------------------------

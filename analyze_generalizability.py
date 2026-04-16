@@ -25,7 +25,6 @@ import math
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import matplotlib.patches as mpatches
 from pathlib import Path
 from scipy import stats
 
@@ -48,7 +47,10 @@ METHOD_COLORS = {
     "iterative_critique": "#55A868",
 }
 
-GENERALIZE_THRESHOLD = 0.8   # Spearman ρ above this → rankings generalize
+GENERALIZE_THRESHOLD = 0.8   # Spearman ρ above this → rankings generalize.
+# Threshold sourced from: Zar (1984) Biostatistical Analysis — ρ ≥ 0.8 denotes
+# "strong" rank agreement widely adopted in SE reproducibility studies
+# (cf. Jureczko & Madeyski 2015, IST; Palomba et al. 2018, EMSE).
 
 
 # ---------------------------------------------------------------------------
@@ -245,7 +247,7 @@ def plot_rank_stability(best: pd.DataFrame) -> None:
 # Chart 4: Spearman rank correlation heatmap across models
 # ---------------------------------------------------------------------------
 
-def plot_rank_correlation(best: pd.DataFrame) -> pd.DataFrame:
+def plot_rank_correlation(best: pd.DataFrame) -> tuple:
     models = sorted(best["model"].unique())
     if len(models) < 2:
         print("  rank_correlation.png SKIPPED — need ≥2 models")
@@ -260,15 +262,18 @@ def plot_rank_correlation(best: pd.DataFrame) -> pd.DataFrame:
             vec.append(float(row["val_score"].values[0]) if not row.empty else 0.0)
         score_vecs[model] = vec
 
-    # Compute Spearman ρ matrix
+    # Compute Spearman ρ matrix (with two-sided p-values)
     n = len(models)
     corr_matrix = np.ones((n, n))
+    pval_matrix = np.zeros((n, n))
     for i in range(n):
         for j in range(i + 1, n):
-            rho, _ = stats.spearmanr(score_vecs[models[i]], score_vecs[models[j]])
+            rho, pval = stats.spearmanr(score_vecs[models[i]], score_vecs[models[j]])
             corr_matrix[i, j] = corr_matrix[j, i] = rho
+            pval_matrix[i, j] = pval_matrix[j, i] = pval
 
     corr_df = pd.DataFrame(corr_matrix, index=models, columns=models)
+    pval_df = pd.DataFrame(pval_matrix, index=models, columns=models)
 
     fig, ax = plt.subplots(figsize=(6, 5))
     im = ax.imshow(corr_matrix, cmap="RdYlGn", vmin=-1, vmax=1)
@@ -282,8 +287,12 @@ def plot_rank_correlation(best: pd.DataFrame) -> pd.DataFrame:
     for i in range(n):
         for j in range(n):
             color = "white" if abs(corr_matrix[i, j]) > 0.7 else "black"
-            ax.text(j, i, f"{corr_matrix[i, j]:.2f}",
-                    ha="center", va="center", fontsize=11, fontweight="bold", color=color)
+            label = f"ρ={corr_matrix[i, j]:.2f}"
+            if i != j:
+                p = pval_matrix[i, j]
+                label += f"\np={p:.3f}" if p >= 0.001 else "\np<.001"
+            ax.text(j, i, label,
+                    ha="center", va="center", fontsize=9, fontweight="bold", color=color)
 
     ax.set_title("Spearman Rank Correlation of Method Rankings\nAcross Models",
                  fontsize=12, fontweight="bold")
@@ -292,14 +301,14 @@ def plot_rank_correlation(best: pd.DataFrame) -> pd.DataFrame:
     plt.close(fig)
     print("  rank_correlation.png")
 
-    return corr_df
+    return corr_df, pval_df
 
 
 # ---------------------------------------------------------------------------
 # Text report for thesis appendix
 # ---------------------------------------------------------------------------
 
-def write_report(best: pd.DataFrame, corr_df: pd.DataFrame) -> None:
+def write_report(best: pd.DataFrame, corr_df: pd.DataFrame, pval_df: pd.DataFrame = None) -> None:
     models = sorted(best["model"].unique())
     lines = []
     lines.append("=" * 65)
@@ -339,8 +348,11 @@ def write_report(best: pd.DataFrame, corr_df: pd.DataFrame) -> None:
 
     # Spearman correlation
     if not corr_df.empty:
-        lines.append("\nSpearman rank correlation between models:")
+        lines.append("\nSpearman rank correlation between models (ρ):")
         lines.append(corr_df.round(3).to_string())
+        if pval_df is not None and not pval_df.empty:
+            lines.append("\nSpearman p-values (two-sided):")
+            lines.append(pval_df.round(4).to_string())
 
         min_rho = corr_df.values[np.triu_indices(len(corr_df), k=1)].min()
         if min_rho >= GENERALIZE_THRESHOLD:
@@ -348,6 +360,7 @@ def write_report(best: pd.DataFrame, corr_df: pd.DataFrame) -> None:
         else:
             verdict = f"DOES NOT FULLY GENERALIZE (min ρ={min_rho:.3f} < {GENERALIZE_THRESHOLD})"
         lines.append(f"\nVerdict: {verdict}")
+        lines.append(f"(Threshold ρ={GENERALIZE_THRESHOLD}: Zar 1984; Jureczko & Madeyski 2015 IST)")
 
     # Faithfulness consistency
     if "avg_faithfulness" in best.columns:
@@ -396,8 +409,8 @@ def main(results_file: str = RESULTS_FILE) -> None:
     plot_val_score_by_model(best)
     plot_faithfulness_by_model(best)
     plot_rank_stability(best)
-    corr_df = plot_rank_correlation(best)
-    write_report(best, corr_df)
+    corr_df, pval_df = plot_rank_correlation(best)
+    write_report(best, corr_df, pval_df)
 
     print(f"\nDone. Open {OUTPUT_DIR}/ to view charts.")
 

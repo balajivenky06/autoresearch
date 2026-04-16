@@ -26,3 +26,5 @@ summary_all_experiments.csv
 
 # Experiment checkpoints (resume state for Colab disconnects)
 .checkpoints/
+
+SKILL.md

@@ -5,38 +5,40 @@ Mirrors program.md but for the unit test task.
 
 ## Setup
 
-1. **Agree on a run tag**: propose a tag (e.g. `unitest-mar12`). Branch `autoresearch/<tag>` must not exist.
+1. **Agree on a run tag**: propose a tag (e.g. `unitest-apr16`). Branch `autoresearch/<tag>` must not exist.
 2. **Create the branch**: `git checkout -b autoresearch/<tag>`
 3. **Read the in-scope files**:
-   - `prepare_unitest.py` — fixed: dataset (HumanEval+MBPP), evaluation, val_score. DO NOT MODIFY.
-   - `train_unitest.py` — the only file you edit. Prompts, RAG config, METHOD, REASONING.
-4. **Verify data exists**: Check `~/.cache/autoresearch_unitest/` for `eval_dataset.pkl` and `knowledge_base.pkl`. If missing, run `uv run prepare_unitest.py` (one-time, ~3 min).
-5. **Initialize results**: Create `results_unitest.tsv` with just the header row.
+   - `prepare_unitest.py` — fixed harness: dataset (HumanEval+MBPP, 100 samples, seed=42), evaluation, val_score. **DO NOT MODIFY.**
+   - `train_unitest.py` — the only file you edit. Prompts, RAG config, METHOD, REASONING, temperature constants.
+   - `faithfulness.py` — shared metric. Read-only reference.
+4. **Verify data exists**: Check `~/.cache/autoresearch_unitest/` for `eval_dataset_v2.pkl` and `knowledge_base_v2.pkl`. If missing, run `python prepare_unitest.py` (one-time, ~3 min).
+5. **Initialize results**: Create `results_unitest.tsv` with just the header row if it doesn't exist.
 6. **Confirm and go**.
 
 ## Experimentation
 
-Each experiment runs for a **fixed time budget of 600 seconds** (10 min generation time), on a fixed 25-sample eval subset. This ensures all runs are directly comparable.
+Each experiment runs for a **fixed time budget of 600 seconds** (10 min generation time), on a fixed **100-sample** eval subset. This ensures all runs are directly comparable.
 
 **What you CAN change in `train_unitest.py`:**
 - `METHOD`: `"plain_llm"` | `"simple_rag"` | `"iterative_critique"`
 - `REASONING`: `"base"` | `"cot"` | `"tot"` | `"got"`
 - `GENERATOR_MODEL` / `HELPER_MODEL`: any Ollama model available locally
 - `TEMPERATURE`, `CRITIQUE_TEMPERATURE`, `REFINE_TEMPERATURE`
-- `TOP_K`: number of docs retrieved for RAG
+- `TOT_TEMP_EXPLORE`, `TOT_TEMP_REFINE`, `TOT_TEMP_SELECT`, `GOT_TEMP_AGGREGATE` — named constants for branch temperatures
+- `TOP_K`: number of docs retrieved for RAG (default 3)
 - Any prompt string: `SYSTEM_PROMPT`, `GENERATION_PROMPT`, `CRITIQUE_PROMPT`, `REFINE_PROMPT`, `COT_PROMPT`, `TOT_*`, `GOT_*`
-- Prompt structure, wording, examples, instructions
 
 **What you CANNOT change:**
 - `prepare_unitest.py` — fixed harness, ground truth metric
 - The `evaluate_tests()` and `compute_val_score()` functions
-- The eval dataset subset (fixed seed=42, 25 samples)
+- The eval dataset subset (fixed seed=42, 100 samples, cache version v2)
+- `faithfulness.py` — shared metric used across PhD tasks
 
 **The goal: maximize `val_score`** (higher is better, range 0.0–1.0).
 
 The composite score weights:
 - `syntactic_validity` × 0.30 — generated tests must be valid Python
-- `edge_case_coverage` × 0.25 — tests must cover edge cases (None, empty, zero, etc.)
+- `edge_case_score`    × 0.25 — tests must cover edge cases (None, empty, zero, etc.)
 - `assert_density`     × 0.20 — meaningful assertions per test function
 - `semantic_sim`       × 0.15 — semantic similarity to reference (sentence-transformers cosine)
 - `rouge_1_f1`         × 0.10 — lexical overlap with reference test suite
@@ -46,72 +48,69 @@ The composite score weights:
 2. Switch METHOD: plain_llm → simple_rag → iterative_critique
 3. Switch REASONING: base → cot → tot → got
 4. Prompt engineering: make GENERATION_PROMPT more specific about edge cases
-5. Temperature tuning: lower TEMPERATURE for more deterministic tests
+5. Temperature tuning: lower TEMPERATURE for more deterministic tests; adjust TOT_TEMP_* constants
 6. TOP_K tuning: try TOP_K = 5 or 2
 7. Combine best METHOD + REASONING + refined prompts
-8. Try different Ollama models (phi4-mini, qwen2.5, deepseek-coder)
+8. Try different Ollama models (phi4:14b, qwen2.5:14b, deepseek-coder)
 9. Adjust CRITIQUE_PROMPT to be stricter or more lenient
 10. Add few-shot examples directly into SYSTEM_PROMPT
 
-**Simplicity criterion**: same as program.md — simpler changes that improve val_score are better than complex ones that barely move the needle.
+**Simplicity criterion**: simpler changes that improve val_score are better than complex ones that barely move the needle.
 
 ## Running an experiment
 
 ```bash
-uv run train_unitest.py > run_unitest.log 2>&1
-grep "^val_score:\|^method:\|^model:" run_unitest.log
+.venv/bin/python train_unitest.py > run_unitest.log 2>&1
+grep "^val_score:\|^method:\|^model:\|^status:" run_unitest.log
 ```
+
+For a quick local trial, set `MAX_SAMPLES = 3` at the top of `train_unitest.py`.
 
 ## Output format
 
 ```
 ---
-val_score:          0.512345
-method:             iterative_critique/cot
-model:              llama3.2:latest
-samples_evaluated:  25
-total_seconds:      487.3
-avg_syntax_valid:   0.8800
-avg_edge_coverage:  0.5200
-avg_assertions:     3.4
-avg_semantic_sim:   0.4120
-avg_rouge_1:        0.1230
+val_score:              0.512345
+method:                 iterative_critique/cot
+model:                  llama3.2:latest
+samples_evaluated:      25
+total_seconds:          487.3
+avg_syntax:             0.8800
+avg_edge:               0.5200
+avg_assert_density:     0.3400
+avg_semantic_sim:       0.4120
+avg_rouge:              0.1230
+avg_noise_rate:         0.1100
+avg_faithfulness:       0.4800
+avg_llm_judge_faith:    0.6200
+avg_retrieval_secs:     0.420
+avg_llm_secs:           12.340
+avg_tokens:             850.0
+Results appended → results_unitest.tsv
 ```
 
 ## Logging results
 
-Log to `results_unitest.tsv` (tab-separated, NOT comma-separated).
+Results are **automatically written** to `results_unitest.tsv` (tab-separated) at the end of each run.
 
-Header and columns:
+TSV columns:
 ```
-commit	val_score	method	model	status	description	avg_syntax	avg_edge	avg_assert_density	avg_semantic_sim	avg_rouge	avg_noise_rate	avg_faithfulness	avg_retrieval_secs	avg_llm_secs	avg_tokens
+method  model  status  val_score  avg_syntax  avg_edge  avg_assert_density  avg_semantic_sim  avg_rouge  avg_noise_rate  avg_faithfulness  avg_llm_judge_faithfulness  avg_retrieval_secs  avg_llm_secs  avg_tokens  samples_evaluated
 ```
 
-1. git commit hash (short, 7 chars)
-2. val_score achieved (e.g. 0.512345) — use 0.000000 for crashes
-3. method (e.g. `iterative_critique/cot`)
-4. model (e.g. `llama3.2:latest`)
-5. status: `keep`, `discard`, or `crash`
-6. short description of what was tried
-7–11. quality metrics: avg_syntax, avg_edge, avg_assert_density, avg_semantic_sim, avg_rouge — from `grep "^avg_syntax\|^avg_edge\|^avg_assert\|^avg_semantic\|^avg_rouge" run_unitest.log`
-12–16. diagnostic metrics (RQ2/RQ3/RQ4): avg_noise_rate, avg_faithfulness, avg_retrieval_secs, avg_llm_secs, avg_tokens — from `grep "^avg_noise\|^avg_faith\|^avg_retrieval\|^avg_llm\|^avg_tokens" run_unitest.log`
-    - avg_noise_rate: NaN for plain_llm (no retrieval) — higher = more corpus mismatch
-    - avg_faithfulness: NaN for plain_llm — fraction of generated tokens grounded in retrieved context
-    - avg_retrieval_secs / avg_llm_secs: cost breakdown (supports RQ4 Pareto analysis)
-    - avg_tokens: total tokens per sample (use 0 if ollama does not expose token counts)
+Column notes:
+- `method`: `"iterative_critique/cot"` format (method/reasoning)
+- `model`: Ollama model name (e.g. `llama3.2:latest`)
+- `status`: `"ok"` | `"partial"` (>50% samples failed) | `"crash"` (unhandled exception)
+- `avg_noise_rate`: NaN for plain_llm — fraction of retrieved chunks with cosine sim < 0.3 (RQ2)
+- `avg_faithfulness`: NaN for plain_llm — token-overlap score, grounding in retrieved context (RQ3)
+- `avg_llm_judge_faithfulness`: NaN for plain_llm — DeepSeek-Coder 6.7B judge score (validated, RQ3)
+- `avg_retrieval_secs` / `avg_llm_secs`: cost breakdown (RQ4 Pareto analysis)
+- `avg_tokens`: 0 if Ollama < v0.4 (token counting unavailable)
 
-Extract all diagnostic columns with:
+Extract all metrics:
 ```bash
 grep "^avg_" run_unitest.log
-```
-
-Example:
-```
-commit	val_score	method	model	status	description	avg_syntax	avg_edge	avg_assert_density	avg_semantic_sim	avg_rouge	avg_noise_rate	avg_faithfulness	avg_retrieval_secs	avg_llm_secs	avg_tokens
-a1b2c3d	0.412300	plain_llm/base	llama3.2:latest	keep	baseline	0.8400	0.4500	0.5600	0.3800	0.1100	nan	nan	0.000	12.340	850.0
-b2c3d4e	0.489100	simple_rag/base	llama3.2:latest	keep	add RAG retrieval	0.8800	0.5200	0.6000	0.4200	0.1300	0.3300	0.5200	0.420	11.200	920.0
-c3d4e5f	0.521400	iterative_critique/cot	llama3.2:latest	keep	COT+critique	0.9200	0.5800	0.6400	0.4600	0.1400	0.2800	0.5800	0.430	24.100	1840.0
-d4e5f6g	0.498000	iterative_critique/got	llama3.2:latest	discard	GOT slower	0.8800	0.5400	0.6000	0.4200	0.1200	0.3100	0.5400	0.440	31.500	2200.0
 ```
 
 ## The experiment loop
@@ -122,10 +121,10 @@ LOOP FOREVER:
 2. Pick an experiment idea (see Ideas above, or think of new ones)
 3. Modify `train_unitest.py`
 4. `git commit -m "experiment: <brief description>"`
-5. `uv run train_unitest.py > run_unitest.log 2>&1`
+5. `.venv/bin/python train_unitest.py > run_unitest.log 2>&1`
 6. `grep "^val_score:\|^method:\|^model:" run_unitest.log`
 7. If grep empty → crash. Run `tail -50 run_unitest.log` to diagnose. Fix if trivial, else log as crash and move on.
-8. Log result to `results_unitest.tsv` (do NOT commit this file)
+8. Results are auto-written to `results_unitest.tsv` — no manual logging needed.
 9. If `val_score` improved → keep commit, advance branch
 10. If `val_score` equal or worse → `git reset --hard HEAD~1` (revert)
 
@@ -133,19 +132,54 @@ LOOP FOREVER:
 
 **NEVER STOP**: Run until manually interrupted. Do not ask for permission to continue.
 
+## Diagnostic metrics (not in val_score)
+
+| Metric | Purpose | RQ |
+|--------|---------|-----|
+| `avg_noise_rate` | Fraction of retrieved chunks with cosine sim < 0.3 | RQ2 |
+| `avg_faithfulness` | Token overlap: generated tests ∩ retrieved context | RQ3 |
+| `avg_llm_judge_faithfulness` | DeepSeek-Coder 6.7B judge (Pearson r=0.925 vs human) | RQ3 |
+| `avg_retrieval_secs` | Time spent in vector retrieval per sample | RQ4 |
+| `avg_llm_secs` | Time spent in LLM generation per sample | RQ4 |
+
+## Analysis scripts (run after full experiment)
+
+```bash
+# Generalizability: Spearman ρ with p-values across models
+.venv/bin/python analyze_generalizability.py
+
+# Statistical significance + val_score sensitivity
+.venv/bin/python statistical_tests.py
+
+# Human annotation worksheet (40 stratified samples)
+.venv/bin/python human_eval_sampler.py
+
+# After annotating: validate automated metric vs human ratings
+.venv/bin/python human_eval_sampler.py --validate human_eval_samples_annotated.csv
+```
+
 ## Visualizations
 
 After logging results to `results_unitest.tsv`, generate PhD comparison charts:
 
 ```bash
-uv run visualize_unitest.py
+.venv/bin/python visualize_unitest.py
 ```
 
 Outputs to `plots_unitest/`:
 - `heatmap.png`         — val_score grid: method × reasoning technique
 - `grouped_bar.png`     — val_score grouped bar (all 12 combinations)
-- `radar.png`           — per-metric radar: best run per method (requires extended TSV columns)
-- `per_metric_bar.png`  — per-metric bar: best run per method (requires extended TSV columns)
-- `noise_rate.png`      — avg noise rate per RAG method (RQ2: when does retrieval hurt?)
-- `cost_breakdown.png`  — stacked retrieval + LLM time per method (RQ4: cost–quality Pareto)
-- `faithfulness.png`    — avg faithfulness per method (RQ3: grounding vs hallucination)
+- `radar.png`           — per-metric radar: best run per method
+- `per_metric_bar.png`  — per-metric bar: best run per method
+- `noise_rate.png`      — avg noise rate per RAG method (RQ2)
+- `cost_breakdown.png`  — stacked retrieval + LLM time per method (RQ4)
+- `faithfulness.png`    — avg faithfulness per method (RQ3)
+
+Outputs to `plots_generalizability/`:
+- `rank_correlation.png`   — Spearman ρ heatmap with p-values
+- `rank_stability.png`     — method ranking lines across models
+- `val_score_by_model.png` — grouped bar: method × model
+- `faithfulness_by_model.png` — faithfulness grouped bar
+- `sensitivity_weights.png`   — val_score rank stability across weight perturbations
+- `statistical_report.txt`    — Kruskal-Wallis + Mann-Whitney + Cohen's d table
+- `generalizability_report.txt` — written summary for thesis appendix
