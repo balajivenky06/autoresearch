@@ -33,7 +33,7 @@ Each experiment runs for a **fixed time budget of 600 seconds** (10 min generati
 **What you CANNOT change:**
 - `prepare_unitest.py` — fixed harness, ground truth metric
 - The `evaluate_tests()` and `compute_val_score()` functions
-- The eval dataset subset (fixed seed=42, 100 samples, cache version v2)
+- The eval dataset subset (fixed seed=42, 100 samples, cache version v3)
 - `faithfulness.py` — shared metric used across PhD tasks
 
 **The goal: maximize `val_score`** (higher is better, range 0.0–1.0).
@@ -47,7 +47,7 @@ The composite score weights:
 
 **Ideas to try** (in rough order of expected impact):
 1. Baseline: run as-is to establish baseline val_score
-2. Switch METHOD: plain_llm → simple_rag → iterative_critique
+2. Switch METHOD: plain_llm → random_rag → simple_rag → iterative_critique
 3. Switch REASONING: base → cot → tot → got
 4. Prompt engineering: make GENERATION_PROMPT more specific about edge cases
 5. Temperature tuning: lower TEMPERATURE for more deterministic tests; adjust TOT_TEMP_* constants
@@ -77,7 +77,7 @@ For a quick local trial, set `MAX_SAMPLES = 3` at the top of `train_unitest.py`.
 val_score:              0.512345
 method:                 iterative_critique/cot
 model:                  llama3.2:latest
-samples_evaluated:      25
+samples_evaluated:      100
 total_seconds:          487.3
 avg_syntax:             0.8800
 avg_edge:               0.5200
@@ -90,6 +90,10 @@ avg_llm_judge_faith:    0.6200
 avg_retrieval_secs:     0.420
 avg_llm_secs:           12.340
 avg_tokens:             850.0
+val_score_humaneval:    0.5340
+val_score_mbpp:         0.4890
+samples_humaneval:      52
+samples_mbpp:           48
 Results appended → results_unitest.tsv
 ```
 
@@ -106,11 +110,13 @@ Column notes:
 - `method`: `"iterative_critique/cot"` format (method/reasoning)
 - `model`: Ollama model name (e.g. `llama3.2:latest`)
 - `status`: `"ok"` | `"partial"` (>50% samples failed) | `"crash"` (unhandled exception)
-- `avg_noise_rate`: NaN for plain_llm — fraction of retrieved chunks with cosine sim < 0.3 (RQ2)
+- `avg_noise_rate`: NaN for plain_llm and random_rag — fraction of retrieved chunks with cosine sim < 0.3 (RQ2)
 - `avg_faithfulness`: NaN for plain_llm — token-overlap score, grounding in retrieved context (RQ3)
 - `avg_llm_judge_faithfulness`: NaN for plain_llm — DeepSeek-Coder 6.7B judge score (validated, RQ3)
 - `avg_retrieval_secs` / `avg_llm_secs`: cost breakdown (RQ4 Pareto analysis)
 - `avg_tokens`: 0 if Ollama < v0.4 (token counting unavailable)
+- `val_score_humaneval` / `val_score_mbpp`: per-benchmark val_score (dataset source ablation)
+- `samples_humaneval` / `samples_mbpp`: sample counts per benchmark in this run
 
 Extract all metrics:
 ```bash
@@ -140,11 +146,13 @@ LOOP FOREVER:
 
 | Metric | Purpose | RQ |
 |--------|---------|-----|
-| `avg_noise_rate` | Fraction of retrieved chunks with cosine sim < 0.3 | RQ2 |
-| `avg_faithfulness` | Token overlap: generated tests ∩ retrieved context | RQ3 |
-| `avg_llm_judge_faithfulness` | DeepSeek-Coder 6.7B judge (Pearson r=0.925 vs human) | RQ3 |
+| `avg_noise_rate` | Fraction of retrieved chunks with cosine sim < 0.3 (NaN for plain_llm, random_rag) | RQ2 |
+| `avg_faithfulness` | Token overlap: generated tests ∩ retrieved context (NaN for plain_llm) | RQ3 |
+| `avg_llm_judge_faithfulness` | DeepSeek-Coder 6.7B judge (Pearson r=0.925 vs human, NaN for plain_llm) | RQ3 |
 | `avg_retrieval_secs` | Time spent in vector retrieval per sample | RQ4 |
 | `avg_llm_secs` | Time spent in LLM generation per sample | RQ4 |
+| `val_score_humaneval` | val_score on HumanEval subset only (dataset ablation) | RQ5 |
+| `val_score_mbpp` | val_score on MBPP subset only (dataset ablation) | RQ5 |
 
 ## Analysis scripts (run after full experiment)
 
@@ -172,20 +180,25 @@ After logging results to `results_unitest.tsv`, generate PhD comparison charts:
 
 Outputs to `plots_unitest/`:
 - `heatmap.png`         — val_score grid: method × reasoning technique
-- `grouped_bar.png`     — val_score grouped bar (all 12 combinations)
+- `grouped_bar.png`     — val_score grouped bar (all 16 combinations)
 - `radar.png`           — per-metric radar: best run per method
 - `per_metric_bar.png`  — per-metric bar: best run per method
 - `noise_rate.png`      — avg noise rate per RAG method (RQ2)
 - `cost_breakdown.png`  — stacked retrieval + LLM time per method (RQ4)
 - `faithfulness.png`    — avg faithfulness per method (RQ3)
+- `interaction.png`     — Method × Reasoning interaction plot (parallel lines = no interaction)
+- `source_split.png`    — HumanEval vs MBPP val_score per method (dataset ablation)
+- `model_val_score.png`       — val_score grouped by method × model (cross-model)
+- `model_faithfulness.png`    — faithfulness grouped by method × model
+- `model_rank_stability.png`  — method ranking lines across models
 
 Outputs to `plots_generalizability/`:
-- `rank_correlation.png`   — Spearman ρ heatmap with p-values
-- `rank_stability.png`     — method ranking lines across models
-- `val_score_by_model.png` — grouped bar: method × model
-- `faithfulness_by_model.png` — faithfulness grouped bar
-- `sensitivity_weights.png`   — val_score rank stability across weight perturbations
-- `statistical_report.txt`    — Kruskal-Wallis + Mann-Whitney + Cohen's d table
+- `rank_correlation.png`        — Spearman ρ heatmap with p-values
+- `rank_stability.png`          — method ranking lines across models
+- `val_score_by_model.png`      — grouped bar: method × model
+- `faithfulness_by_model.png`   — faithfulness grouped bar
+- `sensitivity_weights.png`     — val_score rank stability across weight perturbations
+- `statistical_report.txt`      — Kruskal-Wallis + Mann-Whitney + Cohen's d + interaction + source analysis
 - `generalizability_report.txt` — written summary for thesis appendix
 
 ## Threats to Validity (addressed in paper)
