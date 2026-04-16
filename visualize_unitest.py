@@ -37,11 +37,12 @@ from pathlib import Path
 RESULTS_FILE = "results_unitest.tsv"
 OUTPUT_DIR   = Path("plots_unitest")
 
-METHODS    = ["plain_llm", "simple_rag", "iterative_critique"]
+METHODS    = ["plain_llm", "random_rag", "simple_rag", "iterative_critique"]
 REASONINGS = ["base", "cot", "tot", "got"]
 
 METHOD_LABELS = {
     "plain_llm":          "Plain LLM",
+    "random_rag":         "Random RAG",
     "simple_rag":         "Simple RAG",
     "iterative_critique": "Iterative Critique",
 }
@@ -49,6 +50,7 @@ REASONING_LABELS = {"base": "Base", "cot": "CoT", "tot": "ToT", "got": "GoT"}
 
 COLORS = {
     "plain_llm":          "#4C72B0",
+    "random_rag":         "#8172B2",
     "simple_rag":         "#DD8452",
     "iterative_critique": "#55A868",
 }
@@ -534,6 +536,119 @@ def plot_model_rank_stability(df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Chart 11: Method × Reasoning interaction plot
+# ---------------------------------------------------------------------------
+
+def plot_interaction(df: pd.DataFrame) -> None:
+    """
+    Factorial interaction plot: val_score lines per method across reasoning modes.
+    Parallel lines → no interaction effect (additive model valid).
+    Crossing lines → interaction exists (method benefit depends on reasoning).
+    Standard visualization for two-way factorial designs (Maxwell & Delaney 2004).
+    """
+    fig, ax = plt.subplots(figsize=(9, 5))
+
+    for method in METHODS:
+        sub = df[df["method_name"] == method]
+        if sub.empty:
+            continue
+        vals = []
+        for r in REASONINGS:
+            row = sub[sub["reasoning"] == r]
+            vals.append(float(row["val_score"].max()) if not row.empty else float("nan"))
+
+        # Only plot if we have at least 2 valid points
+        valid = [(x, v) for x, v in enumerate(vals) if not np.isnan(v)]
+        if len(valid) < 2:
+            continue
+
+        xs = [x for x, _ in valid]
+        ys = [v for _, v in valid]
+        label = METHOD_LABELS.get(method, method)
+        ax.plot(xs, ys, "o-", linewidth=2.2, markersize=8,
+                label=label, color=COLORS[method])
+        for x, y in zip(xs, ys):
+            ax.text(x, y + 0.012, f"{y:.3f}", ha="center", va="bottom",
+                    fontsize=8, color=COLORS[method])
+
+    ax.set_xticks(range(len(REASONINGS)))
+    ax.set_xticklabels([REASONING_LABELS.get(r, r) for r in REASONINGS], fontsize=11)
+    ax.set_xlabel("Reasoning Technique", fontsize=11)
+    ax.set_ylabel("val_score", fontsize=11)
+    ax.set_ylim(0, 1.12)
+    ax.set_title("Method × Reasoning Interaction\n(Parallel lines = no interaction; crossings = interaction effect)",
+                 fontsize=12, fontweight="bold")
+    ax.legend(fontsize=10)
+    ax.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / "interaction.png", dpi=150)
+    plt.close(fig)
+    print("  interaction.png")
+
+
+# ---------------------------------------------------------------------------
+# Chart 12: HumanEval vs MBPP source split
+# ---------------------------------------------------------------------------
+
+def plot_source_split(df: pd.DataFrame) -> None:
+    """
+    Compare val_score on HumanEval subset vs MBPP subset per method.
+    Requires val_score_humaneval / val_score_mbpp columns in TSV.
+    Addresses reviewer concern: are results driven by one benchmark?
+    """
+    if "val_score_humaneval" not in df.columns or "val_score_mbpp" not in df.columns:
+        print("  source_split.png SKIPPED — val_score_humaneval/val_score_mbpp columns missing")
+        return
+
+    df = df.copy()
+    df["val_score_humaneval"] = pd.to_numeric(df["val_score_humaneval"], errors="coerce")
+    df["val_score_mbpp"]      = pd.to_numeric(df["val_score_mbpp"],      errors="coerce")
+
+    methods_present = [m for m in METHODS if not df[df["method_name"] == m].empty]
+    if not methods_present:
+        return
+
+    x     = np.arange(len(methods_present))
+    width = 0.35
+    he_vals, mb_vals = [], []
+
+    for method in methods_present:
+        sub = df[df["method_name"] == method]
+        best = sub.loc[sub["val_score"].idxmax()] if not sub.empty else None
+        he_vals.append(float(pd.to_numeric(best["val_score_humaneval"], errors="coerce"))
+                       if best is not None else float("nan"))
+        mb_vals.append(float(pd.to_numeric(best["val_score_mbpp"], errors="coerce"))
+                       if best is not None else float("nan"))
+
+    if all(np.isnan(v) for v in he_vals + mb_vals):
+        print("  source_split.png SKIPPED — all NaN values")
+        return
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    b1 = ax.bar(x - width / 2, he_vals, width, label="HumanEval", color="#5B9BD5", alpha=0.85)
+    b2 = ax.bar(x + width / 2, mb_vals, width, label="MBPP",       color="#ED7D31", alpha=0.85)
+
+    for bar, v in list(zip(b1, he_vals)) + list(zip(b2, mb_vals)):
+        if not np.isnan(v) and v > 0:
+            ax.text(bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + 0.008,
+                    f"{v:.3f}", ha="center", va="bottom", fontsize=8)
+
+    ax.set_xticks(x)
+    ax.set_xticklabels([METHOD_LABELS.get(m, m) for m in methods_present], fontsize=11)
+    ax.set_ylabel("val_score", fontsize=11)
+    ax.set_ylim(0, 1.12)
+    ax.set_title("val_score by Dataset Source: HumanEval vs MBPP\n(Best run per method)",
+                 fontsize=12, fontweight="bold")
+    ax.legend(fontsize=10)
+    ax.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / "source_split.png", dpi=150)
+    plt.close(fig)
+    print("  source_split.png")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -557,6 +672,8 @@ def main() -> None:
     plot_noise_rate(df)
     plot_cost_breakdown(df)
     plot_faithfulness(df)
+    plot_interaction(df)
+    plot_source_split(df)
 
     # Cross-model charts (auto-skipped if only 1 model in TSV)
     print("\n  --- Cross-model charts ---")

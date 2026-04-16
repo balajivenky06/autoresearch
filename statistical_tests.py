@@ -29,9 +29,10 @@ from scipy import stats
 RESULTS_FILE = "results_unitest.tsv"
 OUTPUT_DIR   = Path("plots_generalizability")
 
-METHODS = ["plain_llm", "simple_rag", "iterative_critique"]
+METHODS = ["plain_llm", "random_rag", "simple_rag", "iterative_critique"]
 METHOD_LABELS = {
     "plain_llm":          "Plain LLM",
+    "random_rag":         "Random RAG",
     "simple_rag":         "Simple RAG",
     "iterative_critique": "Iterative Critique",
 }
@@ -286,6 +287,78 @@ def plot_sensitivity(sensitivity_df: pd.DataFrame) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Method × Reasoning interaction analysis
+# ---------------------------------------------------------------------------
+
+def run_interaction_analysis(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Compute mean val_score for each Method × Reasoning cell.
+    Returns a pivot table; the write_report function detects crossing interactions.
+    A 'crossing interaction' exists when the best reasoning mode differs
+    between methods — indicating method × reasoning is not additive.
+    """
+    pivot = df.pivot_table(
+        index="method_name", columns="reasoning",
+        values="val_score", aggfunc="mean"
+    ).round(4)
+    return pivot
+
+
+def detect_interactions(pivot: pd.DataFrame) -> list:
+    """
+    Detect crossing interactions: for each pair of methods, check if
+    their best reasoning mode differs. Returns list of (method_a, method_b, note).
+    """
+    findings = []
+    methods = [m for m in pivot.index if m in pivot.index]
+    for m_a, m_b in itertools.combinations(methods, 2):
+        if m_a not in pivot.index or m_b not in pivot.index:
+            continue
+        best_a = pivot.loc[m_a].idxmax() if not pivot.loc[m_a].isna().all() else None
+        best_b = pivot.loc[m_b].idxmax() if not pivot.loc[m_b].isna().all() else None
+        if best_a and best_b and best_a != best_b:
+            findings.append((m_a, m_b,
+                f"best reasoning differs: {METHOD_LABELS[m_a]}→{best_a}, "
+                f"{METHOD_LABELS[m_b]}→{best_b}"))
+        elif best_a and best_b:
+            findings.append((m_a, m_b, f"no crossing: both best at {best_a}"))
+    return findings
+
+
+# ---------------------------------------------------------------------------
+# Per-source (HumanEval vs MBPP) analysis
+# ---------------------------------------------------------------------------
+
+def run_source_analysis(df: pd.DataFrame) -> dict:
+    """
+    Compare val_score on HumanEval vs MBPP subsets per method.
+    Requires val_score_humaneval / val_score_mbpp columns in TSV.
+    Addresses reviewer concern that results could be dataset-specific.
+    Returns dict with per-method scores for report.
+    """
+    has_cols = ("val_score_humaneval" in df.columns and "val_score_mbpp" in df.columns)
+    if not has_cols:
+        return {}
+
+    df = df.copy()
+    df["val_score_humaneval"] = pd.to_numeric(df["val_score_humaneval"], errors="coerce")
+    df["val_score_mbpp"]      = pd.to_numeric(df["val_score_mbpp"],      errors="coerce")
+
+    result = {}
+    for method in METHODS:
+        sub = df[df["method_name"] == method]
+        if sub.empty:
+            continue
+        best = sub.loc[sub["val_score"].idxmax()]
+        result[method] = {
+            "humaneval": float(best.get("val_score_humaneval", float("nan"))),
+            "mbpp":      float(best.get("val_score_mbpp",      float("nan"))),
+            "overall":   float(best.get("val_score",           float("nan"))),
+        }
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Report writer
 # ---------------------------------------------------------------------------
 
@@ -359,6 +432,34 @@ def write_statistical_report(df: pd.DataFrame, sensitivity_df: pd.DataFrame) -> 
 
             if stable:
                 lines.append(f"  Rankings STABLE across all weight perturbations.")
+
+    # Interaction analysis
+    pivot = run_interaction_analysis(df)
+    interactions = detect_interactions(pivot)
+    lines.append(f"\n{'=' * 70}")
+    lines.append("  METHOD × REASONING INTERACTION ANALYSIS")
+    lines.append("  (Parallel effects → additive model; crossing → interaction)")
+    lines.append("=" * 70)
+    lines.append("\nMean val_score pivot (method × reasoning):")
+    lines.append(pivot.to_string())
+    lines.append("\nInteraction findings:")
+    for m_a, m_b, note in interactions:
+        lines.append(f"  {METHOD_LABELS.get(m_a, m_a)} vs {METHOD_LABELS.get(m_b, m_b)}: {note}")
+
+    # Per-source analysis
+    source_results = run_source_analysis(df)
+    if source_results:
+        lines.append(f"\n{'=' * 70}")
+        lines.append("  DATASET SOURCE ANALYSIS: HumanEval vs MBPP")
+        lines.append("  (Ensures results are not driven by one benchmark)")
+        lines.append("=" * 70)
+        lines.append(f"\n  {'Method':<28} {'HumanEval':>12} {'MBPP':>10} {'Overall':>10}")
+        lines.append("  " + "-" * 62)
+        for method, scores in source_results.items():
+            he = f"{scores['humaneval']:.4f}" if not math.isnan(scores['humaneval']) else "  N/A"
+            mb = f"{scores['mbpp']:.4f}"      if not math.isnan(scores['mbpp'])      else "  N/A"
+            ov = f"{scores['overall']:.4f}"   if not math.isnan(scores['overall'])   else "  N/A"
+            lines.append(f"  {METHOD_LABELS.get(method, method):<28} {he:>12} {mb:>10} {ov:>10}")
 
     lines.append("\n" + "=" * 70)
 

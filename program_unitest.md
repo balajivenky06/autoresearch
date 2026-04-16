@@ -20,7 +20,9 @@ Mirrors program.md but for the unit test task.
 Each experiment runs for a **fixed time budget of 600 seconds** (10 min generation time), on a fixed **100-sample** eval subset. This ensures all runs are directly comparable.
 
 **What you CAN change in `train_unitest.py`:**
-- `METHOD`: `"plain_llm"` | `"simple_rag"` | `"iterative_critique"`
+- `METHOD`: `"plain_llm"` | `"random_rag"` | `"simple_rag"` | `"iterative_critique"`
+  - `random_rag` = same pipeline as simple_rag but retrieves RANDOM chunks (ablation baseline)
+- `NUM_CRITIQUE_ROUNDS`: number of critique-refine iterations (default 2; ablation: try 1)
 - `REASONING`: `"base"` | `"cot"` | `"tot"` | `"got"`
 - `GENERATOR_MODEL` / `HELPER_MODEL`: any Ollama model available locally
 - `TEMPERATURE`, `CRITIQUE_TEMPERATURE`, `REFINE_TEMPERATURE`
@@ -54,6 +56,8 @@ The composite score weights:
 8. Try different Ollama models (phi4:14b, qwen2.5:14b, deepseek-coder)
 9. Adjust CRITIQUE_PROMPT to be stricter or more lenient
 10. Add few-shot examples directly into SYSTEM_PROMPT
+11. Run random_rag (same as simple_rag but random chunks) — isolates retrieval quality contribution
+12. Run NUM_CRITIQUE_ROUNDS=1 vs 2 — quantify marginal gain of second critique round
 
 **Simplicity criterion**: simpler changes that improve val_score are better than complex ones that barely move the needle.
 
@@ -95,7 +99,7 @@ Results are **automatically written** to `results_unitest.tsv` (tab-separated) a
 
 TSV columns:
 ```
-method  model  status  val_score  avg_syntax  avg_edge  avg_assert_density  avg_semantic_sim  avg_rouge  avg_noise_rate  avg_faithfulness  avg_llm_judge_faithfulness  avg_retrieval_secs  avg_llm_secs  avg_tokens  samples_evaluated
+method  model  status  val_score  avg_syntax  avg_edge  avg_assert_density  avg_semantic_sim  avg_rouge  avg_noise_rate  avg_faithfulness  avg_llm_judge_faithfulness  avg_retrieval_secs  avg_llm_secs  avg_tokens  samples_evaluated  val_score_humaneval  val_score_mbpp  samples_humaneval  samples_mbpp
 ```
 
 Column notes:
@@ -183,3 +187,18 @@ Outputs to `plots_generalizability/`:
 - `sensitivity_weights.png`   — val_score rank stability across weight perturbations
 - `statistical_report.txt`    — Kruskal-Wallis + Mann-Whitney + Cohen's d table
 - `generalizability_report.txt` — written summary for thesis appendix
+
+## Threats to Validity (addressed in paper)
+
+### Internal validity
+- **Attribution confound**: `random_rag` METHOD provides a random-retrieval baseline. If `simple_rag` >> `random_rag`, the improvement is from retrieval quality, not just context length.
+- **Critique iterations**: `NUM_CRITIQUE_ROUNDS` is agent-editable (default 2). Run with `NUM_CRITIQUE_ROUNDS=1` to quantify marginal gain of the second round.
+
+### External validity
+- **Dataset generalisability**: `val_score_humaneval` and `val_score_mbpp` are logged per run. Source split chart (`source_split.png`) shows whether results hold across both benchmarks.
+- **Model size confound**: llama3.2 (3B) vs phi4/qwen (14B) conflates model size with architecture. Mitigated by Spearman ρ analysis across all three models; further ablation with `llama3.2:8b` is recommended.
+
+### Construct validity
+- **Automated metric**: val_score weight sensitivity (±50% perturbation) and human evaluation (Pearson r ≥ 0.7 target) validate the composite metric.
+- **Embedding model**: `all-MiniLM-L6-v2` used for retrieval — code-specific embedders (e.g. CodeBERT) may improve retrieval quality; noted as future work.
+- **Execution-based validation**: tests are not actually run; syntactic validity and semantic similarity are proxies. Execution sandbox is out of scope and noted as future work.

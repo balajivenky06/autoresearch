@@ -166,6 +166,20 @@ class VectorStore:
         context_str, _ = self.search_with_scores(query, model, top_k=top_k)
         return context_str
 
+    def random_sample(self, n: int) -> tuple:
+        """Return n randomly-sampled chunks (for random_rag ablation baseline).
+
+        Used to isolate whether retrieval QUALITY (cosine similarity ranking)
+        matters vs simply having additional context tokens in the prompt.
+        Returns (context_str, nan) — noise_rate undefined for random retrieval.
+        """
+        if not self.texts:
+            return "", float("nan")
+        rng = np.random.default_rng(seed=None)   # different random each call
+        idx = rng.choice(len(self.texts), size=min(n, len(self.texts)), replace=False)
+        context_str = "\n\n---\n\n".join(self.texts[int(i)] for i in idx)
+        return context_str, float("nan")
+
 
 def _chunk_text(text: str, chunk_size: int = KB_CHUNK_SIZE, overlap: int = KB_CHUNK_OVERLAP) -> list:
     """Split text into overlapping fixed-size character chunks.

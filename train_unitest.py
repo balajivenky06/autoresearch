@@ -39,6 +39,7 @@ TEMPERATURE          = 0.5
 CRITIQUE_TEMPERATURE = 0.0
 REFINE_TEMPERATURE   = 0.3
 TOP_K                = 5   # number of chunks to retrieve (v3 KB: ~100-200 chunks, more granular)
+NUM_CRITIQUE_ROUNDS  = 2   # critique-refine iterations for iterative_critique (ablation: try 1 vs 2)
 
 # ToT/GoT branch temperatures — named constants for ablation transparency
 TOT_TEMP_EXPLORE    = 0.7   # high diversity for first ToT branch / GoT sub-axes
@@ -292,6 +293,26 @@ def _get_context(query: str) -> str:
     return context_str
 
 
+def _get_random_context() -> str:
+    """Retrieve TOP_K random (not cosine-ranked) chunks from the knowledge base.
+
+    Used exclusively by the random_rag ablation method to determine whether
+    retrieval QUALITY (semantic similarity ranking) drives performance gains,
+    or whether any additional context tokens would produce the same effect.
+    If random_rag ≈ simple_rag → the improvement is from context length alone.
+    If simple_rag >> random_rag → retrieval quality genuinely matters.
+    """
+    global _kb, _emb_model, _retrieval_secs, _last_context
+    if _kb is None:
+        _kb, _emb_model = build_knowledge_base()
+    t0 = time.time()
+    context_str, _ = _kb.random_sample(TOP_K)
+    _retrieval_secs += time.time() - t0
+    # Do NOT append to _noise_rate_buf — noise_rate is undefined for random retrieval
+    _last_context = context_str
+    return context_str
+
+
 def _make_query(function_code: str) -> str:
     return f"pytest unit testing examples patterns for python function: {function_code[:300]}"
 
@@ -446,6 +467,86 @@ def _simple_rag_got(function_code: str) -> str:
     ], GOT_TEMP_AGGREGATE)) or "\n\n".join(non_empty.values())
 
 
+# ---------------------------------------------------------------------------
+# Random RAG generators — ablation baseline (random chunk retrieval)
+# ---------------------------------------------------------------------------
+
+def _random_rag_base(function_code: str) -> str:
+    """Random RAG baseline: identical to simple_rag_base except retrieval is random."""
+    context = _get_random_context()
+    return _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, GENERATION_PROMPT.format(function_code=function_code))},
+    ], TEMPERATURE))
+
+
+def _random_rag_cot(function_code: str) -> str:
+    """Random RAG + CoT: identical to simple_rag_cot except retrieval is random."""
+    context = _get_random_context()
+    raw = _call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, COT_PROMPT.format(function_code=function_code))},
+    ], TEMPERATURE)
+    return _extract_code_block(raw)
+
+
+def _random_rag_tot(function_code: str) -> str:
+    """Random RAG + ToT: identical to simple_rag_tot except retrieval is random."""
+    context = _get_random_context()
+    candidate_a = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, TOT_DECOMPOSE_PROMPT.format(function_code=function_code))},
+    ], TOT_TEMP_EXPLORE))
+    candidate_b = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, GENERATION_PROMPT.format(function_code=function_code))},
+    ], TOT_TEMP_REFINE))
+    if not candidate_a.strip():
+        return candidate_b
+    if not candidate_b.strip():
+        return candidate_a
+    return _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": TOT_EVALUATE_PROMPT.format(
+            candidate_a=candidate_a[:1500], candidate_b=candidate_b[:1500])},
+    ], TOT_TEMP_SELECT)) or candidate_a
+
+
+def _random_rag_got(function_code: str) -> str:
+    """Random RAG + GoT: identical to simple_rag_got except retrieval is random."""
+    context = _get_random_context()
+    happy = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, TOT_DECOMPOSE_PROMPT.format(function_code=function_code))},
+    ], TEMPERATURE))
+    edges = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, TOT_EDGE_PROMPT.format(function_code=function_code))},
+    ], TEMPERATURE))
+    errors_prompt = (f"Generate pytest tests for ERROR cases only (invalid inputs, exceptions).\n\n"
+                     f"Function:\n```python\n{function_code}\n```\n\nReturn ONLY test code:")
+    errors = _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(context, errors_prompt)},
+    ], TEMPERATURE))
+    non_empty = {k: v for k, v in [("happy_path", happy), ("edge_cases", edges),
+                                    ("error_handling", errors)] if v.strip()}
+    if not non_empty:
+        return "# ERROR: GoT+RandomRAG generation failed"
+    agg_prompt = _rag_prompt(context, GOT_AGGREGATE_PROMPT.format_map(
+        {"happy_path": "", "edge_cases": "", "error_handling": "", **non_empty}))
+    return _clean(_call(GENERATOR_MODEL, [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": agg_prompt},
+    ], GOT_TEMP_AGGREGATE)) or "\n\n".join(non_empty.values())
+
+
 def _iterative_critique(initial_tests: str, function_code: str) -> str:
     """Iterative Critique RAG: retrieve context upfront, critique → refine up to 2 rounds.
 
@@ -460,7 +561,7 @@ def _iterative_critique(initial_tests: str, function_code: str) -> str:
     # critique passes, making it indistinguishable from plain_llm in the analysis.
     context = _get_context(_make_query(function_code))
 
-    for _ in range(2):
+    for _ in range(NUM_CRITIQUE_ROUNDS):
         verdict = _call(HELPER_MODEL, [
             {"role": "system", "content": "You are a strict QA reviewer."},
             {"role": "user", "content": CRITIQUE_PROMPT.format(
@@ -500,6 +601,10 @@ GENERATORS = {
     ("iterative_critique", "cot"):  lambda c: _iterative_critique(generate_plain_cot(c), c),
     ("iterative_critique", "tot"):  lambda c: _iterative_critique(generate_plain_tot(c), c),
     ("iterative_critique", "got"):  lambda c: _iterative_critique(generate_plain_got(c), c),
+    ("random_rag",         "base"): _random_rag_base,
+    ("random_rag",         "cot"):  _random_rag_cot,
+    ("random_rag",         "tot"):  _random_rag_tot,
+    ("random_rag",         "got"):  _random_rag_got,
 }
 
 # ---------------------------------------------------------------------------
@@ -588,8 +693,9 @@ if __name__ == "__main__":
 
         _reset_sample_diagnostics()
         t0 = time.time()
-        fn_code = sample["function_code"]
+        fn_code  = sample["function_code"]
         gt_tests = sample["ground_truth_tests"]
+        src      = sample.get("source", "unknown")   # "humaneval" | "mbpp"
 
         try:
             tests = generate_fn(fn_code)
@@ -615,6 +721,7 @@ if __name__ == "__main__":
         metrics["llm_secs"]             = _llm_secs
         metrics["tokens_used"]          = float(_tokens_used)
 
+        metrics["source"] = src
         metrics_list.append(metrics)
         step += 1
 
@@ -669,6 +776,12 @@ if __name__ == "__main__":
     avg_llm_secs       = sum(m.get("llm_secs",       0.0) for m in metrics_list) / len(metrics_list)
     avg_tokens         = sum(m.get("tokens_used",    0.0) for m in metrics_list) / len(metrics_list)
 
+    # Per-source val_score breakdown (HumanEval vs MBPP — ablation RQ5)
+    _humaneval_metrics = [m for m in metrics_list if m.get("source") == "humaneval"]
+    _mbpp_metrics      = [m for m in metrics_list if m.get("source") == "mbpp"]
+    val_score_humaneval = compute_val_score(_humaneval_metrics) if _humaneval_metrics else float("nan")
+    val_score_mbpp      = compute_val_score(_mbpp_metrics)      if _mbpp_metrics      else float("nan")
+
     # Determine run status: crash if >50% of samples failed generation
     if _sample_errors > len(metrics_list) * 0.5:
         run_status = "partial"
@@ -691,6 +804,10 @@ if __name__ == "__main__":
     print(f"avg_retrieval_secs: {avg_retrieval_secs:.3f}")
     print(f"avg_llm_secs:       {avg_llm_secs:.3f}")
     print(f"avg_tokens:         {avg_tokens:.1f}")
+    print(f"val_score_humaneval:{val_score_humaneval:.4f}" if not np.isnan(val_score_humaneval) else "val_score_humaneval:nan")
+    print(f"val_score_mbpp:     {val_score_mbpp:.4f}" if not np.isnan(val_score_mbpp) else "val_score_mbpp:     nan")
+    print(f"samples_humaneval:  {len(_humaneval_metrics)}")
+    print(f"samples_mbpp:       {len(_mbpp_metrics)}")
 
     # -----------------------------------------------------------------------
     # Write / append one row to results_unitest.tsv
@@ -715,6 +832,10 @@ if __name__ == "__main__":
         "avg_llm_secs":             f"{avg_llm_secs:.3f}",
         "avg_tokens":               f"{avg_tokens:.1f}",
         "samples_evaluated":        str(step),
+        "val_score_humaneval":  _nan_str(val_score_humaneval),
+        "val_score_mbpp":       _nan_str(val_score_mbpp),
+        "samples_humaneval":    str(len(_humaneval_metrics)),
+        "samples_mbpp":         str(len(_mbpp_metrics)),
     }
     _write_header = not os.path.exists(tsv_path) or os.path.getsize(tsv_path) == 0
     with open(tsv_path, "a", newline="") as _f:
