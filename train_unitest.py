@@ -38,7 +38,7 @@ HELPER_MODEL    = "llama3.2:1b"   # Ollama model for critique/rewrite
 TEMPERATURE          = 0.5
 CRITIQUE_TEMPERATURE = 0.0
 REFINE_TEMPERATURE   = 0.3
-TOP_K                = 3   # number of docs to retrieve (for RAG methods)
+TOP_K                = 5   # number of chunks to retrieve (v3 KB: ~100-200 chunks, more granular)
 
 # ToT/GoT branch temperatures — named constants for ablation transparency
 TOT_TEMP_EXPLORE    = 0.7   # high diversity for first ToT branch / GoT sub-axes
@@ -365,7 +365,7 @@ def _rag_prompt(context: str, prompt: str) -> str:
     """Embed retrieved context directly into the user prompt (single message).
     Standard RAG pattern: context + task in one message so small models reliably
     ground the generation in the documentation."""
-    return f"Relevant testing documentation:\n{context[:3000]}\n\n{prompt}"
+    return f"Relevant testing documentation:\n{context[:4000]}\n\n{prompt}"
 
 
 def _simple_rag_base(function_code: str) -> str:

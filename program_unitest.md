@@ -11,7 +11,7 @@ Mirrors program.md but for the unit test task.
    - `prepare_unitest.py` — fixed harness: dataset (HumanEval+MBPP, 100 samples, seed=42), evaluation, val_score. **DO NOT MODIFY.**
    - `train_unitest.py` — the only file you edit. Prompts, RAG config, METHOD, REASONING, temperature constants.
    - `faithfulness.py` — shared metric. Read-only reference.
-4. **Verify data exists**: Check `~/.cache/autoresearch_unitest/` for `eval_dataset_v2.pkl` and `knowledge_base_v2.pkl`. If missing, run `python prepare_unitest.py` (one-time, ~3 min).
+4. **Verify data exists**: Check `~/.cache/autoresearch_unitest/` for `eval_dataset_v3.pkl` and `knowledge_base_v3.pkl`. If missing, run `python prepare_unitest.py` (one-time, ~5 min — v3 knowledge base has 14 URLs × chunked).
 5. **Initialize results**: Create `results_unitest.tsv` with just the header row if it doesn't exist.
 6. **Confirm and go**.
 
@@ -25,7 +25,7 @@ Each experiment runs for a **fixed time budget of 600 seconds** (10 min generati
 - `GENERATOR_MODEL` / `HELPER_MODEL`: any Ollama model available locally
 - `TEMPERATURE`, `CRITIQUE_TEMPERATURE`, `REFINE_TEMPERATURE`
 - `TOT_TEMP_EXPLORE`, `TOT_TEMP_REFINE`, `TOT_TEMP_SELECT`, `GOT_TEMP_AGGREGATE` — named constants for branch temperatures
-- `TOP_K`: number of docs retrieved for RAG (default 3)
+- `TOP_K`: number of chunks retrieved for RAG (default 5; v3 KB has ~100-200 chunks)
 - Any prompt string: `SYSTEM_PROMPT`, `GENERATION_PROMPT`, `CRITIQUE_PROMPT`, `REFINE_PROMPT`, `COT_PROMPT`, `TOT_*`, `GOT_*`
 
 **What you CANNOT change:**

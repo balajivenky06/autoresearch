@@ -23,9 +23,13 @@ from pathlib import Path
 TIME_BUDGET      = 600   # seconds of generation time per experiment (10 min)
 NUM_EVAL_SAMPLES = 100   # fixed eval subset size — 100 samples meets journal-quality bar
 DATASET_SEED     = 42    # seed for reproducible subset selection
-CACHE_VERSION    = "v2"  # bump to bust stale caches after config changes
+CACHE_VERSION    = "v3"  # bump to bust stale caches after config changes
 
 NOISE_THRESHOLD  = 0.3   # cosine similarity below this → chunk is "noisy" (diagnostic only)
+
+# Knowledge base chunking config
+KB_CHUNK_SIZE    = 500   # characters per chunk
+KB_CHUNK_OVERLAP = 100   # overlapping characters between consecutive chunks
 
 # Cache dir: /content/.cache in Colab, ~/.cache elsewhere
 _IN_COLAB = os.path.exists("/content")
@@ -34,15 +38,26 @@ DATASET_CACHE = CACHE_DIR / f"eval_dataset_{CACHE_VERSION}.pkl"
 KB_CACHE      = CACHE_DIR / f"knowledge_base_{CACHE_VERSION}.pkl"
 
 # Knowledge base URLs — testing documentation for RAG retrieval
+# Each page is chunked into KB_CHUNK_SIZE-char overlapping windows (not truncated to 4000 chars)
 KNOWLEDGE_BASE_URLS = [
+    # Core pytest docs
     "https://docs.pytest.org/en/stable/how-to/assert.html",
     "https://docs.pytest.org/en/stable/how-to/parametrize.html",
-    "https://docs.python.org/3/library/unittest.html",
-    "https://realpython.com/pytest-python-testing/",
     "https://docs.pytest.org/en/stable/getting-started.html",
-    "https://docs.pytest.org/en/stable/how-to/assert.html#assertions-about-expected-exceptions",
+    "https://docs.pytest.org/en/stable/how-to/fixtures.html",
+    "https://docs.pytest.org/en/stable/how-to/monkeypatch.html",
+    "https://docs.pytest.org/en/stable/how-to/capture-output.html",
+    "https://docs.pytest.org/en/stable/how-to/tmp_path.html",
+    # Python standard library
+    "https://docs.python.org/3/library/unittest.html",
+    "https://docs.python.org/3/library/unittest.mock.html",
+    # Tutorials and patterns
+    "https://realpython.com/pytest-python-testing/",
+    "https://realpython.com/python-mock-library/",
     "https://www.geeksforgeeks.org/unit-testing-python-unittest/",
     "https://semaphoreci.com/community/tutorials/testing-python-applications-with-pytest",
+    # Edge case and property-based testing
+    "https://hypothesis.readthedocs.io/en/latest/quickstart.html",
 ]
 
 # ---------------------------------------------------------------------------
@@ -152,10 +167,29 @@ class VectorStore:
         return context_str
 
 
+def _chunk_text(text: str, chunk_size: int = KB_CHUNK_SIZE, overlap: int = KB_CHUNK_OVERLAP) -> list:
+    """Split text into overlapping fixed-size character chunks.
+
+    Overlapping windows ensure that relevant content at chunk boundaries is
+    not split across two non-retrieved chunks. Each chunk is independently
+    embedded and retrieved by cosine similarity.
+    """
+    chunks = []
+    step = chunk_size - overlap
+    for start in range(0, len(text), step):
+        chunk = text[start:start + chunk_size].strip()
+        if len(chunk) > 50:  # skip near-empty trailing chunks
+            chunks.append(chunk)
+    return chunks
+
+
 def build_knowledge_base(force_reload: bool = False):
     """
-    Fetch testing documentation URLs, encode with sentence-transformers,
-    and return (VectorStore, embedding_model).
+    Fetch testing documentation URLs, chunk into overlapping windows,
+    encode with sentence-transformers, and return (VectorStore, embedding_model).
+
+    Knowledge base: 14 pytest/unittest/mock URLs × ~5-20 chunks each
+    ≈ 100-200 chunks total. TOP_K=5 retrieves the 5 most relevant chunks.
     """
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -180,20 +214,24 @@ def build_knowledge_base(force_reload: bool = False):
             soup = BeautifulSoup(resp.content, "html.parser")
             main = soup.find("main") or soup.find("article") or soup.find("body")
             text = main.get_text(separator="\n", strip=True) if main else soup.get_text(separator="\n", strip=True)
-            if len(text) > 100:
-                texts.append(text[:4000])
+            if len(text) < 100:
+                print(f"  Skipped (too short): {url}")
+                continue
+            chunks = _chunk_text(text)
+            for chunk in chunks:
+                texts.append(chunk)
                 sources.append(url)
-                print(f"  Loaded: {url}")
+            print(f"  Loaded: {url}  ({len(chunks)} chunks)")
             time.sleep(0.5)
         except Exception as e:
             print(f"  Skipped {url}: {e}")
 
-    embeddings = model.encode(texts, show_progress_bar=True)
+    embeddings = model.encode(texts, show_progress_bar=True, batch_size=64)
 
     with open(KB_CACHE, "wb") as f:
         pickle.dump({"texts": texts, "embeddings": embeddings, "sources": sources}, f)
 
-    print(f"Knowledge base: {len(texts)} docs cached.")
+    print(f"Knowledge base: {len(texts)} chunks from {len(KNOWLEDGE_BASE_URLS)} URLs cached → {KB_CACHE}")
     return VectorStore(texts, embeddings, sources), model
 
 
