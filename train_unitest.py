@@ -361,43 +361,52 @@ def generate_plain_got(function_code: str) -> str:
     return merged or "\n\n".join(non_empty.values())
 
 
+def _rag_prompt(context: str, prompt: str) -> str:
+    """Embed retrieved context directly into the user prompt (single message).
+    Standard RAG pattern: context + task in one message so small models reliably
+    ground the generation in the documentation."""
+    return f"Relevant testing documentation:\n{context[:3000]}\n\n{prompt}"
+
+
 def _simple_rag_base(function_code: str) -> str:
-    """Simple RAG: retrieve context, then generate with base prompt."""
+    """Simple RAG: retrieve context, embed in generation prompt (single user message)."""
     context = _get_context(_make_query(function_code))
     return _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"Relevant testing documentation:\n{context[:3000]}"},
-        {"role": "user", "content": GENERATION_PROMPT.format(function_code=function_code)},
+        {"role": "user", "content": _rag_prompt(
+            context, GENERATION_PROMPT.format(function_code=function_code))},
     ], TEMPERATURE))
 
 
 def _simple_rag_cot(function_code: str) -> str:
-    """Simple RAG + COT: retrieve context, then reason step-by-step."""
+    """Simple RAG + COT: embed context in COT prompt (single user message)."""
     context = _get_context(_make_query(function_code))
     raw = _call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": f"Relevant testing documentation:\n{context[:3000]}"},
-        {"role": "user", "content": COT_PROMPT.format(function_code=function_code)},
+        {"role": "user", "content": _rag_prompt(
+            context, COT_PROMPT.format(function_code=function_code))},
     ], TEMPERATURE)
     return _extract_code_block(raw)
 
 
 def _simple_rag_tot(function_code: str) -> str:
-    """Simple RAG + TOT: retrieve context, generate two candidates, select best."""
+    """Simple RAG + TOT: embed context in both candidate generation prompts."""
     context = _get_context(_make_query(function_code))
-    ctx_msg = {"role": "user", "content": f"Relevant testing documentation:\n{context[:3000]}"}
     candidate_a = _clean(_call(GENERATOR_MODEL, [
-        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
-        {"role": "user", "content": TOT_DECOMPOSE_PROMPT.format(function_code=function_code)},
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, TOT_DECOMPOSE_PROMPT.format(function_code=function_code))},
     ], TOT_TEMP_EXPLORE))
     candidate_b = _clean(_call(GENERATOR_MODEL, [
-        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
-        {"role": "user", "content": GENERATION_PROMPT.format(function_code=function_code)},
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, GENERATION_PROMPT.format(function_code=function_code))},
     ], TOT_TEMP_REFINE))
     if not candidate_a.strip():
         return candidate_b
     if not candidate_b.strip():
         return candidate_a
+    # Selection step: deterministic, no context needed — just pick the better code
     return _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": TOT_EVALUATE_PROMPT.format(
@@ -406,35 +415,50 @@ def _simple_rag_tot(function_code: str) -> str:
 
 
 def _simple_rag_got(function_code: str) -> str:
-    """Simple RAG + GOT: retrieve context, generate per-axis, aggregate."""
+    """Simple RAG + GOT: embed context in all 3 axis prompts + aggregation."""
     context = _get_context(_make_query(function_code))
-    ctx_msg = {"role": "user", "content": f"Relevant testing documentation:\n{context[:3000]}"}
     happy = _clean(_call(GENERATOR_MODEL, [
-        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
-        {"role": "user", "content": TOT_DECOMPOSE_PROMPT.format(function_code=function_code)},
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, TOT_DECOMPOSE_PROMPT.format(function_code=function_code))},
     ], TEMPERATURE))
     edges = _clean(_call(GENERATOR_MODEL, [
-        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
-        {"role": "user", "content": TOT_EDGE_PROMPT.format(function_code=function_code)},
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(
+            context, TOT_EDGE_PROMPT.format(function_code=function_code))},
     ], TEMPERATURE))
+    errors_prompt = (f"Generate pytest tests for ERROR cases only (invalid inputs, exceptions).\n\n"
+                     f"Function:\n```python\n{function_code}\n```\n\nReturn ONLY test code:")
     errors = _clean(_call(GENERATOR_MODEL, [
-        {"role": "system", "content": SYSTEM_PROMPT}, ctx_msg,
-        {"role": "user", "content": f"Generate pytest tests for ERROR cases only (invalid inputs, exceptions).\n\nFunction:\n```python\n{function_code}\n```\n\nReturn ONLY test code:"},
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": _rag_prompt(context, errors_prompt)},
     ], TEMPERATURE))
-    non_empty = {k: v for k, v in [("happy_path", happy), ("edge_cases", edges), ("error_handling", errors)] if v.strip()}
+    non_empty = {k: v for k, v in [("happy_path", happy), ("edge_cases", edges),
+                                    ("error_handling", errors)] if v.strip()}
     if not non_empty:
         return "# ERROR: GoT+RAG generation failed"
+    # Aggregation: include context so merger follows pytest idioms from docs
+    agg_prompt = _rag_prompt(context, GOT_AGGREGATE_PROMPT.format_map(
+        {"happy_path": "", "edge_cases": "", "error_handling": "", **non_empty}))
     return _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT},
-        {"role": "user", "content": GOT_AGGREGATE_PROMPT.format_map(
-            {"happy_path": "", "edge_cases": "", "error_handling": "", **non_empty})},
+        {"role": "user", "content": agg_prompt},
     ], GOT_TEMP_AGGREGATE)) or "\n\n".join(non_empty.values())
 
 
 def _iterative_critique(initial_tests: str, function_code: str) -> str:
-    """Critique-refine loop: up to 2 rounds. RAG context only fetched when critique fails."""
+    """Iterative Critique RAG: retrieve context upfront, critique → refine up to 2 rounds.
+
+    Context is always fetched before the loop so:
+      1. The method is consistently RAG-augmented (faithfulness is always computable)
+      2. The refine step always has documentation grounding regardless of critique verdict
+      3. Faithfulness NaN only occurs for plain_llm (no retrieval), not here
+    """
     tests = initial_tests
-    context = None  # lazy: only fetched if critique fails
+    # Always fetch context upfront — this defines "RAG" in Iterative Critique RAG.
+    # Without this, the method silently falls back to plain_llm when the first
+    # critique passes, making it indistinguishable from plain_llm in the analysis.
+    context = _get_context(_make_query(function_code))
 
     for _ in range(2):
         verdict = _call(HELPER_MODEL, [
@@ -445,9 +469,6 @@ def _iterative_critique(initial_tests: str, function_code: str) -> str:
 
         if verdict.upper().startswith("HIGH QUALITY"):
             return tests
-
-        if context is None:
-            context = _get_context(_make_query(function_code))
 
         refined = _clean(_call(GENERATOR_MODEL, [
             {"role": "system", "content": SYSTEM_PROMPT},
