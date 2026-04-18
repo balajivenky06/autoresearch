@@ -35,14 +35,16 @@ from scipy import stats
 RESULTS_FILE = "results_unitest.tsv"
 OUTPUT_DIR   = Path("plots_generalizability")
 
-METHODS = ["plain_llm", "simple_rag", "iterative_critique"]
+METHODS = ["plain_llm", "random_rag", "simple_rag", "iterative_critique"]
 METHOD_LABELS = {
     "plain_llm":          "Plain LLM",
+    "random_rag":         "Random RAG",
     "simple_rag":         "Simple RAG",
     "iterative_critique": "Iterative Critique",
 }
 METHOD_COLORS = {
     "plain_llm":          "#4C72B0",
+    "random_rag":         "#8172B2",
     "simple_rag":         "#DD8452",
     "iterative_critique": "#55A868",
 }

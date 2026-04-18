@@ -35,7 +35,7 @@ from scipy import stats
 RESULTS_FILE    = "results_unitest.tsv"
 SAMPLES_PER_METHOD = 5   # samples per method; total ≈ N_METHODS × N_REASONING × SAMPLES_PER_METHOD
 
-METHODS = ["plain_llm", "simple_rag", "iterative_critique"]
+METHODS = ["plain_llm", "random_rag", "simple_rag", "iterative_critique"]
 REASONING_MODES = ["base", "cot", "tot", "got"]
 
 
