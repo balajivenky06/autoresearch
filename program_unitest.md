@@ -54,7 +54,7 @@ The composite score weights:
 5. Temperature tuning: lower TEMPERATURE for more deterministic tests; adjust TOT_TEMP_* constants
 6. TOP_K tuning: try TOP_K = 5 or 2
 7. Combine best METHOD + REASONING + refined prompts
-8. Try different Ollama models (phi4:14b, qwen2.5:14b, qwen2.5-coder:32b)
+8. Try different Ollama models (phi4:14b, qwen3.5:9b, qwen3-coder:30b)
 9. Adjust CRITIQUE_PROMPT to be stricter or more lenient
 10. Add few-shot examples directly into SYSTEM_PROMPT
 11. Run random_rag (same as simple_rag but random chunks) — isolates retrieval quality contribution
@@ -222,7 +222,7 @@ Outputs to `plots_generalizability/`:
 
 ### External validity
 - **Dataset generalisability**: `val_score_humaneval`, `val_score_mbpp`, and `val_score_classeval` are logged per run. Source split chart (`source_split.png`) shows whether results hold across all three benchmarks (function-level + class-level).
-- **Model size confound**: llama3.2 (3B) vs phi4/qwen (14B) vs qwen2.5-coder (32B) spans 10× parameter range. Mitigated by Spearman ρ analysis across all four models.
+- **Model size confound**: llama3.2 (3B) vs phi4 (14B) vs qwen3.5 (9B) vs qwen3-coder (30B MoE) spans diverse parameter ranges and architectures (dense vs MoE). Mitigated by Spearman ρ analysis across all four models.
 
 ### Construct validity
 - **Automated metric**: val_score weight sensitivity (±50% perturbation) and human evaluation (Pearson r ≥ 0.7 target) validate the composite metric.

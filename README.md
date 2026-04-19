@@ -53,8 +53,9 @@ val_score = 0.30 × syntactic_validity
 | Model | Size | Role |
 |-------|------|------|
 | `llama3.2:latest` | 3B | Fast baseline |
-| `phi4:14b` | 14B | Mid-size |
-| `qwen2.5:14b` | 14B | Mid-size |
+| `phi4:14b` | 14B | Mid-size general |
+| `qwen3.5:9b` | 9B | Latest-gen general |
+| `qwen3-coder:30b` | 30B (3.3B active, MoE) | Code-specialized SOTA |
 
 Rankings across models compared using **Spearman rank correlation** (ρ ≥ 0.8 = findings generalize).
 
