@@ -1,8 +1,8 @@
 """
 analyze_generalizability.py — Cross-model generalizability analysis for PhD thesis.
 
-Answers the key question: do method rankings (plain_llm vs simple_rag vs
-iterative_critique) hold consistently across all tested models?
+Answers the key question: do method rankings (plain_llm vs random_rag vs
+simple_rag vs iterative_critique) hold consistently across all tested models?
 
 If Spearman rank correlation is high (>0.8) across all model pairs, the
 findings generalize — the thesis claim is model-agnostic.
@@ -259,7 +259,7 @@ def plot_rank_correlation(best: pd.DataFrame) -> tuple:
     models = sorted(best["model"].unique())
     if len(models) < 2:
         print("  rank_correlation.png SKIPPED — need ≥2 models")
-        return pd.DataFrame()
+        return pd.DataFrame(), pd.DataFrame()
 
     # Build score vector per model (one val_score per method, fixed order)
     score_vecs = {}

@@ -136,7 +136,8 @@ def llm_judge_faithfulness(generated: str, context: str, function_code: str = ""
         "You are evaluating whether generated pytest tests are grounded in "
         "retrieved testing documentation.\n\n"
         f"Retrieved documentation:\n{context[:2000]}\n\n"
-        f"Generated tests:\n{generated[:1500]}\n\n"
+        + (f"Function under test:\n{function_code[:500]}\n\n" if function_code else "")
+        + f"Generated tests:\n{generated[:1500]}\n\n"
         "Rate how faithfully the tests use patterns, idioms, and techniques "
         "from the retrieved documentation.\n"
         "Respond with ONLY a single decimal number from 0.0 to 1.0:\n"
@@ -198,7 +199,7 @@ def faithfulness_summary(scores: list) -> dict:
                 "n_valid": 0, "n_nan": len(scores)}
     n = len(valid)
     mean = sum(valid) / n
-    std  = (sum((x - mean) ** 2 for x in valid) / n) ** 0.5
+    std  = (sum((x - mean) ** 2 for x in valid) / max(n - 1, 1)) ** 0.5
     return {
         "mean":    round(mean, 6),
         "std":     round(std,  6),

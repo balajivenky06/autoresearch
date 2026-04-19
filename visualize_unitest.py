@@ -132,7 +132,7 @@ def plot_heatmap(df: pd.DataFrame) -> None:
 
 def plot_grouped_bar(df: pd.DataFrame) -> None:
     x     = np.arange(len(REASONINGS))
-    width = 0.25
+    width = 0.8 / len(METHODS)
 
     fig, ax = plt.subplots(figsize=(10, 5))
 
@@ -154,7 +154,7 @@ def plot_grouped_bar(df: pd.DataFrame) -> None:
                     f"{v:.3f}", ha="center", va="bottom", fontsize=7.5,
                 )
 
-    ax.set_xticks(x + width * 1.5)  # center under all 3 bars
+    ax.set_xticks(x + width * (len(METHODS) - 1) / 2)  # center under all bars
     ax.set_xticklabels([REASONING_LABELS.get(r, r) for r in REASONINGS], fontsize=11)
     ax.set_xlabel("Reasoning Technique", fontsize=11)
     ax.set_ylabel("val_score", fontsize=11)
@@ -222,7 +222,7 @@ def plot_per_metric_bar(df: pd.DataFrame) -> None:
         return
 
     x     = np.arange(len(METRIC_COLS))
-    width = 0.25
+    width = 0.8 / len(METHODS)
 
     fig, ax = plt.subplots(figsize=(11, 5))
 
@@ -240,7 +240,7 @@ def plot_per_metric_bar(df: pd.DataFrame) -> None:
                     f"{v:.2f}", ha="center", va="bottom", fontsize=8,
                 )
 
-    ax.set_xticks(x + width * 1.5)  # center under all 3 bars
+    ax.set_xticks(x + width * (len(METHODS) - 1) / 2)  # center under all bars
     ax.set_xticklabels(METRIC_LABELS, fontsize=11)
     ax.set_ylabel("Score", fontsize=11)
     ax.set_ylim(0, 1.12)
@@ -510,7 +510,7 @@ def plot_model_rank_stability(df: pd.DataFrame) -> None:
                 r = sub[sub["method_name"] == m]
                 scores[m] = float(r["val_score"].max()) if not r.empty else 0.0
             sorted_methods = sorted(scores, key=scores.get, reverse=True)
-            rank = sorted_methods.index(method) + 1 if method in sorted_methods else 3
+            rank = sorted_methods.index(method) + 1 if method in sorted_methods else len(METHODS)
             ranks.append(rank)
             x_labels.append(model)
 

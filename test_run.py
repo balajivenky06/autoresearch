@@ -2,7 +2,7 @@
 test_run.py — Trial run: 1 sample from HumanEval + 1 from MBPP.
 
 Tests the full pipeline end-to-end before running the full experiment.
-Runs all 3 methods (plain_llm, simple_rag, iterative_critique) on 2 samples.
+Runs all 4 methods (plain_llm, random_rag, simple_rag, iterative_critique) on 2 samples.
 
 Usage:
     python test_run.py
@@ -38,7 +38,11 @@ def section(title):
     print(f"  {title}")
     print('='*55)
 
+checks_total = 0
+
 def check(name, fn):
+    global checks_total
+    checks_total += 1
     try:
         result = fn()
         print(f"{PASS} {name}")
@@ -233,7 +237,7 @@ kb_result = check("build_knowledge_base() builds VectorStore",
 # ===========================================================================
 # 6. Ollama + full pipeline on 1 sample
 # ===========================================================================
-section("6. Full pipeline — 1 sample, all 3 methods (llama3.2:1b)")
+section("6. Full pipeline — 1 sample, all 4 methods (llama3.2:1b)")
 
 if not dataset:
     print("  SKIPPED — dataset not loaded")
@@ -251,6 +255,7 @@ else:
 
     for method_key, gen_fn in [
         ("plain_llm/base",          tu.generate_plain_base),
+        ("random_rag/base",         tu._random_rag_base),
         ("simple_rag/base",         tu._simple_rag_base),
         ("iterative_critique/base", lambda c: tu._iterative_critique(tu.generate_plain_base(c), c)),
     ]:
@@ -284,7 +289,7 @@ section("SUMMARY")
 
 n_err = len(errors)
 
-print(f"\n  Total checks run, errors: {n_err}")
+print(f"\n  Total checks: {checks_total}, errors: {n_err}")
 if errors:
     print("\n  FAILED checks:")
     for name, exc in errors:

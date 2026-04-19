@@ -48,7 +48,7 @@ TOT_TEMP_SELECT     = 0.0   # deterministic for ToT selection step
 GOT_TEMP_AGGREGATE  = 0.2   # near-deterministic for GoT merge step
 
 # Set to an integer (e.g. 3) for a quick local trial; None = use full dataset / time budget
-MAX_SAMPLES          = 1
+MAX_SAMPLES          = None
 DATASET_VERSION      = "v3"   # "v3" = HumanEval+MBPP | "v4" = HumanEval+MBPP+ClassEval
 
 # ---------------------------------------------------------------------------

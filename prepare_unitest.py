@@ -503,23 +503,22 @@ def execute_tests(generated_tests: str, function_code: str,
                 f.write(content)
 
             proc = subprocess.run(
-                [sys.executable, "-m", "pytest", test_file, "-x", "--tb=short", "-q", "--no-header"],
+                [sys.executable, "-m", "pytest", test_file, "--tb=short", "-q", "--no-header"],
                 capture_output=True, text=True,
                 timeout=timeout_secs, cwd=tmpdir,
             )
             output = proc.stdout + proc.stderr
 
             # Parse pytest summary line: "3 passed, 2 failed, 1 error"
-            import re as _re
             passed = 0
             failed = 0
             errors = 0
 
-            for match in _re.finditer(r"(\d+)\s+passed", output):
+            for match in re.finditer(r"(\d+)\s+passed", output):
                 passed = int(match.group(1))
-            for match in _re.finditer(r"(\d+)\s+failed", output):
+            for match in re.finditer(r"(\d+)\s+failed", output):
                 failed = int(match.group(1))
-            for match in _re.finditer(r"(\d+)\s+error", output):
+            for match in re.finditer(r"(\d+)\s+error", output):
                 errors = int(match.group(1))
 
             total = passed + failed + errors
