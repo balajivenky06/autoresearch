@@ -9,10 +9,13 @@ Usage (one-time setup):
 """
 
 import os
+import sys
 import ast
 import re
 import time
 import pickle
+import subprocess
+import tempfile
 import numpy as np
 from pathlib import Path
 
@@ -96,6 +99,67 @@ def _load_mbpp():
     return rows
 
 
+def _load_classeval():
+    """Load ClassEval and extract individual methods as function-level samples.
+
+    ClassEval contains 100 classes with ~412 methods total. Each method is
+    extracted as a separate sample with enough class context (imports +
+    constructor + target method) for the LLM to generate meaningful tests.
+    This matches the function-level granularity of HumanEval/MBPP.
+
+    Dataset: FudanSELab/ClassEval (HuggingFace).
+    """
+    from datasets import load_dataset
+    ds = load_dataset("FudanSELab/ClassEval", split="test")
+    rows = []
+    for item in ds:
+        class_name = item.get("class_name", "UnknownClass")
+        import_stmt = item.get("import_statement", "")
+        if isinstance(import_stmt, list):
+            import_stmt = "\n".join(import_stmt)
+        constructor = item.get("class_constructor", "")
+
+        methods_info = item.get("methods_info", [])
+        if not methods_info:
+            continue
+
+        for j, method_info in enumerate(methods_info):
+            method_code = method_info.get("solution_code", "")
+            if not method_code.strip():
+                continue
+
+            # Build self-contained function context:
+            # imports + class definition + constructor + target method
+            parts = []
+            if import_stmt.strip():
+                parts.append(import_stmt.strip())
+            class_body = f"class {class_name}:\n"
+            if constructor.strip():
+                # Indent constructor under class
+                constructor_lines = constructor.strip().split("\n")
+                class_body += "\n".join(f"    {line}" for line in constructor_lines) + "\n\n"
+            # Indent method under class
+            method_lines = method_code.strip().split("\n")
+            class_body += "\n".join(f"    {line}" for line in method_lines)
+            parts.append(class_body)
+            function_code = "\n\n".join(parts)
+
+            test_code = method_info.get("test_code", "")
+            method_name = method_info.get("method_name", f"method_{j}")
+
+            if not test_code.strip():
+                continue
+
+            rows.append({
+                "task_id":            f"ClassEval/{item.get('task_id', j)}/{method_name}",
+                "source":             "classeval",
+                "function_code":      function_code.strip(),
+                "entry_point":        method_name,
+                "ground_truth_tests": test_code.strip(),
+            })
+    return rows
+
+
 def make_eval_dataset(force_reload: bool = False) -> list:
     """
     Load and cache the fixed evaluation subset (HumanEval + MBPP).
@@ -128,6 +192,55 @@ def make_eval_dataset(force_reload: bool = False) -> list:
         pickle.dump(subset, f)
 
     print(f"Eval subset: {len(subset)} samples saved to {DATASET_CACHE}")
+    return subset
+
+
+# Extended dataset with ClassEval (v4)
+_CACHE_VERSION_V4 = "v4"
+_DATASET_CACHE_V4 = CACHE_DIR / f"eval_dataset_{_CACHE_VERSION_V4}.pkl"
+
+def make_eval_dataset_v4(force_reload: bool = False) -> list:
+    """
+    Load and cache the extended evaluation subset: HumanEval + MBPP + ClassEval.
+
+    Same structure as make_eval_dataset() but draws from 3 benchmark sources.
+    The v3 dataset (HumanEval+MBPP only) remains unchanged and available.
+    Uses same seed=42 and NUM_EVAL_SAMPLES=100 for comparability.
+    """
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+    if _DATASET_CACHE_V4.exists() and not force_reload:
+        with open(_DATASET_CACHE_V4, "rb") as f:
+            return pickle.load(f)
+
+    print("Downloading HumanEval...")
+    humaneval = _load_humaneval()
+    print(f"  {len(humaneval)} samples")
+
+    print("Downloading MBPP...")
+    mbpp = _load_mbpp()
+    print(f"  {len(mbpp)} samples")
+
+    print("Downloading ClassEval...")
+    classeval = _load_classeval()
+    print(f"  {len(classeval)} method-level samples")
+
+    combined = [r for r in humaneval + mbpp + classeval
+                if r["function_code"].strip() and r["ground_truth_tests"].strip()]
+
+    rng = np.random.default_rng(DATASET_SEED)
+    indices = rng.choice(len(combined), size=min(NUM_EVAL_SAMPLES, len(combined)), replace=False)
+    subset = [combined[int(i)] for i in sorted(indices)]
+
+    # Report source distribution
+    from collections import Counter
+    source_counts = Counter(s["source"] for s in subset)
+    print(f"Eval subset v4: {len(subset)} samples — {dict(source_counts)}")
+
+    with open(_DATASET_CACHE_V4, "wb") as f:
+        pickle.dump(subset, f)
+
+    print(f"Saved to {_DATASET_CACHE_V4}")
     return subset
 
 
@@ -355,6 +468,93 @@ def evaluate_tests(generated: str, ground_truth: str, function_code: str) -> dic
     }
 
 
+def execute_tests(generated_tests: str, function_code: str,
+                  timeout_secs: int = 10) -> dict:
+    """
+    Run generated tests against the function under test in an isolated subprocess.
+
+    Creates a temp file combining function_code + generated_tests, then runs
+    pytest on it. Returns execution metrics as a diagnostic (not part of val_score).
+
+    Returns dict with keys:
+        exec_pass_rate   : float  (0.0-1.0, fraction of tests passed; 0.0 on error)
+        exec_total_tests : int    (number of test items collected)
+        exec_passed      : int
+        exec_failed      : int
+        exec_errors      : int
+        exec_status      : str    ("pass"|"partial"|"fail"|"timeout"|"syntax_error"|"no_tests"|"error")
+    """
+    result = {
+        "exec_pass_rate": 0.0, "exec_total_tests": 0,
+        "exec_passed": 0, "exec_failed": 0, "exec_errors": 0,
+        "exec_status": "error",
+    }
+
+    if not generated_tests or not generated_tests.strip():
+        result["exec_status"] = "no_tests"
+        return result
+
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            test_file = os.path.join(tmpdir, "test_generated.py")
+            # Combine function code + generated tests into one file
+            content = f"# --- Function under test ---\n{function_code}\n\n# --- Generated tests ---\n{generated_tests}\n"
+            with open(test_file, "w") as f:
+                f.write(content)
+
+            proc = subprocess.run(
+                [sys.executable, "-m", "pytest", test_file, "-x", "--tb=short", "-q", "--no-header"],
+                capture_output=True, text=True,
+                timeout=timeout_secs, cwd=tmpdir,
+            )
+            output = proc.stdout + proc.stderr
+
+            # Parse pytest summary line: "3 passed, 2 failed, 1 error"
+            import re as _re
+            passed = 0
+            failed = 0
+            errors = 0
+
+            for match in _re.finditer(r"(\d+)\s+passed", output):
+                passed = int(match.group(1))
+            for match in _re.finditer(r"(\d+)\s+failed", output):
+                failed = int(match.group(1))
+            for match in _re.finditer(r"(\d+)\s+error", output):
+                errors = int(match.group(1))
+
+            total = passed + failed + errors
+
+            if total == 0:
+                # Check for collection errors (syntax errors in generated tests)
+                if "SyntaxError" in output or "IndentationError" in output:
+                    result["exec_status"] = "syntax_error"
+                elif "no tests ran" in output or "collected 0 items" in output:
+                    result["exec_status"] = "no_tests"
+                else:
+                    result["exec_status"] = "error"
+                return result
+
+            result["exec_passed"] = passed
+            result["exec_failed"] = failed
+            result["exec_errors"] = errors
+            result["exec_total_tests"] = total
+            result["exec_pass_rate"] = passed / total
+
+            if failed == 0 and errors == 0:
+                result["exec_status"] = "pass"
+            elif passed > 0:
+                result["exec_status"] = "partial"
+            else:
+                result["exec_status"] = "fail"
+
+    except subprocess.TimeoutExpired:
+        result["exec_status"] = "timeout"
+    except Exception:
+        result["exec_status"] = "error"
+
+    return result
+
+
 def compute_val_score(metrics_list: list) -> float:
     """
     Compute a single composite val_score from a list of per-sample metric dicts.
@@ -397,5 +597,8 @@ if __name__ == "__main__":
     print("\n2. Building knowledge base...")
     kb, emb_model = build_knowledge_base(force_reload=True)
     print(f"   {len(kb.texts)} docs indexed.")
+
+    print("\n3. Building v4 dataset (HumanEval + MBPP + ClassEval)...")
+    make_eval_dataset_v4(force_reload=True)
 
     print("\nSetup complete. You can now run: python train_unitest.py")

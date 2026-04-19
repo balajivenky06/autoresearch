@@ -520,8 +520,14 @@ def plot_model_rank_stability(df: pd.DataFrame) -> None:
             ax.text(xi, rank - 0.1, str(rank), ha="center", va="bottom",
                     fontsize=9, fontweight="bold", color=COLORS[method])
 
-    ax.set_yticks([1, 2, 3])
-    ax.set_yticklabels(["1st (best)", "2nd", "3rd (worst)"], fontsize=10)
+    n_methods = len(METHODS)
+    ax.set_yticks(range(1, n_methods + 1))
+    labels = []
+    for i in range(1, n_methods + 1):
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(i, "th")
+        extra = " (best)" if i == 1 else (" (worst)" if i == n_methods else "")
+        labels.append(f"{i}{suffix}{extra}")
+    ax.set_yticklabels(labels, fontsize=10)
     ax.invert_yaxis()
     ax.set_xlabel("Model", fontsize=11)
     ax.set_ylabel("Rank (by val_score)", fontsize=11)
@@ -592,9 +598,9 @@ def plot_interaction(df: pd.DataFrame) -> None:
 
 def plot_source_split(df: pd.DataFrame) -> None:
     """
-    Compare val_score on HumanEval subset vs MBPP subset per method.
+    Compare val_score on HumanEval vs MBPP vs ClassEval subsets per method.
     Requires val_score_humaneval / val_score_mbpp columns in TSV.
-    Addresses reviewer concern: are results driven by one benchmark?
+    val_score_classeval is optional (only present for v4 dataset runs).
     """
     if "val_score_humaneval" not in df.columns or "val_score_mbpp" not in df.columns:
         print("  source_split.png SKIPPED — val_score_humaneval/val_score_mbpp columns missing")
@@ -603,14 +609,18 @@ def plot_source_split(df: pd.DataFrame) -> None:
     df = df.copy()
     df["val_score_humaneval"] = pd.to_numeric(df["val_score_humaneval"], errors="coerce")
     df["val_score_mbpp"]      = pd.to_numeric(df["val_score_mbpp"],      errors="coerce")
+    has_classeval = "val_score_classeval" in df.columns
+    if has_classeval:
+        df["val_score_classeval"] = pd.to_numeric(df["val_score_classeval"], errors="coerce")
 
     methods_present = [m for m in METHODS if not df[df["method_name"] == m].empty]
     if not methods_present:
         return
 
+    n_sources = 3 if has_classeval else 2
     x     = np.arange(len(methods_present))
-    width = 0.35
-    he_vals, mb_vals = [], []
+    width = 0.8 / n_sources
+    he_vals, mb_vals, ce_vals = [], [], []
 
     for method in methods_present:
         sub = df[df["method_name"] == method]
@@ -619,26 +629,34 @@ def plot_source_split(df: pd.DataFrame) -> None:
                        if best is not None else float("nan"))
         mb_vals.append(float(pd.to_numeric(best["val_score_mbpp"], errors="coerce"))
                        if best is not None else float("nan"))
+        if has_classeval:
+            ce_vals.append(float(pd.to_numeric(best.get("val_score_classeval", float("nan")), errors="coerce"))
+                           if best is not None else float("nan"))
 
-    if all(np.isnan(v) for v in he_vals + mb_vals):
-        print("  source_split.png SKIPPED — all NaN values")
-        return
+    fig, ax = plt.subplots(figsize=(10, 5))
+    offset = 0
+    b1 = ax.bar(x + offset * width, he_vals, width, label="HumanEval", color="#5B9BD5", alpha=0.85)
+    offset += 1
+    b2 = ax.bar(x + offset * width, mb_vals, width, label="MBPP",       color="#ED7D31", alpha=0.85)
+    bars_list = list(zip(b1, he_vals)) + list(zip(b2, mb_vals))
 
-    fig, ax = plt.subplots(figsize=(9, 5))
-    b1 = ax.bar(x - width / 2, he_vals, width, label="HumanEval", color="#5B9BD5", alpha=0.85)
-    b2 = ax.bar(x + width / 2, mb_vals, width, label="MBPP",       color="#ED7D31", alpha=0.85)
+    if has_classeval:
+        offset += 1
+        b3 = ax.bar(x + offset * width, ce_vals, width, label="ClassEval", color="#70AD47", alpha=0.85)
+        bars_list += list(zip(b3, ce_vals))
 
-    for bar, v in list(zip(b1, he_vals)) + list(zip(b2, mb_vals)):
+    for bar, v in bars_list:
         if not np.isnan(v) and v > 0:
             ax.text(bar.get_x() + bar.get_width() / 2,
                     bar.get_height() + 0.008,
-                    f"{v:.3f}", ha="center", va="bottom", fontsize=8)
+                    f"{v:.3f}", ha="center", va="bottom", fontsize=7)
 
-    ax.set_xticks(x)
+    ax.set_xticks(x + width * (n_sources - 1) / 2)
     ax.set_xticklabels([METHOD_LABELS.get(m, m) for m in methods_present], fontsize=11)
     ax.set_ylabel("val_score", fontsize=11)
     ax.set_ylim(0, 1.12)
-    ax.set_title("val_score by Dataset Source: HumanEval vs MBPP\n(Best run per method)",
+    title_sources = "HumanEval vs MBPP vs ClassEval" if has_classeval else "HumanEval vs MBPP"
+    ax.set_title(f"val_score by Dataset Source: {title_sources}\n(Best run per method)",
                  fontsize=12, fontweight="bold")
     ax.legend(fontsize=10)
     ax.grid(axis="y", alpha=0.3)
@@ -646,6 +664,53 @@ def plot_source_split(df: pd.DataFrame) -> None:
     fig.savefig(OUTPUT_DIR / "source_split.png", dpi=150)
     plt.close(fig)
     print("  source_split.png")
+
+
+# ---------------------------------------------------------------------------
+# Chart 13: Execution pass rate per method
+# ---------------------------------------------------------------------------
+
+def plot_exec_pass_rate(df: pd.DataFrame) -> None:
+    """Bar chart: avg_exec_pass_rate per method (best run).
+    Shows the fraction of generated tests that actually PASS when executed."""
+    if "avg_exec_pass_rate" not in df.columns:
+        print("  exec_pass_rate.png SKIPPED — avg_exec_pass_rate column missing from TSV")
+        return
+
+    best = _best_per_method(df)
+    if not best:
+        return
+
+    labels, vals, colors = [], [], []
+    for method in METHODS:
+        if method not in best:
+            continue
+        ep = pd.to_numeric(best[method].get("avg_exec_pass_rate", 0), errors="coerce")
+        if np.isnan(ep):
+            ep = 0.0
+        labels.append(METHOD_LABELS[method])
+        vals.append(float(ep))
+        colors.append(COLORS[method])
+
+    if not vals:
+        print("  exec_pass_rate.png SKIPPED — no exec data")
+        return
+
+    fig, ax = plt.subplots(figsize=(9, 5))
+    bars = ax.bar(labels, vals, color=colors, alpha=0.85, width=0.5)
+    for bar, v in zip(bars, vals):
+        ax.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.01,
+                f"{v:.3f}", ha="center", va="bottom", fontsize=11, fontweight="bold")
+
+    ax.set_ylabel("Execution Pass Rate (fraction of tests passed)", fontsize=11)
+    ax.set_ylim(0, 1.12)
+    ax.set_title("Execution Pass Rate per Method\n(Best Run — tests actually run via pytest)",
+                 fontsize=13, fontweight="bold")
+    ax.grid(axis="y", alpha=0.3)
+    plt.tight_layout()
+    fig.savefig(OUTPUT_DIR / "exec_pass_rate.png", dpi=150)
+    plt.close(fig)
+    print("  exec_pass_rate.png")
 
 
 # ---------------------------------------------------------------------------
@@ -674,6 +739,7 @@ def main() -> None:
     plot_faithfulness(df)
     plot_interaction(df)
     plot_source_split(df)
+    plot_exec_pass_rate(df)
 
     # Cross-model charts (auto-skipped if only 1 model in TSV)
     print("\n  --- Cross-model charts ---")

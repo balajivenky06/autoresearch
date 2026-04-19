@@ -8,10 +8,10 @@ Mirrors program.md but for the unit test task.
 1. **Agree on a run tag**: propose a tag (e.g. `unitest-apr16`). Branch `autoresearch/<tag>` must not exist.
 2. **Create the branch**: `git checkout -b autoresearch/<tag>`
 3. **Read the in-scope files**:
-   - `prepare_unitest.py` — fixed harness: dataset (HumanEval+MBPP, 100 samples, seed=42), evaluation, val_score. **DO NOT MODIFY.**
-   - `train_unitest.py` — the only file you edit. Prompts, RAG config, METHOD, REASONING, temperature constants.
+   - `prepare_unitest.py` — fixed harness: dataset (HumanEval+MBPP+ClassEval, 100 samples, seed=42), evaluation, val_score, execution. **DO NOT MODIFY.**
+   - `train_unitest.py` — the only file you edit. Prompts, RAG config, METHOD, REASONING, DATASET_VERSION, temperature constants.
    - `faithfulness.py` — shared metric. Read-only reference.
-4. **Verify data exists**: Check `~/.cache/autoresearch_unitest/` for `eval_dataset_v3.pkl` and `knowledge_base_v3.pkl`. If missing, run `python prepare_unitest.py` (one-time, ~5 min — v3 knowledge base has 14 URLs × chunked).
+4. **Verify data exists**: Check `~/.cache/autoresearch_unitest/` for `eval_dataset_v3.pkl` (or `v4`) and `knowledge_base_v3.pkl`. If missing, run `python prepare_unitest.py` (one-time, ~5 min — v3 knowledge base has 14 URLs × chunked).
 5. **Initialize results**: Create `results_unitest.tsv` with just the header row if it doesn't exist.
 6. **Confirm and go**.
 
@@ -23,6 +23,7 @@ Each experiment runs for a **fixed time budget of 600 seconds** (10 min generati
 - `METHOD`: `"plain_llm"` | `"random_rag"` | `"simple_rag"` | `"iterative_critique"`
   - `random_rag` = same pipeline as simple_rag but retrieves RANDOM chunks (ablation baseline)
 - `NUM_CRITIQUE_ROUNDS`: number of critique-refine iterations (default 2; ablation: try 1)
+- `DATASET_VERSION`: `"v3"` (HumanEval+MBPP) | `"v4"` (HumanEval+MBPP+ClassEval)
 - `REASONING`: `"base"` | `"cot"` | `"tot"` | `"got"`
 - `GENERATOR_MODEL` / `HELPER_MODEL`: any Ollama model available locally
 - `TEMPERATURE`, `CRITIQUE_TEMPERATURE`, `REFINE_TEMPERATURE`
@@ -33,7 +34,7 @@ Each experiment runs for a **fixed time budget of 600 seconds** (10 min generati
 **What you CANNOT change:**
 - `prepare_unitest.py` — fixed harness, ground truth metric
 - The `evaluate_tests()` and `compute_val_score()` functions
-- The eval dataset subset (fixed seed=42, 100 samples, cache version v3)
+- The eval dataset subset (fixed seed=42, 100 samples, cache version v3/v4)
 - `faithfulness.py` — shared metric used across PhD tasks
 
 **The goal: maximize `val_score`** (higher is better, range 0.0–1.0).
@@ -53,7 +54,7 @@ The composite score weights:
 5. Temperature tuning: lower TEMPERATURE for more deterministic tests; adjust TOT_TEMP_* constants
 6. TOP_K tuning: try TOP_K = 5 or 2
 7. Combine best METHOD + REASONING + refined prompts
-8. Try different Ollama models (phi4:14b, qwen2.5:14b, deepseek-coder)
+8. Try different Ollama models (phi4:14b, qwen2.5:14b, qwen2.5-coder:32b)
 9. Adjust CRITIQUE_PROMPT to be stricter or more lenient
 10. Add few-shot examples directly into SYSTEM_PROMPT
 11. Run random_rag (same as simple_rag but random chunks) — isolates retrieval quality contribution
@@ -90,10 +91,15 @@ avg_llm_judge_faith:    0.6200
 avg_retrieval_secs:     0.420
 avg_llm_secs:           12.340
 avg_tokens:             850.0
+avg_exec_pass_rate:     0.6500
+avg_exec_total:         8.2
 val_score_humaneval:    0.5340
 val_score_mbpp:         0.4890
-samples_humaneval:      52
-samples_mbpp:           48
+val_score_classeval:    0.4720
+samples_humaneval:      40
+samples_mbpp:           35
+samples_classeval:      25
+dataset_version:        v4
 Results appended → results_unitest.tsv
 ```
 
@@ -103,7 +109,7 @@ Results are **automatically written** to `results_unitest.tsv` (tab-separated) a
 
 TSV columns:
 ```
-method  model  status  val_score  avg_syntax  avg_edge  avg_assert_density  avg_semantic_sim  avg_rouge  avg_noise_rate  avg_faithfulness  avg_llm_judge_faithfulness  avg_retrieval_secs  avg_llm_secs  avg_tokens  samples_evaluated  val_score_humaneval  val_score_mbpp  samples_humaneval  samples_mbpp
+method  model  status  val_score  avg_syntax  avg_edge  avg_assert_density  avg_semantic_sim  avg_rouge  avg_noise_rate  avg_faithfulness  avg_llm_judge_faithfulness  avg_retrieval_secs  avg_llm_secs  avg_tokens  samples_evaluated  val_score_humaneval  val_score_mbpp  samples_humaneval  samples_mbpp  val_score_classeval  samples_classeval  avg_exec_pass_rate  avg_exec_total_tests  dataset_version
 ```
 
 Column notes:
@@ -115,8 +121,11 @@ Column notes:
 - `avg_llm_judge_faithfulness`: NaN for plain_llm — DeepSeek-Coder 6.7B judge score (validated, RQ3)
 - `avg_retrieval_secs` / `avg_llm_secs`: cost breakdown (RQ4 Pareto analysis)
 - `avg_tokens`: 0 if Ollama < v0.4 (token counting unavailable)
-- `val_score_humaneval` / `val_score_mbpp`: per-benchmark val_score (dataset source ablation)
-- `samples_humaneval` / `samples_mbpp`: sample counts per benchmark in this run
+- `val_score_humaneval` / `val_score_mbpp` / `val_score_classeval`: per-benchmark val_score (dataset source ablation)
+- `samples_humaneval` / `samples_mbpp` / `samples_classeval`: sample counts per benchmark in this run
+- `avg_exec_pass_rate`: fraction of generated tests that pass when executed via pytest (supplementary)
+- `avg_exec_total_tests`: average number of test functions detected per sample
+- `dataset_version`: `v3` or `v4` — which eval dataset was used for this run
 
 Extract all metrics:
 ```bash
@@ -151,8 +160,11 @@ LOOP FOREVER:
 | `avg_llm_judge_faithfulness` | DeepSeek-Coder 6.7B judge (Pearson r=0.925 vs human, NaN for plain_llm) | RQ3 |
 | `avg_retrieval_secs` | Time spent in vector retrieval per sample | RQ4 |
 | `avg_llm_secs` | Time spent in LLM generation per sample | RQ4 |
+| `avg_exec_pass_rate` | Fraction of generated tests that pass when executed via pytest | RQ1 |
+| `avg_exec_total_tests` | Average number of test functions detected per sample | RQ1 |
 | `val_score_humaneval` | val_score on HumanEval subset only (dataset ablation) | RQ5 |
 | `val_score_mbpp` | val_score on MBPP subset only (dataset ablation) | RQ5 |
+| `val_score_classeval` | val_score on ClassEval subset only (class-level ablation, v4 only) | RQ5 |
 
 ## Analysis scripts (run after full experiment)
 
@@ -187,7 +199,8 @@ Outputs to `plots_unitest/`:
 - `cost_breakdown.png`  — stacked retrieval + LLM time per method (RQ4)
 - `faithfulness.png`    — avg faithfulness per method (RQ3)
 - `interaction.png`     — Method × Reasoning interaction plot (parallel lines = no interaction)
-- `source_split.png`    — HumanEval vs MBPP val_score per method (dataset ablation)
+- `source_split.png`    — HumanEval vs MBPP vs ClassEval val_score per method (dataset ablation)
+- `exec_pass_rate.png`  — execution pass rate per method (tests run via pytest)
 - `model_val_score.png`       — val_score grouped by method × model (cross-model)
 - `model_faithfulness.png`    — faithfulness grouped by method × model
 - `model_rank_stability.png`  — method ranking lines across models
@@ -208,10 +221,10 @@ Outputs to `plots_generalizability/`:
 - **Critique iterations**: `NUM_CRITIQUE_ROUNDS` is agent-editable (default 2). Run with `NUM_CRITIQUE_ROUNDS=1` to quantify marginal gain of the second round.
 
 ### External validity
-- **Dataset generalisability**: `val_score_humaneval` and `val_score_mbpp` are logged per run. Source split chart (`source_split.png`) shows whether results hold across both benchmarks.
-- **Model size confound**: llama3.2 (3B) vs phi4/qwen (14B) conflates model size with architecture. Mitigated by Spearman ρ analysis across all three models; further ablation with `llama3.2:8b` is recommended.
+- **Dataset generalisability**: `val_score_humaneval`, `val_score_mbpp`, and `val_score_classeval` are logged per run. Source split chart (`source_split.png`) shows whether results hold across all three benchmarks (function-level + class-level).
+- **Model size confound**: llama3.2 (3B) vs phi4/qwen (14B) vs qwen2.5-coder (32B) spans 10× parameter range. Mitigated by Spearman ρ analysis across all four models.
 
 ### Construct validity
 - **Automated metric**: val_score weight sensitivity (±50% perturbation) and human evaluation (Pearson r ≥ 0.7 target) validate the composite metric.
 - **Embedding model**: `all-MiniLM-L6-v2` used for retrieval — code-specific embedders (e.g. CodeBERT) may improve retrieval quality; noted as future work.
-- **Execution-based validation**: tests are not actually run; syntactic validity and semantic similarity are proxies. Execution sandbox is out of scope and noted as future work.
+- **Execution-based validation**: `avg_exec_pass_rate` runs generated tests via pytest in a subprocess sandbox (10s timeout per sample). This supplements the proxy-based val_score with ground-truth execution results. Note: execution is best-effort — some tests may fail due to missing imports or environment differences rather than logical errors.

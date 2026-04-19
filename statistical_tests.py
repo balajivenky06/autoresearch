@@ -256,7 +256,7 @@ def plot_sensitivity(sensitivity_df: pd.DataFrame) -> None:
     if len(models) == 1:
         axes = [axes]
 
-    colors = {"plain_llm": "#4C72B0", "simple_rag": "#DD8452", "iterative_critique": "#55A868"}
+    colors = {"plain_llm": "#4C72B0", "random_rag": "#8172B2", "simple_rag": "#DD8452", "iterative_critique": "#55A868"}
 
     for ax, model in zip(axes, models):
         sub = sensitivity_df[sensitivity_df["model"] == model]
@@ -271,8 +271,13 @@ def plot_sensitivity(sensitivity_df: pd.DataFrame) -> None:
         ax.set_title(model, fontsize=10)
         ax.set_xticks(range(len(scenarios)))
         ax.set_xticklabels(scenarios, rotation=45, ha="right", fontsize=7)
-        ax.set_yticks([1, 2, 3])
-        ax.set_yticklabels(["1st", "2nd", "3rd"], fontsize=9)
+        n_methods = len(METHODS)
+        ax.set_yticks(range(1, n_methods + 1))
+        labels = []
+        for i in range(1, n_methods + 1):
+            suffix = {1: "st", 2: "nd", 3: "rd"}.get(i, "th")
+            labels.append(f"{i}{suffix}")
+        ax.set_yticklabels(labels, fontsize=9)
         ax.invert_yaxis()
         ax.grid(axis="y", alpha=0.3)
 
@@ -353,6 +358,7 @@ def run_source_analysis(df: pd.DataFrame) -> dict:
         result[method] = {
             "humaneval": float(best.get("val_score_humaneval", float("nan"))),
             "mbpp":      float(best.get("val_score_mbpp",      float("nan"))),
+            "classeval": float(best.get("val_score_classeval", float("nan"))),
             "overall":   float(best.get("val_score",           float("nan"))),
         }
     return result
@@ -376,6 +382,8 @@ def write_statistical_report(df: pd.DataFrame, sensitivity_df: pd.DataFrame) -> 
     ]
     if "avg_llm_judge_faithfulness" in df.columns:
         metrics_to_test.append(("avg_llm_judge_faithfulness", "Faithfulness (LLM-judge)"))
+    if "avg_exec_pass_rate" in df.columns:
+        metrics_to_test.append(("avg_exec_pass_rate", "Execution pass rate (diagnostic)"))
 
     for model in sorted(df["model"].unique()):
         model_df = df[df["model"] == model]
@@ -453,13 +461,14 @@ def write_statistical_report(df: pd.DataFrame, sensitivity_df: pd.DataFrame) -> 
         lines.append("  DATASET SOURCE ANALYSIS: HumanEval vs MBPP")
         lines.append("  (Ensures results are not driven by one benchmark)")
         lines.append("=" * 70)
-        lines.append(f"\n  {'Method':<28} {'HumanEval':>12} {'MBPP':>10} {'Overall':>10}")
-        lines.append("  " + "-" * 62)
+        lines.append(f"\n  {'Method':<28} {'HumanEval':>12} {'MBPP':>10} {'ClassEval':>12} {'Overall':>10}")
+        lines.append("  " + "-" * 74)
         for method, scores in source_results.items():
             he = f"{scores['humaneval']:.4f}" if not math.isnan(scores['humaneval']) else "  N/A"
             mb = f"{scores['mbpp']:.4f}"      if not math.isnan(scores['mbpp'])      else "  N/A"
+            ce = f"{scores['classeval']:.4f}" if not math.isnan(scores.get('classeval', float('nan'))) else "  N/A"
             ov = f"{scores['overall']:.4f}"   if not math.isnan(scores['overall'])   else "  N/A"
-            lines.append(f"  {METHOD_LABELS.get(method, method):<28} {he:>12} {mb:>10} {ov:>10}")
+            lines.append(f"  {METHOD_LABELS.get(method, method):<28} {he:>12} {mb:>10} {ce:>12} {ov:>10}")
 
     lines.append("\n" + "=" * 70)
 

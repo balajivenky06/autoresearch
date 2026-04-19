@@ -18,8 +18,8 @@ import numpy as np
 import ollama
 
 from prepare_unitest import (
-    TIME_BUDGET, make_eval_dataset, build_knowledge_base,
-    evaluate_tests, compute_val_score, compute_faithfulness, llm_judge_faithfulness,
+    TIME_BUDGET, make_eval_dataset, make_eval_dataset_v4, build_knowledge_base,
+    evaluate_tests, execute_tests, compute_val_score, compute_faithfulness, llm_judge_faithfulness,
 )
 
 # ---------------------------------------------------------------------------
@@ -49,6 +49,7 @@ GOT_TEMP_AGGREGATE  = 0.2   # near-deterministic for GoT merge step
 
 # Set to an integer (e.g. 3) for a quick local trial; None = use full dataset / time budget
 MAX_SAMPLES          = 1
+DATASET_VERSION      = "v3"   # "v3" = HumanEval+MBPP | "v4" = HumanEval+MBPP+ClassEval
 
 # ---------------------------------------------------------------------------
 # Prompts — edit these freely
@@ -669,7 +670,10 @@ if __name__ == "__main__":
     t_start = time.time()
     run_status = "ok"
 
-    dataset = make_eval_dataset()
+    if DATASET_VERSION == "v4":
+        dataset = make_eval_dataset_v4()
+    else:
+        dataset = make_eval_dataset()
     print(f"Eval dataset: {len(dataset)} samples")
     print(f"Method: {METHOD} | Reasoning: {REASONING} | Model: {GENERATOR_MODEL}")
     print(f"Time budget: {TIME_BUDGET}s")
@@ -720,6 +724,10 @@ if __name__ == "__main__":
         metrics["retrieval_secs"]       = _retrieval_secs
         metrics["llm_secs"]             = _llm_secs
         metrics["tokens_used"]          = float(_tokens_used)
+
+        # Execution-based validation: actually run generated tests (diagnostic only)
+        exec_result = execute_tests(tests, fn_code, timeout_secs=15)
+        metrics.update(exec_result)
 
         metrics["source"] = src
         metrics_list.append(metrics)
@@ -775,12 +783,17 @@ if __name__ == "__main__":
     avg_retrieval_secs = sum(m.get("retrieval_secs", 0.0) for m in metrics_list) / len(metrics_list)
     avg_llm_secs       = sum(m.get("llm_secs",       0.0) for m in metrics_list) / len(metrics_list)
     avg_tokens         = sum(m.get("tokens_used",    0.0) for m in metrics_list) / len(metrics_list)
+    avg_exec_pass_rate = sum(m.get("exec_pass_rate", 0.0) for m in metrics_list) / len(metrics_list)
+    avg_exec_total     = sum(m.get("exec_total_tests", 0) for m in metrics_list) / len(metrics_list)
 
     # Per-source val_score breakdown (HumanEval vs MBPP — ablation RQ5)
     _humaneval_metrics = [m for m in metrics_list if m.get("source") == "humaneval"]
     _mbpp_metrics      = [m for m in metrics_list if m.get("source") == "mbpp"]
     val_score_humaneval = compute_val_score(_humaneval_metrics) if _humaneval_metrics else float("nan")
     val_score_mbpp      = compute_val_score(_mbpp_metrics)      if _mbpp_metrics      else float("nan")
+
+    _classeval_metrics = [m for m in metrics_list if m.get("source") == "classeval"]
+    val_score_classeval = compute_val_score(_classeval_metrics) if _classeval_metrics else float("nan")
 
     # Determine run status: crash if >50% of samples failed generation
     if _sample_errors > len(metrics_list) * 0.5:
@@ -808,6 +821,11 @@ if __name__ == "__main__":
     print(f"val_score_mbpp:     {val_score_mbpp:.4f}" if not np.isnan(val_score_mbpp) else "val_score_mbpp:     nan")
     print(f"samples_humaneval:  {len(_humaneval_metrics)}")
     print(f"samples_mbpp:       {len(_mbpp_metrics)}")
+    print(f"val_score_classeval:{val_score_classeval:.4f}" if not np.isnan(val_score_classeval) else "val_score_classeval:nan")
+    print(f"samples_classeval:  {len(_classeval_metrics)}")
+    print(f"avg_exec_pass_rate: {avg_exec_pass_rate:.4f}")
+    print(f"avg_exec_total:     {avg_exec_total:.1f}")
+    print(f"dataset_version:    {DATASET_VERSION}")
 
     # -----------------------------------------------------------------------
     # Write / append one row to results_unitest.tsv
@@ -836,6 +854,11 @@ if __name__ == "__main__":
         "val_score_mbpp":       _nan_str(val_score_mbpp),
         "samples_humaneval":    str(len(_humaneval_metrics)),
         "samples_mbpp":         str(len(_mbpp_metrics)),
+        "val_score_classeval":  _nan_str(val_score_classeval),
+        "samples_classeval":    str(len(_classeval_metrics)),
+        "avg_exec_pass_rate":   f"{avg_exec_pass_rate:.4f}",
+        "avg_exec_total_tests": f"{avg_exec_total:.1f}",
+        "dataset_version":      DATASET_VERSION,
     }
     _write_header = not os.path.exists(tsv_path) or os.path.getsize(tsv_path) == 0
     with open(tsv_path, "a", newline="") as _f:
