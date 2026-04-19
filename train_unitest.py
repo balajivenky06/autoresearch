@@ -27,7 +27,7 @@ from prepare_unitest import (
 # ---------------------------------------------------------------------------
 
 METHOD    = "plain_llm"
-# Options: "plain_llm" | "simple_rag" | "iterative_critique"
+# Options: "plain_llm" | "random_rag" | "simple_rag" | "iterative_critique"
 
 REASONING = "base"
 # Options: "base" | "cot" | "tot" | "got"
@@ -513,7 +513,7 @@ def _random_rag_tot(function_code: str) -> str:
     return _clean(_call(GENERATOR_MODEL, [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": TOT_EVALUATE_PROMPT.format(
-            candidate_a=candidate_a[:1500], candidate_b=candidate_b[:1500])},
+            function_code=function_code, candidate_a=candidate_a[:1500], candidate_b=candidate_b[:1500])},
     ], TOT_TEMP_SELECT)) or candidate_a
 
 

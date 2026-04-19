@@ -2,7 +2,7 @@
 human_eval_sampler.py — Stratified sample generator for human annotation.
 
 Generates a human_eval_samples.csv with 30–50 samples selected to cover:
-  • All 3 methods (plain_llm, simple_rag, iterative_critique)
+  • All 4 methods (plain_llm, random_rag, simple_rag, iterative_critique)
   • All reasoning modes (base, cot, tot, got)
   • Best and worst performers per method (to ensure score range coverage)
 

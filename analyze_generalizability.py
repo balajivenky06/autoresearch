@@ -230,8 +230,14 @@ def plot_rank_stability(best: pd.DataFrame) -> None:
                     ha="center", va="bottom", fontsize=9, fontweight="bold",
                     color=METHOD_COLORS[method])
 
-    ax.set_yticks([1, 2, 3])
-    ax.set_yticklabels(["1st (best)", "2nd", "3rd (worst)"], fontsize=10)
+    n_methods = len(METHODS)
+    ax.set_yticks(range(1, n_methods + 1))
+    ordinal_labels = []
+    for i in range(1, n_methods + 1):
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(i, "th")
+        tag = " (best)" if i == 1 else (" (worst)" if i == n_methods else "")
+        ordinal_labels.append(f"{i}{suffix}{tag}")
+    ax.set_yticklabels(ordinal_labels, fontsize=10)
     ax.invert_yaxis()
     ax.set_xlabel("Model", fontsize=11)
     ax.set_ylabel("Rank (by val_score)", fontsize=11)
