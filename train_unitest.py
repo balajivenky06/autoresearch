@@ -674,7 +674,9 @@ if __name__ == "__main__":
         dataset = make_eval_dataset_v4()
     else:
         dataset = make_eval_dataset()
-    print(f"Eval dataset: {len(dataset)} samples")
+    import random as _rng
+    _rng.Random(42).shuffle(dataset)
+    print(f"Eval dataset: {len(dataset)} samples (shuffled, seed=42)")
     print(f"Method: {METHOD} | Reasoning: {REASONING} | Model: {GENERATOR_MODEL}")
     print(f"Time budget: {TIME_BUDGET}s")
 
