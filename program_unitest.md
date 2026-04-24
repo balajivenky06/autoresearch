@@ -29,8 +29,9 @@ autoresearch/
 ### Data Pipeline
 1. `prepare_unitest.py` downloads HumanEval + MBPP (+ ClassEval for v4) datasets
 2. Subsets to 100 samples (seed=42), caches to `~/.cache/autoresearch_unitest/eval_dataset_v3.pkl` (or `v4`)
-3. Knowledge base: 14 testing documentation URLs → 500-char overlapping chunks (100-char overlap) → cached as `knowledge_base_v3.pkl`
-4. VectorStore: in-memory numpy + `all-MiniLM-L6-v2` sentence-transformers embeddings, cosine similarity, top-k retrieval
+3. `train_unitest.py` shuffles the dataset at runtime (`random.Random(42)`) to interleave HumanEval + MBPP + ClassEval samples — ensures per-benchmark scores are valid even when TIME_BUDGET truncates evaluation early
+4. Knowledge base: 14 testing documentation URLs → 500-char overlapping chunks (100-char overlap) → cached as `knowledge_base_v3.pkl`
+5. VectorStore: in-memory numpy + `all-MiniLM-L6-v2` sentence-transformers embeddings, cosine similarity, top-k retrieval
 
 ### Generation Pipeline (`train_unitest.py`)
 - 4 methods × 4 reasoning = 16 generator functions, registered in `GENERATORS` dispatch dict
@@ -295,6 +296,7 @@ Runs the full 64-experiment sweep on Google Colab A100. Key features:
   2. Per-experiment TSV appended to Drive after every experiment
   3. Git push every 5 experiments
 - **Disconnect resilience**: On reconnect, Drive copy of `results_unitest.tsv` is source of truth. Always restores from Drive when Drive has more data than local copy.
+- **Quick-test cleanup**: Before the main loop, rows with `samples_evaluated < 50` are automatically removed from the TSV to prevent Step 7 quick-test pollution.
 - **Steps**: Mount Drive → Install deps → Pull 4 Ollama models → Clone repo → One-time setup → 64-run sweep → Analysis → Visualize → Push
 
 ## Research Questions
