@@ -164,7 +164,9 @@ def llm_judge_faithfulness(generated: str, context: str, function_code: str = ""
             score = float(match.group(1))
             return round(max(0.0, min(1.0, score)), 6)
         return float("nan")
-    except Exception:
+    except Exception as e:
+        import sys
+        print(f"[judge] llm_judge_faithfulness error: {e}", file=sys.stderr)
         return float("nan")
 
 
