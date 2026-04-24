@@ -815,7 +815,7 @@ if __name__ == "__main__":
     print(f"avg_rouge:          {avg_rouge:.4f}")
     print(f"avg_noise_rate:     {avg_noise_rate:.4f}" if not np.isnan(avg_noise_rate) else "avg_noise_rate:     nan")
     print(f"avg_faithfulness:       {avg_faithfulness:.4f}" if not np.isnan(avg_faithfulness) else "avg_faithfulness:       nan")
-    print(f"avg_llm_judge_faith:    {avg_llm_judge_faith:.4f}" if not np.isnan(avg_llm_judge_faith) else "avg_llm_judge_faith:    nan")
+    print(f"avg_llm_judge_faithfulness:    {avg_llm_judge_faith:.4f}" if not np.isnan(avg_llm_judge_faith) else "avg_llm_judge_faithfulness:    nan")
     print(f"avg_retrieval_secs: {avg_retrieval_secs:.3f}")
     print(f"avg_llm_secs:       {avg_llm_secs:.3f}")
     print(f"avg_tokens:         {avg_tokens:.1f}")
