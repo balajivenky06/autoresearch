@@ -1,0 +1,47 @@
+=================================================================
+  GENERALIZABILITY REPORT — Unit Test Generation
+=================================================================
+
+Models tested: llama3.2:latest, phi4:14b, qwen3-coder:30b, qwen3.5:9b
+Methods:       plain_llm, random_rag, simple_rag, iterative_critique
+
+val_score (best run per method/model):
+Method                   llama3.2:latest   phi4:14b          qwen3-coder:30b   qwen3.5:9b        
+-------------------------------------------------------------------------------------------------
+Plain LLM                0.6800            0.6843            0.7069            0.6904            
+Random RAG               0.6726            0.6819            0.7039            0.7009            
+Simple RAG               0.6720            0.6842            0.7020            0.6918            
+Iterative Critique       0.6633            0.6814            0.7236            0.6197            
+
+Method rankings per model (1=best):
+Method                   llama3.2:latest   phi4:14b          qwen3-coder:30b   qwen3.5:9b        
+-------------------------------------------------------------------------------------------------
+Plain LLM                1                 1                 2                 3                 
+Random RAG               2                 3                 3                 1                 
+Simple RAG               3                 2                 4                 2                 
+Iterative Critique       4                 4                 1                 4                 
+
+Spearman rank correlation between models (ρ):
+                 llama3.2:latest  phi4:14b  qwen3-coder:30b  qwen3.5:9b
+llama3.2:latest              1.0       0.8             -0.2         0.4
+phi4:14b                     0.8       1.0             -0.4         0.2
+qwen3-coder:30b             -0.2      -0.4              1.0        -0.8
+qwen3.5:9b                   0.4       0.2             -0.8         1.0
+
+Spearman p-values (two-sided):
+                 llama3.2:latest  phi4:14b  qwen3-coder:30b  qwen3.5:9b
+llama3.2:latest              0.0       0.2              0.8         0.6
+phi4:14b                     0.2       0.0              0.6         0.8
+qwen3-coder:30b              0.8       0.6              0.0         0.2
+qwen3.5:9b                   0.6       0.8              0.2         0.0
+
+Verdict: DOES NOT FULLY GENERALIZE (min ρ=-0.800 < 0.8)
+(Threshold ρ=0.8: Zar 1984; Jureczko & Madeyski 2015 IST)
+
+Faithfulness (avg) per method/model:
+Method                   llama3.2:latest   phi4:14b          qwen3-coder:30b   qwen3.5:9b        
+-------------------------------------------------------------------------------------------------
+Simple RAG               0.2025            0.1288            0.1387            0.0754            
+Iterative Critique       0.1771            0.1388            0.1216            0.0850            
+
+=================================================================

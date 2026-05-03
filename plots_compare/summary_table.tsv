@@ -1,0 +1,7 @@
+task	method	val_score	faithfulness	noise_rate	total_secs	rouge
+Test Oracle	Plain LLM	0.7069			9.4840	0.1740
+Test Oracle	"Random
+RAG"	0.7039	0.1211		13.0240	0.1351
+Test Oracle	Simple RAG	0.7020	0.1387		7.0360	0.1257
+Test Oracle	"Iterative
+Critique"	0.7236	0.1216		30.7420	0.1462
