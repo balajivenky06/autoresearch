@@ -15,12 +15,14 @@ autoresearch/
 ├── statistical_tests.py        — Kruskal-Wallis, Mann-Whitney U, Bonferroni, Cohen's d, weight sensitivity
 ├── human_eval_sampler.py       — Stratified annotation sampler (40 samples) + post-annotation validation
 ├── compare_tasks.py            — Cross-task comparison: unit test vs docstring generation (RQ4)
+├── mutation_testing.py         — Mutation testing: defect-detection capability of generated tests (SE metric)
 ├── test_run.py                 — Pipeline verification: smoke-tests all 4 methods on 2 samples
 ├── unitest_colab.ipynb         — Colab notebook: full 64-run multi-model sweep on A100
 ├── program_unitest.md          — This file: agent instructions and repo knowledge base
 ├── results_unitest.tsv         — Experiment results (auto-generated, not committed)
 ├── plots_unitest/              — 13 visualization charts (auto-generated)
 ├── plots_generalizability/     — Cross-model analysis charts + reports (auto-generated)
+├── plots_mutation/             — Mutation testing charts + report (auto-generated)
 └── pyproject.toml              — Dependencies (Python ≥3.10)
 ```
 
@@ -218,6 +220,63 @@ LOOP FOREVER:
 
 **Simplicity criterion**: simpler changes that improve val_score are better than complex ones that barely move the needle.
 
+## Mutation Testing (SE-Relevant Metric)
+
+Addresses EMSE reviewer feedback: "Do generated tests actually detect software defects?"
+
+**Mutation operators** (AST-based, adapted from mutmut/PIT):
+- Arithmetic: `+ ↔ -`, `* ↔ /`
+- Comparison: `== ↔ !=`, `< ↔ >=`, `> ↔ <=`
+- Boundary: integer constants ±1
+- Return: `return x → return None`
+- Negate: `True ↔ False`
+
+**Metric**: `mutation_kill_rate` = mutants detected / (total mutants − equivalent mutants)
+
+**Test filtering**: Generated tests are pre-filtered to only those that pass on the original (unmutated) code. This is standard practice in mutation testing research — LLMs sometimes generate tests with spurious assertions (e.g., expecting `ValueError` when function raises `IndexError`). The filtering isolates defect-detection capability from test correctness.
+
+**Usage**:
+```bash
+# With Colab checkpoints (per-sample generated tests):
+python mutation_testing.py --checkpoints-dir checkpoints/
+
+# Local re-generation (small subset, no checkpoints needed):
+python mutation_testing.py --regenerate --max-samples 20 --model llama3.2:latest
+
+# Specific methods only:
+python mutation_testing.py --regenerate --max-samples 20 --model llama3.2:latest --methods plain_llm/base,simple_rag/base
+
+# Re-plot existing results:
+python mutation_testing.py --results-only
+```
+
+**Output**: `results_mutation.tsv`, `plots_mutation/` (kill_rate_by_method.png, kill_rate_by_operator.png, mutation_report.txt)
+
+**Integration with Colab**: Step 10b in `unitest_colab.ipynb` runs mutation testing after experiments. Requires checkpoints with per-sample `generated_tests` field (train_unitest.py saves these automatically).
+
+### Mutation Testing Results (llama3.2:latest, 3B)
+
+| Method | Kill Rate | ± Std | Valid/Total | Mutants |
+|--------|-----------|-------|-------------|---------|
+| Iterative Critique | **0.875** | 0.250 | 4/11 | 19 |
+| Simple RAG | 0.788 | 0.346 | 14/20 | 88 |
+| Plain LLM | 0.744 | 0.341 | 20/20 | 108 |
+| Random RAG | 0.604 | 0.402 | 18/20 | 104 |
+
+**Per-operator kill rates** (hardest → easiest):
+- Boundary ±1: 31–50% (hardest — requires precise value assertions)
+- Arithmetic swap: 48–100%
+- Comparison negate: 58–100%
+- Negate bool: 70–100%
+- Return None: 71–100%
+
+**Key findings**:
+1. Iterative Critique produces the most defect-detecting tests (87.5%) — critique loop improves bug-finding
+2. Simple RAG improves over Plain LLM (78.8% vs 74.4%) — relevant examples guide better assertions
+3. Random RAG degrades defect detection (60.4%) — noise from irrelevant context hurts test quality
+4. Boundary mutations are universally hardest to kill — a well-known SE finding reproduced here
+5. Ground truth baseline: 91.9% kill rate (100 samples) — LLM tests approach but don't reach human-quality
+
 ## Diagnostic metrics (not in val_score)
 
 | Metric | Purpose | RQ |
@@ -250,6 +309,11 @@ LOOP FOREVER:
 
 # Cross-task comparison (requires docstring results too)
 .venv/bin/python compare_tasks.py
+
+# Mutation testing (SE-relevant defect detection metric)
+.venv/bin/python mutation_testing.py --checkpoints-dir checkpoints/
+# Or local re-generation:
+.venv/bin/python mutation_testing.py --regenerate --max-samples 10
 
 # Pipeline verification (smoke test before full run)
 .venv/bin/python test_run.py
@@ -297,7 +361,8 @@ Runs the full 64-experiment sweep on Google Colab A100. Key features:
   3. Git push every 5 experiments
 - **Disconnect resilience**: On reconnect, Drive copy of `results_unitest.tsv` is source of truth. Always restores from Drive when Drive has more data than local copy.
 - **Quick-test cleanup**: Before the main loop, rows with `samples_evaluated < 50` are automatically removed from the TSV to prevent Step 7 quick-test pollution.
-- **Steps**: Mount Drive → Install deps → Pull 4 Ollama models → Clone repo → One-time setup → 64-run sweep → Analysis → Visualize → Push
+- **Mutation testing**: After experiments complete, run `python mutation_testing.py --checkpoints-dir checkpoints/` to measure defect-detection capability. Requires checkpoints with `generated_tests` field (train_unitest.py saves these automatically).
+- **Steps**: Mount Drive → Install deps → Pull 4 Ollama models → Clone repo → One-time setup → 64-run sweep → Mutation testing → Analysis → Visualize → Push
 
 ## Research Questions
 
@@ -308,6 +373,7 @@ Runs the full 64-experiment sweep on Google Colab A100. Key features:
 | RQ3 | How faithful are generated tests to retrieved context? | avg_faithfulness, avg_llm_judge_faithfulness |
 | RQ4 | What is the cost-faithfulness trade-off? | avg_retrieval_secs, avg_llm_secs |
 | RQ5 | Do results generalize across benchmarks? | val_score_humaneval, val_score_mbpp, val_score_classeval |
+| RQ6 | Do generated tests detect real software defects? | mutation_kill_rate (SE-relevant) |
 
 ## Statistical Methodology
 

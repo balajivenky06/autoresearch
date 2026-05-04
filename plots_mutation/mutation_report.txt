@@ -1,0 +1,40 @@
+======================================================================
+  MUTATION TESTING REPORT — Unit Test Generation
+  SE-Relevant Metric: Do generated tests detect injected defects?
+======================================================================
+
+Experiments analyzed: 4
+Total mutants generated: 319
+Total mutants killed: 189
+Total equivalent mutants: 26
+
+Method                                 Kill Rate      ± Std   Killed    Total    Equiv      N
+------------------------------------------------------------------------------------------
+  Iterative Critique                    0.8750     0.2500       15       19        3      4
+  Plain LLM                             0.7441     0.3412       62      108        8     20
+  Random RAG                            0.6038     0.4023       53      104        8     18
+  Simple RAG                            0.7882     0.3456       59       88        7     14
+
+Per-Operator Kill Rates:
+Method                                arithmetic     boundary   comparison  negate_bool  return_none
+----------------------------------------------------------------------------------------------------
+  Iterative Critique                      1.0000       0.4000       0.7500       1.0000       1.0000
+  Plain LLM                               0.5600       0.3714       0.5833       0.7000       0.8077
+  Random RAG                              0.4800       0.3143       0.6000       0.7000       0.7083
+  Simple RAG                              0.6667       0.5000       1.0000       0.7000       0.7500
+
+Statistical Comparison:
+  Best method: Iterative Critique (kill_rate=0.8750)
+
+======================================================================
+  INTERPRETATION FOR THESIS
+======================================================================
+
+Mutation kill rate measures the practical defect-detection capability
+of generated test oracles. A kill rate of 0.X means X% of injected
+defects (operator mutations) are caught by the generated tests.
+
+This directly addresses the SE question: 'Do generated tests
+actually help developers find bugs in software?'
+
+======================================================================

@@ -732,6 +732,9 @@ if __name__ == "__main__":
         metrics.update(exec_result)
 
         metrics["source"] = src
+        metrics["generated_tests"] = tests        # saved for mutation testing analysis
+        metrics["function_code"] = fn_code         # saved for mutation testing analysis
+        metrics["ground_truth_tests"] = gt_tests   # saved for mutation testing analysis
         metrics_list.append(metrics)
         step += 1
 
@@ -870,7 +873,7 @@ if __name__ == "__main__":
         _writer.writerow(result_row)
     print(f"Results appended → {tsv_path}")
 
-    # Clear checkpoint AFTER TSV is safely written.
-    # Ordering matters: if TSV write fails, the checkpoint survives so the
-    # experiment can be re-run and will resume from the last saved sample.
-    _clear_checkpoint()
+    # Keep checkpoint for mutation testing analysis (generated_tests field).
+    # Previously cleared here; now retained so mutation_testing.py can read them.
+    # To manually clear: delete files in .checkpoints/ or Drive checkpoints/
+    # _clear_checkpoint()
