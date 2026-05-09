@@ -60,8 +60,11 @@ import pandas as pd
 # Config
 # ---------------------------------------------------------------------------
 
+# Match prepare_unitest.py: Colab uses /content/.cache, elsewhere ~/.cache
+_IN_COLAB = "google.colab" in sys.modules or Path("/content").exists()
 CACHE_DIR = Path(os.environ.get("CACHE_DIR",
-    Path.home() / ".cache" / "autoresearch_unitest"))
+    Path("/content/.cache/autoresearch_unitest") if _IN_COLAB
+    else Path.home() / ".cache" / "autoresearch_unitest"))
 DATASET_CACHE = CACHE_DIR / "eval_dataset_v3.pkl"
 
 OUTPUT_DIR = Path("plots_mutation")
