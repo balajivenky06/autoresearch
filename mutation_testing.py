@@ -509,6 +509,9 @@ def load_checkpoints(checkpoints_dir: str) -> dict:
                         "function_code": m.get("function_code", ""),
                         "ground_truth_tests": m.get("ground_truth_tests", ""),
                         "source": m.get("source", "unknown"),
+                        "method": method,
+                        "reasoning": reasoning,
+                        "model": model,
                     })
                 results[key] = samples
                 print(f"  {pkl_file.name}: {len(samples)} samples "
@@ -657,6 +660,9 @@ def regenerate_tests(dataset: list, max_samples: int = 10,
                 "function_code": sample["function_code"],
                 "ground_truth_tests": sample.get("ground_truth_tests", ""),
                 "generated_tests": generated,
+                "method": method,
+                "reasoning": reasoning,
+                "model": model,
             })
 
             print(f"\r    {i+1}/{len(samples)} ({dt:.1f}s)", end="", flush=True)
@@ -724,25 +730,29 @@ def run_mutation_analysis(checkpoint_data: dict, dataset: list) -> pd.DataFrame:
                 print(f"    {i+1}/{len(samples)} done", end="\r")
 
         if kill_rates:
-            # Parse method/reasoning from checkpoint key
-            # Key format: {method}_{reasoning}_{model} e.g. "plain_llm_base_llama3.2_latest"
             KNOWN_METHODS = {
                 "plain_llm": "Plain LLM",
                 "random_rag": "Random RAG",
                 "simple_rag": "Simple RAG",
                 "iterative_critique": "Iterative Critique",
             }
-            method_label = key
-            for raw, pretty in KNOWN_METHODS.items():
-                if key.startswith(raw):
-                    method_label = pretty
-                    break
+            # Prefer per-sample metadata (set by load_checkpoints / regenerate_tests).
+            # Fall back to parsing the key for backwards compatibility.
+            first = samples[0] if samples else {}
+            method_raw = first.get("method") or next(
+                (m for m in KNOWN_METHODS if key.startswith(m)), key
+            )
+            reasoning = first.get("reasoning", "")
+            model = first.get("model", "")
+            method_label = KNOWN_METHODS.get(method_raw, method_raw)
 
             mean_kill = np.mean(kill_rates)
             std_kill = np.std(kill_rates, ddof=1) if len(kill_rates) > 1 else 0.0
 
             row = {
                 "method": method_label,
+                "reasoning": reasoning,
+                "model": model,
                 "mean_kill_rate": round(mean_kill, 6),
                 "std_kill_rate": round(std_kill, 6),
                 "median_kill_rate": round(np.median(kill_rates), 6),
@@ -784,17 +794,31 @@ def plot_mutation_results(df: pd.DataFrame) -> None:
         return
 
     # 1. Kill rate by method
-    fig, ax = plt.subplots(figsize=(10, 6))
-    methods = df["method"].values
+    fig, ax = plt.subplots(figsize=(max(10, 1.2 * len(df)), 6))
+    # Build informative labels: "Method" or "Method (model)" or "Method (model/reasoning)"
+    has_model = "model" in df.columns and df["model"].astype(str).str.len().gt(0).any()
+    has_reasoning = "reasoning" in df.columns and df["reasoning"].astype(str).str.len().gt(0).any()
+
+    def _label(row):
+        parts = [str(row["method"])]
+        suffix = []
+        if has_model and row.get("model"):
+            suffix.append(str(row["model"]))
+        if has_reasoning and row.get("reasoning"):
+            suffix.append(str(row["reasoning"]))
+        if suffix:
+            parts.append(f"({' / '.join(suffix)})")
+        return " ".join(parts)
+
+    methods = [_label(r) for _, r in df.iterrows()]
     kill_rates = df["mean_kill_rate"].values
     stds = df["std_kill_rate"].values
 
-    colors = {"plain_llm": "#4C72B0", "random_rag": "#8172B2",
-              "simple_rag": "#DD8452", "iterative_critique": "#55A868"}
-    bar_colors = []
-    for m in methods:
-        base = m.split("/")[0]
-        bar_colors.append(colors.get(base, "#999999"))
+    method_colors = {
+        "Plain LLM": "#4C72B0", "Random RAG": "#8172B2",
+        "Simple RAG": "#DD8452", "Iterative Critique": "#55A868",
+    }
+    bar_colors = [method_colors.get(str(m), "#999999") for m in df["method"].values]
 
     bars = ax.bar(range(len(methods)), kill_rates, yerr=stds,
                   color=bar_colors, capsize=5, edgecolor="black", linewidth=0.5)
@@ -860,11 +884,22 @@ def write_mutation_report(df: pd.DataFrame) -> None:
     lines.append(f"Total mutants killed: {df['total_killed'].sum()}")
     lines.append(f"Total equivalent mutants: {df['total_equivalent'].sum()}")
 
-    lines.append(f"\n{'Method':<35} {'Kill Rate':>12} {'± Std':>10} {'Killed':>8} {'Total':>8} {'Equiv':>8} {'N':>6}")
-    lines.append("-" * 90)
+    def _row_label(r):
+        parts = [str(r['method'])]
+        bits = []
+        if 'model' in r and pd.notna(r.get('model', '')) and str(r.get('model', '')):
+            bits.append(str(r['model']))
+        if 'reasoning' in r and pd.notna(r.get('reasoning', '')) and str(r.get('reasoning', '')):
+            bits.append(str(r['reasoning']))
+        if bits:
+            parts.append(f"({'/'.join(bits)})")
+        return ' '.join(parts)
+
+    lines.append(f"\n{'Method (model/reasoning)':<45} {'Kill Rate':>12} {'± Std':>10} {'Killed':>8} {'Total':>8} {'Equiv':>8} {'N':>6}")
+    lines.append("-" * 100)
     for _, row in df.iterrows():
         lines.append(
-            f"  {row['method']:<33} {row['mean_kill_rate']:>10.4f}"
+            f"  {_row_label(row):<43} {row['mean_kill_rate']:>10.4f}"
             f" {row['std_kill_rate']:>10.4f}"
             f" {row['total_killed']:>8} {row['total_mutants']:>8}"
             f" {row['total_equivalent']:>8} {row['n_samples_valid']:>6}"
@@ -878,7 +913,7 @@ def write_mutation_report(df: pd.DataFrame) -> None:
         lines.append("-" * (35 + 13 * len(op_cols)))
         for _, row in df.iterrows():
             vals = "".join(f" {row[c]:>12.4f}" if not math.isnan(row[c]) else f" {'N/A':>12}" for c in op_cols)
-            lines.append(f"  {row['method']:<33}{vals}")
+            lines.append(f"  {_row_label(row):<43}{vals}")
 
     # Statistical comparison
     if len(df) >= 2:
@@ -986,11 +1021,31 @@ def main():
     df = run_mutation_analysis(checkpoint_data, dataset)
 
     if not df.empty:
-        df.to_csv(RESULTS_FILE, sep="\t", index=False, float_format="%.6f")
-        print(f"\nResults saved → {RESULTS_FILE}")
+        # Merge with any existing TSV: rows with the same (method, reasoning, model)
+        # are replaced by the new run; everything else is preserved. This lets you
+        # accumulate per-model results across multiple invocations.
+        if RESULTS_FILE.exists():
+            try:
+                existing = pd.read_csv(RESULTS_FILE, sep="\t")
+                key_cols = [c for c in ("method", "reasoning", "model") if c in existing.columns and c in df.columns]
+                if key_cols:
+                    keys_in_new = df[key_cols].apply(tuple, axis=1).tolist()
+                    existing_keys = existing[key_cols].apply(tuple, axis=1)
+                    keep = ~existing_keys.isin(keys_in_new)
+                    merged = pd.concat([existing[keep], df], ignore_index=True)
+                else:
+                    merged = df
+            except Exception as e:
+                print(f"  WARNING: could not merge with existing {RESULTS_FILE}: {e}; overwriting")
+                merged = df
+        else:
+            merged = df
 
-        plot_mutation_results(df)
-        write_mutation_report(df)
+        merged.to_csv(RESULTS_FILE, sep="\t", index=False, float_format="%.6f")
+        print(f"\nResults saved → {RESULTS_FILE} ({len(merged)} rows)")
+
+        plot_mutation_results(merged)
+        write_mutation_report(merged)
     else:
         print("No valid mutation results produced.")
 
