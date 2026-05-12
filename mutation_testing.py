@@ -275,6 +275,43 @@ def _wrap_bare_asserts(test_code: str) -> str:
     return "\n".join(wrapped_lines)
 
 
+def _strip_function_redefinition(test_code: str, fn_name: str) -> str:
+    """Remove top-level `def <fn_name>(...)` blocks from test_code.
+
+    Some LLMs (notably phi4) prepend a redefinition of the function under test
+    to their generated tests. When the harness writes function_code (the mutant)
+    followed by test_code, that redefinition shadows the mutant in Python's
+    module namespace, so tests call the pristine version and no mutations are
+    ever detected. Strip the redefinition so the mutant is the only version
+    in scope.
+    """
+    if not fn_name or not test_code.strip():
+        return test_code
+    try:
+        tree = ast.parse(test_code)
+    except SyntaxError:
+        # Regex fallback: strip "def fn_name(...): ... <until next top-level line>"
+        pat = re.compile(
+            rf"^def\s+{re.escape(fn_name)}\s*\([^)]*\)[^:]*:.*?(?=^\S|\Z)",
+            re.MULTILINE | re.DOTALL,
+        )
+        return pat.sub("", test_code)
+
+    keep = [n for n in tree.body
+            if not (isinstance(n, ast.FunctionDef) and n.name == fn_name)]
+    if len(keep) == len(tree.body):
+        return test_code
+
+    try:
+        return ast.unparse(ast.Module(body=keep, type_ignores=[]))
+    except Exception:
+        pat = re.compile(
+            rf"^def\s+{re.escape(fn_name)}\s*\([^)]*\)[^:]*:.*?(?=^\S|\Z)",
+            re.MULTILINE | re.DOTALL,
+        )
+        return pat.sub("", test_code)
+
+
 def run_tests_against_code(test_code: str, function_code: str,
                            timeout: int = TIMEOUT_PER_TEST) -> str:
     """
@@ -287,14 +324,16 @@ def run_tests_against_code(test_code: str, function_code: str,
     # Wrap bare asserts for pytest compatibility
     test_code = _wrap_bare_asserts(test_code)
 
+    # Extract function name and strip any LLM-prepended redefinition that
+    # would shadow function_code (the possibly-mutated version we're testing).
+    fn_match = re.search(r"def\s+(\w+)\s*\(", function_code)
+    fn_name = fn_match.group(1) if fn_match else ""
+    if fn_name:
+        test_code = _strip_function_redefinition(test_code, fn_name)
+
     # Handle HumanEval check(candidate) format
-    if "def check(candidate)" in test_code:
-        # Extract function name from function_code
-        import re as _re
-        fn_match = _re.search(r"def\s+(\w+)\s*\(", function_code)
-        if fn_match:
-            fn_name = fn_match.group(1)
-            test_code = test_code + f"\n\ndef test_humaneval():\n    check({fn_name})\n"
+    if "def check(candidate)" in test_code and fn_name:
+        test_code = test_code + f"\n\ndef test_humaneval():\n    check({fn_name})\n"
 
     try:
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -534,6 +573,38 @@ def load_checkpoints(checkpoints_dir: str) -> dict:
 # Re-generation mode (for local runs without checkpoints)
 # ---------------------------------------------------------------------------
 
+def _ollama_alive(timeout_secs: float = 3.0) -> bool:
+    """Return True if the Ollama daemon responds within timeout_secs."""
+    try:
+        import ollama as _ollama
+        # Use a thread to enforce a wall-clock timeout (the ollama client
+        # doesn't accept a per-call timeout).
+        import threading
+        result = {"ok": False}
+        def _probe():
+            try:
+                _ollama.list()
+                result["ok"] = True
+            except Exception:
+                pass
+        t = threading.Thread(target=_probe, daemon=True)
+        t.start()
+        t.join(timeout_secs)
+        return result["ok"]
+    except Exception:
+        return False
+
+
+def _wait_for_ollama(max_wait_secs: float = 120.0, poll_secs: float = 3.0) -> bool:
+    """Block until Ollama is reachable or max_wait_secs elapses. Returns True on success."""
+    deadline = time.time() + max_wait_secs
+    while time.time() < deadline:
+        if _ollama_alive():
+            return True
+        time.sleep(poll_secs)
+    return False
+
+
 def regenerate_tests(dataset: list, max_samples: int = 10,
                      model: str = None, methods: list = None) -> dict:
     """
@@ -646,11 +717,27 @@ def regenerate_tests(dataset: list, max_samples: int = 10,
             tu._llm_secs = 0.0
             tu._tokens_used = 0
 
-            try:
-                generated = generator(sample["function_code"])
-            except Exception as e:
-                print(f"    Sample {i} failed: {e}")
-                generated = ""
+            # Per-sample retry: an empty result usually means Ollama hiccupped
+            # (the train_unitest._llm wrapper swallows "Failed to connect" and
+            # returns ""). Retry up to 3 times with increasing waits, after
+            # confirming Ollama is back online.
+            generated = ""
+            for attempt in range(3):
+                try:
+                    generated = generator(sample["function_code"])
+                except Exception as e:
+                    print(f"    Sample {i} attempt {attempt+1} raised: {e}")
+                    generated = ""
+
+                if generated and generated.strip():
+                    break
+
+                # Empty result — wait for Ollama and retry
+                wait_secs = 5 * (attempt + 1)
+                print(f"    Sample {i} empty generation (attempt {attempt+1}/3); "
+                      f"waiting up to {wait_secs}s for Ollama...", flush=True)
+                if not _wait_for_ollama(max_wait_secs=wait_secs):
+                    print(f"    Ollama still unreachable after {wait_secs}s")
 
             dt = time.time() - t0
             sample_results.append({
