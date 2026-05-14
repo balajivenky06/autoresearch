@@ -70,6 +70,7 @@ DATASET_CACHE = CACHE_DIR / "eval_dataset_v3.pkl"
 OUTPUT_DIR = Path("plots_mutation")
 RESULTS_FILE = Path("results_mutation.tsv")
 MAIN_RESULTS = Path("results_unitest.tsv")
+ANALYSIS_CKPT_DIR = Path(".checkpoints_mutation_analysis")
 
 MAX_MUTANTS_PER_FUNCTION = 15   # cap to keep runtime manageable
 TIMEOUT_PER_TEST = 10           # seconds per pytest run
@@ -775,17 +776,31 @@ def run_mutation_analysis(checkpoint_data: dict, dataset: list) -> pd.DataFrame:
     """
     rows = []
 
+    ANALYSIS_CKPT_DIR.mkdir(exist_ok=True)
+
     for key, samples in checkpoint_data.items():
         print(f"\n  Analyzing: {key} ({len(samples)} samples)...")
 
-        kill_rates = []
-        total_killed = 0
-        total_mutants = 0
-        total_survived = 0
-        total_equivalent = 0
-        operator_stats = defaultdict(lambda: {"total": 0, "killed": 0})
+        # Load any prior analysis state for this key. Each entry maps
+        # sample_idx -> result dict from evaluate_mutants(). On disconnect,
+        # the next run picks up from where it left off; we only re-do the
+        # in-flight sample (which got partially mutated, never persisted).
+        analysis_ckpt = ANALYSIS_CKPT_DIR / f"{key}.pkl"
+        if analysis_ckpt.exists():
+            try:
+                with open(analysis_ckpt, "rb") as f:
+                    completed = pickle.load(f)
+                if completed:
+                    print(f"    Resuming from {len(completed)}/{len(samples)} samples")
+            except Exception:
+                completed = {}
+        else:
+            completed = {}
 
         for i, sample in enumerate(samples):
+            if i in completed:
+                continue   # already analyzed in a prior run
+
             generated = sample.get("generated_tests", "")
             func_code = sample.get("function_code", "")
             gt_tests = sample.get("ground_truth_tests", "")
@@ -798,23 +813,43 @@ def run_mutation_analysis(checkpoint_data: dict, dataset: list) -> pd.DataFrame:
                     gt_tests = dataset[idx].get("ground_truth_tests", "")
 
             if not generated or not func_code:
-                continue
+                # Mark as skipped so a resume doesn't try this sample again
+                completed[i] = {"kill_rate": float("nan"), "killed": 0,
+                                "total_mutants": 0, "survived": 0,
+                                "equivalent": 0, "per_operator": {}}
+            else:
+                completed[i] = evaluate_mutants(func_code, generated, gt_tests)
 
-            result = evaluate_mutants(func_code, generated, gt_tests)
-
-            if not math.isnan(result.get("kill_rate", float("nan"))):
-                kill_rates.append(result["kill_rate"])
-                total_killed += result["killed"]
-                total_mutants += result["total_mutants"]
-                total_survived += result["survived"]
-                total_equivalent += result["equivalent"]
-
-                for op, stats in result["per_operator"].items():
-                    operator_stats[op]["total"] += stats["total"]
-                    operator_stats[op]["killed"] += stats["killed"]
+            # Persist after every sample (resume-safe). Tempfile + rename to
+            # avoid leaving a half-written pkl if the runtime dies mid-write.
+            tmp_path = analysis_ckpt.with_suffix(".pkl.tmp")
+            with open(tmp_path, "wb") as f:
+                pickle.dump(completed, f)
+            tmp_path.replace(analysis_ckpt)
 
             if (i + 1) % 5 == 0:
                 print(f"    {i+1}/{len(samples)} done", end="\r")
+
+        # Aggregate from the full completed map (works the same whether the
+        # run finished in one go or resumed from a checkpoint).
+        kill_rates = []
+        total_killed = 0
+        total_mutants = 0
+        total_survived = 0
+        total_equivalent = 0
+        operator_stats = defaultdict(lambda: {"total": 0, "killed": 0})
+
+        for result in completed.values():
+            if math.isnan(result.get("kill_rate", float("nan"))):
+                continue
+            kill_rates.append(result["kill_rate"])
+            total_killed += result["killed"]
+            total_mutants += result["total_mutants"]
+            total_survived += result["survived"]
+            total_equivalent += result["equivalent"]
+            for op, stats in result.get("per_operator", {}).items():
+                operator_stats[op]["total"] += stats["total"]
+                operator_stats[op]["killed"] += stats["killed"]
 
         if kill_rates:
             KNOWN_METHODS = {
