@@ -445,13 +445,21 @@ def evaluate_mutants(function_code: str, test_code: str,
     """
     mutants = generate_mutants(function_code)
 
+    # per_operator is a plain dict (lazily filled via _bump) so the whole
+    # result is pickleable for the per-sample analysis-resume checkpoint.
+    per_operator: dict = {}
+
+    def _bump(op: str, field: str, by: int = 1) -> None:
+        slot = per_operator.setdefault(op, {"total": 0, "killed": 0})
+        slot[field] += by
+
     result = {
         "total_mutants": len(mutants),
         "killed": 0,
         "survived": 0,
         "equivalent": 0,
         "errors": 0,
-        "per_operator": defaultdict(lambda: {"total": 0, "killed": 0}),
+        "per_operator": per_operator,
     }
 
     if not mutants:
@@ -470,14 +478,14 @@ def evaluate_mutants(function_code: str, test_code: str,
 
     for mutant_code, description in mutants:
         operator = description.rsplit("_", 1)[0]
-        result["per_operator"][operator]["total"] += 1
+        _bump(operator, "total")
 
         mutant_result = run_tests_against_code(test_code, mutant_code)
 
         if mutant_result == "fail":
             # Mutant killed — test detected the defect
             result["killed"] += 1
-            result["per_operator"][operator]["killed"] += 1
+            _bump(operator, "killed")
         elif mutant_result == "pass":
             # Check if this is an equivalent mutant (ground truth also passes)
             if ground_truth_tests:
