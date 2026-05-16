@@ -70,7 +70,25 @@ DATASET_CACHE = CACHE_DIR / "eval_dataset_v3.pkl"
 OUTPUT_DIR = Path("plots_mutation")
 RESULTS_FILE = Path("results_mutation.tsv")
 MAIN_RESULTS = Path("results_unitest.tsv")
-ANALYSIS_CKPT_DIR = Path(".checkpoints_mutation_analysis")
+
+# Per-sample analysis-resume directory. mutation_testing.py writes here, but
+# Drive-synced copies of the same files often land under the no-dot variant.
+# _resolve_analysis_dir() prefers the dotted path (Colab runtime default) and
+# falls back to the no-dot path if that already has data, so a local re-run
+# can pick up where a Colab run left off without manual renaming.
+_ANALYSIS_CKPT_DOT    = Path(".checkpoints_mutation_analysis")
+_ANALYSIS_CKPT_NO_DOT = Path("checkpoints_mutation_analysis")
+
+
+def _resolve_analysis_dir() -> Path:
+    if _ANALYSIS_CKPT_DOT.is_dir():
+        return _ANALYSIS_CKPT_DOT
+    if _ANALYSIS_CKPT_NO_DOT.is_dir():
+        return _ANALYSIS_CKPT_NO_DOT
+    return _ANALYSIS_CKPT_DOT   # will be created on first write
+
+
+ANALYSIS_CKPT_DIR = _resolve_analysis_dir()
 
 MAX_MUTANTS_PER_FUNCTION = 15   # cap to keep runtime manageable
 TIMEOUT_PER_TEST = 10           # seconds per pytest run
@@ -1089,6 +1107,11 @@ def main():
                         help="Comma-separated method/reasoning pairs, e.g. 'plain_llm/base,simple_rag/base'")
     parser.add_argument("--results-only", action="store_true",
                         help="Only analyze existing results_mutation.tsv")
+    parser.add_argument("--models", type=str, default=None,
+                        help="Comma-separated model filter applied to "
+                             "--checkpoints-dir loads, e.g. "
+                             "'llama3.2:latest,phi4:14b'. Skips any "
+                             "checkpoint whose model field is not in the list.")
     args = parser.parse_args()
 
     OUTPUT_DIR.mkdir(exist_ok=True)
@@ -1118,6 +1141,24 @@ def main():
     # Get checkpoint data
     if args.checkpoints_dir:
         checkpoint_data = load_checkpoints(args.checkpoints_dir)
+        # Optional model filter: drop checkpoints whose first-sample model
+        # is not in the user-supplied set. Keys store model with ':' → '_',
+        # so match against the original colon form recovered from the
+        # per-sample 'model' field that load_checkpoints stamps on each entry.
+        if args.models:
+            wanted = {m.strip() for m in args.models.split(",") if m.strip()}
+            kept = {}
+            for key, samples in checkpoint_data.items():
+                first = samples[0] if samples else {}
+                m = first.get("model", "")
+                if m in wanted:
+                    kept[key] = samples
+                else:
+                    print(f"  Filter: skipping {key} (model={m!r} "
+                          f"not in {sorted(wanted)})")
+            checkpoint_data = kept
+            print(f"After --models filter: {len(checkpoint_data)} "
+                  f"checkpoint(s) remain")
     elif args.regenerate:
         methods_list = None
         if args.methods:
