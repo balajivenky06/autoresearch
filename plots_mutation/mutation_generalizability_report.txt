@@ -1,0 +1,94 @@
+==============================================================================
+  MUTATION KILL RATE — CROSS-MODEL GENERALIZABILITY REPORT
+==============================================================================
+
+Models tested: llama3.2:latest, phi4:14b, qwen3-coder:30b, qwen3.5:9b
+Methods      : plain_llm, random_rag, simple_rag, iterative_critique
+Threshold    : Spearman ρ ≥ 0.8 (Zar 1984; Jureczko & Madeyski 2015 IST)
+
+Mean kill rate per (method × model):
+  Method                llama3.2:latest       phi4:14b              qwen3-coder:30b       qwen3.5:9b            
+  --------------------------------------------------------------------------------------------------------------
+  Plain LLM             0.7219                0.8596                0.9078                0.9050                
+  Random RAG            0.6527                0.8725                0.9309                0.9752                
+  Simple RAG            0.6740                0.8966                0.9189                0.9939                
+  Iterative Critique    1.0000                0.9342                0.9516                0.9429                
+
+Method rankings per model on mean_kill_rate (1 = best):
+  Method                llama3.2:latest       phi4:14b              qwen3-coder:30b       qwen3.5:9b            
+  --------------------------------------------------------------------------------------------------------------
+  Plain LLM             2                     4                     4                     4                     
+  Random RAG            4                     3                     2                     2                     
+  Simple RAG            3                     2                     3                     1                     
+  Iterative Critique    1                     1                     1                     3                     
+
+Spearman ρ between models on mean_kill_rate:
+                   llama3.2:latest  phi4:14b  qwen3-coder:30b  qwen3.5:9b
+  llama3.2:latest              1.0       0.4              0.2        -0.6
+  phi4:14b                     0.4       1.0              0.8         0.4
+  qwen3-coder:30b              0.2       0.8              1.0         0.2
+  qwen3.5:9b                  -0.6       0.4              0.2         1.0
+
+Spearman p-values (two-sided):
+                   llama3.2:latest  phi4:14b  qwen3-coder:30b  qwen3.5:9b
+  llama3.2:latest              NaN       0.6              0.8         0.4
+  phi4:14b                     0.6       NaN              0.2         0.6
+  qwen3-coder:30b              0.8       0.2              NaN         0.8
+  qwen3.5:9b                   0.4       0.6              0.8         NaN
+
+VERDICTS (using min off-diagonal ρ):
+  overall (mean_kill_rate)      min ρ = -0.600   mean ρ = +0.233   → DOES NOT FULLY GENERALIZE
+  kill_arithmetic               min ρ = -1.000   mean ρ = +0.150   → DOES NOT FULLY GENERALIZE
+  kill_boundary                 min ρ = +0.316   mean ρ = +0.697   → DOES NOT FULLY GENERALIZE
+  kill_comparison               min ρ = +0.632   mean ρ = +0.802   → DOES NOT FULLY GENERALIZE
+  kill_negate_bool              min ρ = +0.000   mean ρ = +0.385   → DOES NOT FULLY GENERALIZE
+  kill_return_none              min ρ = -0.949   mean ρ = -0.239   → DOES NOT FULLY GENERALIZE
+
+Per-operator ρ matrices:
+
+  [kill_arithmetic]
+                   llama3.2:latest  phi4:14b  qwen3-coder:30b  qwen3.5:9b
+  llama3.2:latest              1.0      -0.5             -1.0         1.0
+  phi4:14b                    -0.5       1.0              0.8         0.4
+  qwen3-coder:30b             -1.0       0.8              1.0         0.2
+  qwen3.5:9b                   1.0       0.4              0.2         1.0
+
+  [kill_boundary]
+                   llama3.2:latest  phi4:14b  qwen3-coder:30b  qwen3.5:9b
+  llama3.2:latest            1.000     1.000            0.632       0.800
+  phi4:14b                   1.000     1.000            0.632       0.800
+  qwen3-coder:30b            0.632     0.632            1.000       0.316
+  qwen3.5:9b                 0.800     0.800            0.316       1.000
+
+  [kill_comparison]
+                   llama3.2:latest  phi4:14b  qwen3-coder:30b  qwen3.5:9b
+  llama3.2:latest            1.000     0.632            0.775       0.775
+  phi4:14b                   0.632     1.000            0.816       0.816
+  qwen3-coder:30b            0.775     0.816            1.000       1.000
+  qwen3.5:9b                 0.775     0.816            1.000       1.000
+
+  [kill_negate_bool]
+                   llama3.2:latest  phi4:14b  qwen3-coder:30b  qwen3.5:9b
+  llama3.2:latest            1.000     0.000            0.894       0.258
+  phi4:14b                   0.000     1.000            0.000       0.577
+  qwen3-coder:30b            0.894     0.000            1.000       0.577
+  qwen3.5:9b                 0.258     0.577            0.577       1.000
+
+  [kill_return_none]
+                   llama3.2:latest  phi4:14b  qwen3-coder:30b  qwen3.5:9b
+  llama3.2:latest            1.000    -0.800           -0.105      -0.949
+  phi4:14b                  -0.800     1.000           -0.211       0.632
+  qwen3-coder:30b           -0.105    -0.211            1.000       0.000
+  qwen3.5:9b                -0.949     0.632            0.000       1.000
+
+==============================================================================
+INTERPRETATION
+==============================================================================
+  - ρ ≥  0.8: strong agreement; ranking is model-agnostic.
+  - 0.6 ≤ ρ < 0.8: moderate agreement; some inversion.
+  - 0.0 ≤ ρ < 0.6: weak agreement; ranking depends on the LLM.
+  - ρ <  0.0: inverted ranking; methods rank inversely across LLMs.
+
+  A failing overall verdict alongside a passing boundary verdict
+  (or vice versa) is a useful finding: it identifies which
+  defect-type's ordering is universal vs. LLM-dependent.
