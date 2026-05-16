@@ -1,0 +1,88 @@
+==============================================================================
+ MUTATION MIXED-EFFECTS REPORT  (metric = kill_rate)
+==============================================================================
+
+Observations: 409
+Models      : ['llama3.2_latest', 'phi4_14b', 'qwen3-coder_30b', 'qwen3.5_9b']
+Methods     : ['iterative_critique', 'plain_llm', 'random_rag', 'simple_rag']
+Source samples (sample_idx levels): 30
+
+==============================================================================
+ 1. DESCRIPTIVES (per method × model)
+==============================================================================
+  model                 method                    n     mean      std
+------------------------------------------------------------------------------
+  llama3.2_latest       Iterative Critique        4   1.0000   0.0000
+  llama3.2_latest       Plain LLM                29   0.7219   0.3722
+  llama3.2_latest       Random RAG               22   0.6527   0.3800
+  llama3.2_latest       Simple RAG               20   0.6740   0.4090
+  phi4_14b              Iterative Critique       19   0.9342   0.2334
+  phi4_14b              Plain LLM                30   0.8596   0.3302
+  phi4_14b              Random RAG               30   0.8725   0.2949
+  phi4_14b              Simple RAG               26   0.8966   0.2750
+  qwen3-coder_30b       Iterative Critique       29   0.9516   0.1550
+  qwen3-coder_30b       Plain LLM                30   0.9078   0.2503
+  qwen3-coder_30b       Random RAG               30   0.9309   0.2116
+  qwen3-coder_30b       Simple RAG               30   0.9189   0.2132
+  qwen3.5_9b            Iterative Critique       20   0.9429   0.2242
+  qwen3.5_9b            Plain LLM                30   0.9050   0.2532
+  qwen3.5_9b            Random RAG               30   0.9752   0.0761
+  qwen3.5_9b            Simple RAG               30   0.9939   0.0332
+
+==============================================================================
+ 2. TYPE-III ANOVA  (kill_rate ~ method + model + sample_idx)
+==============================================================================
+  Method-effect F-test is the omnibus test of interest.
+
+  term                          sum_sq    df         F         p  sig
+------------------------------------------------------------------------------
+  Intercept                     7.5731     1  182.4819    <0.001    *
+  C(method)                     0.0989     3    0.7945    0.4976     
+  C(model)                      2.7557     3   22.1342    <0.001    *
+  C(sample_idx)                11.8097    29    9.8126    <0.001    *
+  Residual                     15.4797   373       nan       nan     
+
+==============================================================================
+ 3. TUKEY HSD POST-HOC  (method, family-wise α = 0.05)
+==============================================================================
+  Tukey controls the family-wise error rate over all 6 method pairs.
+
+  group1                group2                  meandiff     p_adj     lower     upper   reject
+------------------------------------------------------------------------------
+  Iterative Critique    Plain LLM                -0.0976    0.0798   -0.2028    0.0076    False
+  Iterative Critique    Random RAG               -0.0748    0.2685   -0.1813    0.0316    False
+  Iterative Critique    Simple RAG               -0.0588    0.4938   -0.1664    0.0488    False
+  Plain LLM             Random RAG                0.0228    0.9207   -0.0699    0.1156    False
+  Plain LLM             Simple RAG                0.0388    0.7114   -0.0553    0.1329    False
+  Random RAG            Simple RAG                0.0160    0.9729   -0.0795    0.1115    False
+
+==============================================================================
+ 4. MIXED-LM  (sample_idx as random intercept)
+==============================================================================
+  Random:  intercept | sample_idx  (30 source problems)
+  Fixed :  C(method) + C(model)
+  REML estimation; method t-tests use Satterthwaite df.
+
+  AIC = nan   BIC = nan   log-likelihood = 20.58
+  Variance(intercept | sample_idx) = 0.027132
+  Residual variance                = 0.041502
+
+  term                                          coef        se        z         p  sig
+------------------------------------------------------------------------------
+  Intercept                                   0.7390    0.0462   15.987    <0.001    *
+  C(method)[T.plain_llm]                     -0.0455    0.0311   -1.461    0.1441     
+  C(method)[T.random_rag]                    -0.0292    0.0314   -0.932    0.3516     
+  C(method)[T.simple_rag]                    -0.0155    0.0316   -0.492    0.6228     
+  C(model)[T.phi4_14b]                        0.1716    0.0312    5.497    <0.001    *
+  C(model)[T.qwen3-coder_30b]                 0.2107    0.0307    6.864    <0.001    *
+  C(model)[T.qwen3.5_9b]                      0.2392    0.0309    7.729    <0.001    *
+  Group Var                                   0.6537    0.1986    3.292    <0.001    *
+
+==============================================================================
+ INTERPRETATION
+==============================================================================
+  Method's main F-test is NOT significant at α=0.05  (F=0.794, p=0.4976).
+  The Tukey HSD post-hoc still reports raw pair-wise estimates,
+  but family-wise α prevents calling any pair significant.
+
+  Mixed-LM contrasts (vs plain_llm baseline): 0/3 method dummies have p<0.05.
