@@ -59,6 +59,18 @@ METHOD_LABELS = {
     "iterative_critique": "Iterative Critique",
 }
 
+# Per-operator analysis. Boundary is the historically hardest mutator
+# (±1 on integer constants) and is least subject to the 1.0 ceiling that
+# bites the overall kill rate on capable models.
+OPERATORS = ["arithmetic", "boundary", "comparison", "negate_bool", "return_none"]
+OPERATOR_LABELS = {
+    "arithmetic":  "Arithmetic (+ ↔ -, * ↔ /)",
+    "boundary":    "Boundary (n ↔ n±1)",
+    "comparison":  "Comparison (==/!=, </>=, >/<=)",
+    "negate_bool": "Negate Boolean (True ↔ False)",
+    "return_none": "Return None (return x → return None)",
+}
+
 ALPHA           = 0.05
 N_PAIRS         = len(list(itertools.combinations(METHODS, 2)))   # 6
 BONFERRONI_A    = ALPHA / N_PAIRS                                  # 0.00833...
@@ -154,7 +166,8 @@ def load_per_sample_kill_rates() -> pd.DataFrame:
             kr = result.get("kill_rate", float("nan"))
             if isinstance(kr, float) and math.isnan(kr):
                 continue
-            rows.append({
+
+            row = {
                 "method":        method,
                 "reasoning":     reasoning,
                 "model":         model,
@@ -163,7 +176,21 @@ def load_per_sample_kill_rates() -> pd.DataFrame:
                 "total_mutants": result.get("total_mutants", 0),
                 "killed":        result.get("killed", 0),
                 "equivalent":    result.get("equivalent", 0),
-            })
+            }
+
+            # Per-operator kill rates (killed / total) for samples where the
+            # operator actually produced any mutants. NaN when the sample's
+            # function had no mutants of this kind — those rows get filtered
+            # downstream in the per-operator slices.
+            per_op = result.get("per_operator", {}) or {}
+            for op in OPERATORS:
+                stats_op = per_op.get(op) or {}
+                total = stats_op.get("total", 0)
+                killed_op = stats_op.get("killed", 0)
+                row[f"kill_rate_{op}"] = (killed_op / total) if total > 0 \
+                    else float("nan")
+
+            rows.append(row)
 
     if not rows:
         print("ERROR: no per-sample kill rates extracted.")
@@ -289,6 +316,21 @@ def cohens_dz(diffs: np.ndarray) -> float:
     if sd == 0:
         return float("nan")
     return float(np.mean(diffs) / sd)
+
+
+def slice_for_operator(df: pd.DataFrame, op: str) -> pd.DataFrame:
+    """
+    Return a per-sample frame where 'kill_rate' is the operator-specific
+    kill rate. Samples whose function had no mutants of this operator type
+    (NaN in the source column) are dropped — they don't carry information.
+    """
+    col = f"kill_rate_{op}"
+    if col not in df.columns:
+        return df.iloc[0:0]
+    keep_cols = ["method", "reasoning", "model", "sample_idx", col]
+    sub = df[keep_cols].copy()
+    sub = sub.rename(columns={col: "kill_rate"})
+    return sub.dropna(subset=["kill_rate"])
 
 
 def pairwise_wilcoxon(wide: pd.DataFrame) -> pd.DataFrame:
@@ -538,8 +580,81 @@ def write_report(per_sample: pd.DataFrame, tsv: pd.DataFrame) -> str:
                         build_paired_matrix(per_sample[per_sample["model"] == m]))
     _write_wilcoxon("pooled (all models)", pooled_wide)
 
+    # ---- Per-operator paired tests ----------------------------------------
+    lines.append(_h("5. PER-OPERATOR PAIRED TESTS (Friedman + Wilcoxon per mutator)"))
+    lines.append("  The overall kill rate hits a 1.0 ceiling on capable models,")
+    lines.append("  killing rank-test power. Per-operator kill rates spread more —")
+    lines.append("  especially BOUNDARY (n ↔ n±1), historically the hardest mutator.")
+    lines.append("  Samples whose function had no mutants of an operator are dropped.")
+    lines.append("")
+
+    # Per-operator pooled-Friedman summary up front (the headline table).
+    lines.append(f"  POOLED FRIEDMAN PER OPERATOR")
+    lines.append(f"  {'operator':<14}{'n_blocks':>10}  {'chi2':>10}  {'p':>10}  {'reject H₀?':>12}")
+    lines.append(_hline())
+    op_summaries = {}
+    for op in OPERATORS:
+        op_df = slice_for_operator(per_sample, op)
+        pooled_op_blocks = []
+        for m in models:
+            wide_m = build_paired_matrix(op_df[op_df["model"] == m])
+            if not wide_m.empty:
+                pooled_op_blocks.append(wide_m.reset_index(drop=True))
+        pooled_op_wide = (pd.concat(pooled_op_blocks, ignore_index=True)
+                          if pooled_op_blocks else pd.DataFrame(columns=METHODS))
+        fr = friedman_paired(pooled_op_wide)
+        op_summaries[op] = (fr, pooled_op_wide)
+        verdict = "yes" if (not math.isnan(fr["p"]) and
+                            fr["p"] < ALPHA) else "no"
+        lines.append(
+            f"  {op:<14}{fr['n_blocks']:>10}  {fr['chi2']:>10.4f}  "
+            f"{fmt_p(fr['p']):>10}  {verdict:>12}"
+        )
+    lines.append("")
+
+    # Pairwise Wilcoxon for each operator (compact, only print significant
+    # pairs at top, full table below).
+    for op in OPERATORS:
+        fr, pooled_op_wide = op_summaries[op]
+        lines.append(f"  [POOLED — operator = {op}]   "
+                     f"Friedman chi2={fr['chi2']:.3f}, "
+                     f"p={fmt_p(fr['p'])}, n_blocks={fr['n_blocks']}")
+        lines.append(f"    {'method_a vs method_b':<42}"
+                     f"{'n_pairs':>8}  {'W':>9} {'p_raw':>9} {'p_adj':>9} "
+                     f"{'dz':>8} {'effect':>11} sig")
+        lines.append("    " + "-" * 113)
+        wx = pairwise_wilcoxon(pooled_op_wide)
+        for _, r in wx.iterrows():
+            pair = f"{METHOD_LABELS[r['a']]} vs {METHOD_LABELS[r['b']]}"
+            sig_mark = "*" if r["sig"] else " "
+            lines.append(
+                f"    {pair:<42}{r['n_pairs']:>8}  "
+                f"{r['W']:>9.1f} {fmt_p(r['p_raw']):>9} {fmt_p(r['p_adj']):>9} "
+                f"{fmt_d(r['dz']):>8} {r['effect']:>11} {sig_mark}"
+            )
+        lines.append("")
+
+    # ---- Per-operator x per-model Friedman (terse, no pairwise) -----------
+    lines.append("  PER-MODEL FRIEDMAN PER OPERATOR (block = sample_idx)")
+    header = f"  {'operator':<14}" + "".join(f"{m:>22}" for m in models)
+    lines.append(header)
+    lines.append(_hline())
+    for op in OPERATORS:
+        op_df = slice_for_operator(per_sample, op)
+        cells = []
+        for m in models:
+            wide_m = build_paired_matrix(op_df[op_df["model"] == m])
+            fr = friedman_paired(wide_m)
+            if math.isnan(fr["p"]):
+                cells.append(f"  n={fr['n_blocks']:<3} p=  nan")
+            else:
+                sig = "*" if fr["p"] < ALPHA else " "
+                cells.append(f"  n={fr['n_blocks']:<3} p={fmt_p(fr['p']):<6}{sig}")
+        lines.append(f"  {op:<14}" + "".join(f"{c:>22}" for c in cells))
+    lines.append("")
+
     # ---- Aggregated TSV (covers llama3.2 + phi4 which lack per-sample) ----
-    lines.append(_h("5. AGGREGATED MEANS FROM results_mutation.tsv"))
+    lines.append(_h("6. AGGREGATED MEANS FROM results_mutation.tsv"))
     lines.append("  (Per-sample stats above use .checkpoints_mutation_analysis/.")
     lines.append("   For llama3.2 and phi4, only the aggregated mean is available")
     lines.append("   because those models were analysed before per-sample resume")
@@ -644,6 +759,38 @@ def main() -> int:
         found_any = True
     if not found_any:
         print("  (none)")
+
+    # Per-operator headline — focuses on boundary, the historically hardest
+    # mutator and the one least subject to the kill-rate ceiling.
+    print()
+    print("=" * 60)
+    print("PER-OPERATOR HEADLINE — BOUNDARY (n ↔ n±1, hardest mutator)")
+    print("=" * 60)
+    boundary_df = slice_for_operator(per_sample, "boundary")
+    boundary_blocks = []
+    for m in models:
+        wide_m = build_paired_matrix(boundary_df[boundary_df["model"] == m])
+        if not wide_m.empty:
+            boundary_blocks.append(wide_m.reset_index(drop=True))
+    boundary_wide = (pd.concat(boundary_blocks, ignore_index=True)
+                     if boundary_blocks else pd.DataFrame(columns=METHODS))
+    fr_b = friedman_paired(boundary_wide)
+    b_verdict = "REJECT H₀" if (not math.isnan(fr_b["p"]) and
+                                 fr_b["p"] < ALPHA) else "FAIL TO REJECT"
+    print(f"Friedman (pooled, paired): chi2={fr_b['chi2']:.4f} "
+          f"p={fmt_p(fr_b['p'])}   ({b_verdict}, n_blocks={fr_b['n_blocks']})")
+    print()
+    print("Significant Wilcoxon pairs on boundary kill rate "
+          f"(Bonferroni p_adj < {ALPHA}):")
+    wx_b = pairwise_wilcoxon(boundary_wide)
+    sig_b = wx_b[wx_b["sig"]]
+    if sig_b.empty:
+        print("  (none)")
+    else:
+        for _, r in sig_b.iterrows():
+            print(f"  {METHOD_LABELS[r['a']]:<20} vs "
+                  f"{METHOD_LABELS[r['b']]:<20} p_adj={fmt_p(r['p_adj'])}  "
+                  f"dz={fmt_d(r['dz'])} ({r['effect']})")
 
     return 0
 
