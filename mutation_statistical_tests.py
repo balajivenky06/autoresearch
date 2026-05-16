@@ -240,6 +240,114 @@ def pairwise_mannwhitney(df: pd.DataFrame) -> pd.DataFrame:
 
 
 # ---------------------------------------------------------------------------
+# Paired tests (Friedman + Wilcoxon signed-rank)
+#
+# The mutation-testing design is paired-by-design: within a given model,
+# all four methods are exercised on the SAME 30 source samples (same
+# `sample_idx` 0..29 across the 4 analysis pkls). Treating the per-sample
+# kill rates as independent groups throws away that pairing, which inflates
+# the variance estimate and kills statistical power. The paired tests below
+# block by sample_idx so between-sample differences cancel out.
+# ---------------------------------------------------------------------------
+
+def build_paired_matrix(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Pivot per-sample kill rates into a sample_idx × method matrix.
+
+    df is expected to be a single-model slice. Returns a DataFrame with one
+    row per sample_idx, columns = METHODS, values = kill_rate. Rows with any
+    missing method are dropped so all paired tests operate on complete cases.
+    """
+    if df.empty:
+        return pd.DataFrame(columns=METHODS)
+    wide = df.pivot_table(index="sample_idx", columns="method",
+                          values="kill_rate", aggfunc="first")
+    # Keep only the standard 4 methods (in canonical order) that actually
+    # appear in this slice, then drop incomplete rows.
+    present = [m for m in METHODS if m in wide.columns]
+    wide = wide[present].dropna()
+    return wide
+
+
+def friedman_paired(wide: pd.DataFrame) -> dict:
+    """Friedman chi-square on a paired sample_idx × method matrix."""
+    if wide.shape[0] < 2 or wide.shape[1] < 2:
+        return {"chi2": float("nan"), "p": float("nan"),
+                "n_blocks": wide.shape[0], "k": wide.shape[1]}
+    cols = [wide[c].values for c in wide.columns]
+    chi2, p = stats.friedmanchisquare(*cols)
+    return {"chi2": float(chi2), "p": float(p),
+            "n_blocks": wide.shape[0], "k": wide.shape[1]}
+
+
+def cohens_dz(diffs: np.ndarray) -> float:
+    """Paired-samples effect size: mean(diff) / std(diff). NaN if std=0."""
+    diffs = np.asarray(diffs, dtype=float)
+    if len(diffs) < 2:
+        return float("nan")
+    sd = float(np.std(diffs, ddof=1))
+    if sd == 0:
+        return float("nan")
+    return float(np.mean(diffs) / sd)
+
+
+def pairwise_wilcoxon(wide: pd.DataFrame) -> pd.DataFrame:
+    """
+    All 6 pairwise Wilcoxon signed-rank tests on the paired matrix.
+
+    Each comparison uses only rows where both methods are present (already
+    guaranteed by build_paired_matrix.dropna()). When every difference is
+    zero, scipy raises — we report that as p=nan but mark the pair as
+    non-significant with negligible effect.
+    """
+    out = []
+    cols_present = list(wide.columns)
+    for a, b in itertools.combinations(METHODS, 2):
+        if a not in cols_present or b not in cols_present:
+            out.append({"a": a, "b": b, "n_pairs": 0,
+                        "W": float("nan"), "p_raw": float("nan"),
+                        "p_adj": float("nan"), "dz": float("nan"),
+                        "effect": "N/A", "sig": False})
+            continue
+        diffs = (wide[a] - wide[b]).values
+        n_pairs = len(diffs)
+        nonzero = np.sum(diffs != 0)
+        if n_pairs < 2 or nonzero == 0:
+            out.append({"a": a, "b": b, "n_pairs": n_pairs,
+                        "W": float("nan"), "p_raw": float("nan"),
+                        "p_adj": float("nan"),
+                        "dz": cohens_dz(diffs),
+                        "effect": effect_label(cohens_dz(diffs)),
+                        "sig": False})
+            continue
+        try:
+            W, p_raw = stats.wilcoxon(diffs, zero_method="wilcox",
+                                      alternative="two-sided")
+        except ValueError:
+            out.append({"a": a, "b": b, "n_pairs": n_pairs,
+                        "W": float("nan"), "p_raw": float("nan"),
+                        "p_adj": float("nan"),
+                        "dz": cohens_dz(diffs),
+                        "effect": effect_label(cohens_dz(diffs)),
+                        "sig": False})
+            continue
+        p_adj = min(p_raw * N_PAIRS, 1.0)
+        dz = cohens_dz(diffs)
+        out.append({
+            "a":      a,
+            "b":      b,
+            "n_pairs": n_pairs,
+            "W":      float(W),
+            "p_raw":  float(p_raw),
+            "p_adj":  float(p_adj),
+            "dz":     float(dz) if not math.isnan(dz) else float("nan"),
+            "effect": effect_label(dz),
+            "sig":    bool(p_adj < ALPHA),
+        })
+    return pd.DataFrame(out)
+
+
+# ---------------------------------------------------------------------------
 # Report writer
 # ---------------------------------------------------------------------------
 
@@ -362,8 +470,76 @@ def write_report(per_sample: pd.DataFrame, tsv: pd.DataFrame) -> str:
 
     _write_table("pooled (all models)", per_sample)
 
+    # ---- Paired tests (Friedman + Wilcoxon signed-rank) -------------------
+    lines.append(_h("4. PAIRED TESTS (Friedman + Wilcoxon, blocked by sample_idx)"))
+    lines.append("  All 4 methods share the same 30 source samples within a model,")
+    lines.append("  so we can test the difference WITHIN sample (paired) instead of")
+    lines.append("  treating methods as independent groups. This typically has more")
+    lines.append("  power because between-sample variance is blocked out.")
+    lines.append("")
+    lines.append(f"  Friedman chi-square — H₀: all methods have the same distribution")
+    lines.append(f"  Wilcoxon signed-rank — H₀: median(method_a − method_b) = 0")
+    lines.append(f"  Cohen's dz = mean(diff) / std(diff)")
+    lines.append("")
+
+    # Friedman per model + pooled
+    lines.append(f"  {'scope':<26}{'n_blocks':>10}  {'k':>4}  {'chi2':>10}  {'p':>10}  {'reject H₀?':>12}")
+    lines.append(_hline())
+    for m in models:
+        wide = build_paired_matrix(per_sample[per_sample["model"] == m])
+        fr = friedman_paired(wide)
+        verdict = "yes" if (not math.isnan(fr["p"]) and fr["p"] < ALPHA) else "no"
+        lines.append(
+            f"  {('model = ' + m):<26}{fr['n_blocks']:>10}  {fr['k']:>4}  "
+            f"{fr['chi2']:>10.4f}  {fmt_p(fr['p']):>10}  {verdict:>12}"
+        )
+    # Pooled: stack the per-model paired matrices so each (model, sample_idx)
+    # is a separate block. This preserves pairing while combining models.
+    paired_blocks = []
+    for m in models:
+        wide_m = build_paired_matrix(per_sample[per_sample["model"] == m])
+        if not wide_m.empty:
+            paired_blocks.append(wide_m.reset_index(drop=True))
+    if paired_blocks:
+        pooled_wide = pd.concat(paired_blocks, ignore_index=True)
+    else:
+        pooled_wide = pd.DataFrame(columns=METHODS)
+    fr_pooled = friedman_paired(pooled_wide)
+    verdict_pooled = "yes" if (not math.isnan(fr_pooled["p"]) and
+                               fr_pooled["p"] < ALPHA) else "no"
+    lines.append(_hline())
+    lines.append(
+        f"  {'pooled (all models)':<26}{fr_pooled['n_blocks']:>10}  "
+        f"{fr_pooled['k']:>4}  {fr_pooled['chi2']:>10.4f}  "
+        f"{fmt_p(fr_pooled['p']):>10}  {verdict_pooled:>12}"
+    )
+    lines.append("")
+
+    # Pairwise Wilcoxon per model + pooled
+    def _write_wilcoxon(scope_label: str, wide: pd.DataFrame):
+        lines.append(f"  [{scope_label}]")
+        lines.append(f"    {'method_a vs method_b':<42}"
+                     f"{'n_pairs':>8}  {'W':>9} {'p_raw':>9} {'p_adj':>9} "
+                     f"{'dz':>8} {'effect':>11} sig")
+        lines.append("    " + "-" * 113)
+        df = pairwise_wilcoxon(wide)
+        for _, r in df.iterrows():
+            pair = f"{METHOD_LABELS[r['a']]} vs {METHOD_LABELS[r['b']]}"
+            sig_mark = "*" if r["sig"] else " "
+            lines.append(
+                f"    {pair:<42}{r['n_pairs']:>8}  "
+                f"{r['W']:>9.1f} {fmt_p(r['p_raw']):>9} {fmt_p(r['p_adj']):>9} "
+                f"{fmt_d(r['dz']):>8} {r['effect']:>11} {sig_mark}"
+            )
+        lines.append("")
+
+    for m in models:
+        _write_wilcoxon(f"model = {m}",
+                        build_paired_matrix(per_sample[per_sample["model"] == m]))
+    _write_wilcoxon("pooled (all models)", pooled_wide)
+
     # ---- Aggregated TSV (covers llama3.2 + phi4 which lack per-sample) ----
-    lines.append(_h("4. AGGREGATED MEANS FROM results_mutation.tsv"))
+    lines.append(_h("5. AGGREGATED MEANS FROM results_mutation.tsv"))
     lines.append("  (Per-sample stats above use .checkpoints_mutation_analysis/.")
     lines.append("   For llama3.2 and phi4, only the aggregated mean is available")
     lines.append("   because those models were analysed before per-sample resume")
@@ -386,10 +562,15 @@ def write_report(per_sample: pd.DataFrame, tsv: pd.DataFrame) -> str:
 
     # ---- Footnotes --------------------------------------------------------
     lines.append(_h("INTERPRETATION GUIDE"))
-    lines.append("  Cohen's d magnitudes:")
-    lines.append("    |d| < 0.2 negligible    0.2-0.5 small    0.5-0.8 medium    ≥0.8 large")
-    lines.append("  Sign convention: d > 0 means method_a > method_b (higher kill rate).")
+    lines.append("  Effect size magnitudes (|d| or |dz|):")
+    lines.append("    < 0.2 negligible    0.2-0.5 small    0.5-0.8 medium    ≥0.8 large")
+    lines.append("  Sign convention: positive effect means method_a > method_b.")
     lines.append("  Significance: p_adj < α (=0.05) after Bonferroni over 6 pairwise tests.")
+    lines.append("")
+    lines.append("  When sections 2/3 (unpaired) and 4 (paired) disagree, prefer the")
+    lines.append("  paired result — the methods share source samples by design, so")
+    lines.append("  Friedman/Wilcoxon has correct Type I error control and more power")
+    lines.append("  than the independent-groups tests above.")
     lines.append("")
 
     return "\n".join(lines)
@@ -425,20 +606,44 @@ def main() -> int:
     print("\n" + "=" * 60)
     print("HEADLINE RESULTS (pooled across models)")
     print("=" * 60)
+
     kw = kruskal_across_methods(per_sample)
     verdict = "REJECT H₀" if (not math.isnan(kw["p"]) and kw["p"] < ALPHA) \
         else "FAIL TO REJECT"
-    print(f"Kruskal-Wallis:  H={kw['H']:.4f}  p={fmt_p(kw['p'])}   ({verdict})")
+    print(f"Kruskal-Wallis (unpaired):  H={kw['H']:.4f}  p={fmt_p(kw['p'])}   ({verdict})")
+
+    # Build paired matrix pooled across models
+    models = sorted(per_sample["model"].unique())
+    paired_blocks = []
+    for m in models:
+        wide_m = build_paired_matrix(per_sample[per_sample["model"] == m])
+        if not wide_m.empty:
+            paired_blocks.append(wide_m.reset_index(drop=True))
+    pooled_wide = (pd.concat(paired_blocks, ignore_index=True)
+                   if paired_blocks else pd.DataFrame(columns=METHODS))
+    fr = friedman_paired(pooled_wide)
+    fr_verdict = "REJECT H₀" if (not math.isnan(fr["p"]) and fr["p"] < ALPHA) \
+        else "FAIL TO REJECT"
+    print(f"Friedman (paired):         chi2={fr['chi2']:.4f}  "
+          f"p={fmt_p(fr['p'])}   ({fr_verdict}, n_blocks={fr['n_blocks']})")
+
     print()
     print("Significant pairwise differences (Bonferroni-adjusted p<0.05):")
-    pw = pairwise_mannwhitney(per_sample)
-    sig = pw[pw["sig"]]
-    if sig.empty:
+    found_any = False
+    sig_mw = pairwise_mannwhitney(per_sample)
+    for _, r in sig_mw[sig_mw["sig"]].iterrows():
+        print(f"  [Mann-Whitney] {METHOD_LABELS[r['a']]:<20} vs "
+              f"{METHOD_LABELS[r['b']]:<20} p_adj={fmt_p(r['p_adj'])}  "
+              f"d={fmt_d(r['d'])} ({r['effect']})")
+        found_any = True
+    sig_wx = pairwise_wilcoxon(pooled_wide)
+    for _, r in sig_wx[sig_wx["sig"]].iterrows():
+        print(f"  [Wilcoxon]     {METHOD_LABELS[r['a']]:<20} vs "
+              f"{METHOD_LABELS[r['b']]:<20} p_adj={fmt_p(r['p_adj'])}  "
+              f"dz={fmt_d(r['dz'])} ({r['effect']})")
+        found_any = True
+    if not found_any:
         print("  (none)")
-    else:
-        for _, r in sig.iterrows():
-            print(f"  {METHOD_LABELS[r['a']]:<20} vs {METHOD_LABELS[r['b']]:<20} "
-                  f"p_adj={fmt_p(r['p_adj'])}  d={fmt_d(r['d'])} ({r['effect']})")
 
     return 0
 
