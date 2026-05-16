@@ -27,7 +27,10 @@ summary_all_experiments.csv
 # Experiment checkpoints (resume state for Colab disconnects)
 .checkpoints/
 .checkpoints_mutation/
+.checkpoints_mutation_analysis/
 checkpoints/
+checkpoints_mutation/
+checkpoints_mutation_analysis/
 
 # Generated plots (regenerable from TSVs via visualize_*.py)
 plots/
