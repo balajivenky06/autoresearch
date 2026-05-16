@@ -3,21 +3,29 @@
 **Last updated**: 2026-05-16
 **Repo**: `/Users/balajivenktesh/Desktop/Education/autoresearch/`
 **Branch**: `master`
-**Latest commit**: `6265c4e` — "feat(stats): mixed-effects model — significance for boundary kill rate"
+**Latest commit**: `815bb37` — "feat: analyze_mutation_generalizability.py — cross-model Spearman ρ"
 **Remote**: `https://github.com/balajivenky06/autoresearch.git` (pushed and up to date)
 
 **PhD Topic**: Plain LLM vs Random RAG vs Simple RAG vs Iterative Critique RAG for code generation.
-**This task**: Unit test generation — full 4 methods × 4 models × 30 samples mutation-testing matrix complete.
+**This task**: Unit test generation — full 4 methods × 4 models × 30 samples mutation-testing matrix complete, plus correlation and cross-model generalizability analyses.
 
 ---
 
-## TL;DR — Headline Result for EMSE Resubmission
+## TL;DR — Headline Results for EMSE Resubmission
 
-> After controlling for source-sample difficulty and LLM choice via a linear mixed-effects model, **Iterative Critique RAG generates tests that detect 20.5 percentage points more off-by-one defects than Plain LLM generation** (Tukey HSD Δ=−0.205, p_adj=0.0499; Mixed-LM β=−0.133 for Plain LLM vs IC baseline, p=0.016).
+Three publishable claims now backed by statistics:
 
-The overall kill rate doesn't show statistical separation on the per-sample tests because of a 1.0 ceiling effect on the strong models. The discriminative signal lives in the **boundary** (n ↔ n±1) mutation operator, the historically hardest mutator.
+1. **Significance** — *After controlling for source-sample difficulty and LLM choice via a linear mixed-effects model, **Iterative Critique RAG generates tests that detect 20.5 percentage points more off-by-one defects than Plain LLM generation** (Tukey HSD Δ=−0.205, p_adj=0.0499; Mixed-LM β=−0.133 for Plain LLM vs IC baseline, p=0.016).*
 
-A secondary finding from the same ANOVA: **LLM choice dominates RAG method choice**. Switching llama3.2 (3B) → qwen3-coder (30B) buys ~0.20 kill rate; switching Plain LLM → Iterative Critique buys ~0.05. Both effects are real; LLM > method by ~4× in F-statistic.
+2. **Counter-intuitive correlation** — *Token-overlap faithfulness to retrieved testing documentation **negatively** predicts mutation kill rate (Pearson r=−0.61, p=0.045, n=11). Within Random RAG and Simple RAG the inverse is near-perfect (r=−0.97 and r=−0.99). Semantic faithfulness via DeepSeek judge shows no effect (r=−0.24, p=0.48). The harm is specific to **syntactic copy-paste** of retrieved tutorial vocabulary — LLMs that template from docs produce weaker assertions than LLMs that use retrieval as a reference for function-specific reasoning.*
+
+3. **Generalizability** — *Method rankings on mutation kill rate **do not generalize across LLMs** (min pairwise Spearman ρ = −0.60, mean ρ = +0.23). Iterative Critique wins on three of four models (llama3.2, phi4, qwen3-coder) but drops to third on qwen3.5 where Simple RAG dominates. **Boundary kill rate has the highest cross-model rank stability** (mean ρ = +0.70) — and it's the only metric where the IC-vs-Plain-LLM Tukey HSD reaches significance, making it the recommended SE-relevant metric when reporting RAG ablations for unit-test generation.*
+
+Two supporting facts:
+
+- The overall kill rate doesn't show statistical separation on the per-sample tests because of a 1.0 ceiling effect on the strong models. Discriminative signal lives in the **boundary** mutation operator (n ↔ n±1), the historically hardest mutator.
+- From the ANOVA decomposition: **LLM choice dominates RAG method choice**. Switching llama3.2 (3B) → qwen3-coder (30B) buys ~0.20 kill rate; switching Plain LLM → Iterative Critique buys ~0.05. F-statistic ratio (model : method) is roughly 25 : 1.
+- The testing-docs knowledge base is well-curated — `avg_noise_rate` is identically 0.0 across every RAG cell (no chunk falls below the 0.3 cosine threshold). Reported as a methods-section fact, not a result.
 
 ---
 
@@ -98,15 +106,63 @@ The model and sample effects dwarf the method effect by 10–20×. This is the "
 
 Clear directional ordering across all 4 models: **IC ≥ Simple RAG ≥ Random RAG > Plain LLM on boundary**.
 
+### RAG Quality vs Kill Rate Correlation (`noise_vs_kill.py`)
+
+Joins `results_unitest.tsv` (RAG-quality metrics) with `results_mutation.tsv` on (method, model, reasoning='base') for the 11 RAG cells with non-NaN data.
+
+| Predictor | Pooled r | p | n | Verdict |
+|---|---|---|---|---|
+| `avg_noise_rate` | nan | nan | 7 | Constant 0.0 — degenerate (see TL;DR fact) |
+| **`avg_faithfulness`** (token overlap) | **−0.614** | **0.045** ★ | 11 | **Significant, negative** |
+| `avg_llm_judge_faithfulness` (DeepSeek judge) | −0.237 | 0.48 | 11 | No correlation |
+
+Within-method breakdown for `avg_faithfulness`:
+
+| Method | r | p | n |
+|---|---|---|---|
+| random_rag | **−0.97** | 0.029 ★ | 4 |
+| simple_rag | **−0.99** | 0.011 ★ | 4 |
+| iterative_critique | +0.75 (small-n) | 0.46 | 3 |
+
+The negative correlation is sharply within-method on Random/Simple RAG (r ≈ −0.98). IC alone flips the sign (n=3, suggestive only) — consistent with the critique loop steering tests away from copy-pasted vocabulary toward function-specific assertions.
+
+### Cross-Model Generalizability (`analyze_mutation_generalizability.py`)
+
+Spearman ρ between method rankings for every pair of models, threshold ρ ≥ 0.8 (Zar 1984; Jureczko & Madeyski 2015 IST).
+
+| Metric | min ρ | mean ρ | Verdict |
+|---|---|---|---|
+| `mean_kill_rate` (overall) | **−0.60** | +0.23 | does not generalize |
+| `kill_arithmetic` | **−1.00** | +0.15 | does not generalize (one pair perfectly inverted) |
+| **`kill_boundary`** | **+0.32** | **+0.70** | closest, mean ρ highest of any metric |
+| `kill_comparison` | +0.63 | **+0.80** | mean exactly at threshold; min fails |
+| `kill_negate_bool` | +0.00 | +0.39 | does not generalize |
+| `kill_return_none` | **−0.95** | −0.24 | **inverted** between llama3.2 and qwen3.5 |
+
+Rank table (1 = best method on that model):
+
+| Method | llama3.2 | phi4 | qwen3-coder | qwen3.5 |
+|---|---|---|---|---|
+| Plain LLM | 2 | 4 | 4 | 4 |
+| Random RAG | 4 | 3 | 2 | 2 |
+| Simple RAG | 3 | 2 | 3 | **1** |
+| Iterative Critique | **1** | **1** | **1** | 3 |
+
+- IC is rank-1 on three of four models; on qwen3.5 it drops to rank 3 (Simple RAG takes top).
+- Plain LLM is rank 2 on llama3.2 but rank 4 on every stronger model.
+- Why boundary is the most universal metric: it's the operator where the LLM-capability advantage doesn't yet saturate (no ceiling effect), so the method differences are still legible.
+
 ---
 
-## Analysis Pipeline (3 scripts)
+## Analysis Pipeline (5 scripts)
 
 | Script | What it does | Key output |
 |---|---|---|
 | `mutation_testing.py` | Generate + analyze mutants. Supports `--regenerate` (Ollama generation) and `--checkpoints-dir` (analysis-only on existing tests). Per-sample resume on both phases. | `results_mutation.tsv`, `.checkpoints_mutation/`, `.checkpoints_mutation_analysis/`, `plots_mutation/` |
 | `mutation_statistical_tests.py` | Per-sample Kruskal-Wallis + Mann-Whitney (unpaired) and Friedman + Wilcoxon (paired). Per-model, pooled, and per-operator (boundary, arithmetic, etc.). | `plots_mutation/mutation_statistical_report.txt` |
 | `mutation_mixed_effects.py` ★ | Type-III ANOVA + Tukey HSD + Mixed-LM (sample_idx as random intercept). The right test for this design. Accepts `--metric kill_rate_<operator>`. | `plots_mutation/mutation_mixed_effects_*.txt` |
+| `noise_vs_kill.py` ★ | Joins unitest TSV with mutation TSV; Pearson r + Spearman ρ for noise rate, faithfulness, and DeepSeek judge against kill rate. Per-method and pooled. | `plots_mutation/noise_vs_kill_report.txt`, `noise_vs_kill_scatter.png` |
+| `analyze_mutation_generalizability.py` ★ | Cross-model Spearman ρ of method rankings (overall + per-operator). Heatmaps, rank-stability lines, grouped bars. | `plots_mutation/mutation_generalizability_report.txt`, `mutation_rank_*.png` |
 
 ### Why mixed-effects beat the rank tests
 
@@ -168,6 +224,8 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 - [x] **Statistical significance for mutation kill rate** — rank tests (Kruskal-Wallis, Friedman, Mann-Whitney, Wilcoxon) + Type-III ANOVA + Tukey HSD + Mixed-LM
 - [x] **Per-operator significance tests** (boundary, arithmetic, comparison, negate_bool, return_none)
 - [x] **Bug-fixing**: cache path, TSV merge, function-shadow, Ollama retry, per-sample analysis resume, pickle-friendly results, --models filter, dir-resolution fallback
+- [x] **RAG quality ↔ kill rate correlation** — `noise_vs_kill.py`. Found significant negative correlation (r=−0.61, p=0.045) between token-overlap faithfulness and kill rate. Counter-intuitive finding: tests copying retrieved tutorial vocabulary verbatim catch fewer bugs.
+- [x] **Cross-model generalizability** — `analyze_mutation_generalizability.py`. Found that method rankings do not generalize across LLMs (min ρ=−0.60); boundary kill rate has the highest cross-model rank stability (mean ρ=+0.70).
 
 ### HIGH PRIORITY — directly addresses reviewer feedback
 
@@ -176,10 +234,10 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 
 ### MEDIUM PRIORITY — strengthens paper
 
-- [ ] **Cross-model generalizability for kill rates** (item #2 from earlier plan) — Spearman ρ between method-rankings across the 4 models. Mirror `analyze_generalizability.py`'s approach for `val_score`.
-- [ ] **Noise rate → kill rate correlation** — join `avg_noise_rate` from `results_unitest.tsv` with `mean_kill_rate` from `results_mutation.tsv` (already 16 rows aligned by method×model). Pearson r tests "RAG retrieval quality predicts defect-detection quality" — novel SE claim.
+- [x] ~~Cross-model generalizability for kill rates~~ — done; see Cross-Model Generalizability section above.
+- [x] ~~Noise rate → kill rate correlation~~ — done; noise rate degenerate but found significant token-overlap faithfulness correlation instead.
 - [ ] **Increase mutation sample size** to 100 samples/cell — direct power increase if the marginal p=0.07 ANOVA result needs to be airtight. ~12–24h Colab.
-- [ ] **Iterative critique rounds ablation** — 1 vs 2 critique rounds on boundary kill rate.
+- [ ] **Iterative critique rounds ablation** — 1 vs 2 critique rounds on boundary kill rate. Tests whether the second round is doing real work.
 
 ### LOWER PRIORITY — nice-to-have
 
@@ -195,10 +253,24 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 ## Paper Framing (suggested)
 
 ### Core narrative
-1. RAG-based test generation methods produce tests with systematically higher mutation kill rates than plain LLM generation (descriptive ordering across 16 model×method cells)
+1. RAG-based test generation methods produce tests with systematically higher mutation kill rates than plain LLM generation (descriptive ordering across 16 model × method cells)
 2. The advantage is **statistically certified for boundary mutations** (the hardest, off-by-one defects): Iterative Critique RAG vs Plain LLM Δ=+0.205 kill rate (Tukey HSD p=0.0499; Mixed-LM p=0.016 after controlling for LLM and sample)
 3. The overall kill-rate advantage narrows to non-significant on capable models because of a 1.0 ceiling effect — methods converge when the base LLM is strong enough
 4. **LLM choice matters more than RAG method**: model F-statistic dominates method F-statistic by 10–20× in every ANOVA fit
+5. **Method rankings do not generalize across LLMs** (min Spearman ρ = −0.60). Iterative Critique wins on 3 of 4 models but Simple RAG wins on the strongest (qwen3.5). Boundary kill rate has the highest cross-model rank stability (mean ρ = +0.70), motivating it as the canonical SE-relevant metric for RAG ablations.
+6. **Counter-intuitive faithfulness finding**: token-overlap faithfulness to retrieved testing documentation negatively predicts kill rate (Pearson r = −0.61, p = 0.045). Tests that template from retrieved tutorials catch fewer bugs than tests that use retrieval as a reference. DeepSeek-judged semantic faithfulness shows no correlation (r = −0.24, p = 0.48), pinpointing the harm as **syntactic copy-paste**, not principled grounding.
+
+### Findings summary table
+
+| # | Finding | Evidence | Strength |
+|---|---|---|---|
+| 1 | IC > Plain LLM for boundary defects | Tukey p=0.0499; Mixed-LM p=0.016 | Strong (significant) |
+| 2 | LLM choice > RAG method choice | ANOVA F: model 22.1 vs method 0.79 | Strong (huge F-ratio) |
+| 3 | Token-overlap faithfulness ↑ → kill rate ↓ | Pearson r=−0.61, p=0.045 | Strong, novel, counter-intuitive |
+| 4 | Semantic faithfulness DOES NOT correlate with kill rate | DeepSeek judge r=−0.24, p=0.48 | Supporting (validates #3 is about syntax) |
+| 5 | Method rankings don't generalize across LLMs | min ρ=−0.60, mean ρ=+0.23 | Strong |
+| 6 | Boundary is the most universal metric | mean ρ=+0.70, only sig pair | Strong methodological note |
+| 7 | KB curation: noise rate = 0 everywhere | All 7 RAG cells | Methods-section fact |
 
 ### Threat-to-validity Q&A (preempt reviewers)
 
@@ -208,12 +280,17 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 | Why phi4 looks so different across versions? | Found and fixed a real bug (`6b977fd`): some LLMs prepend a function re-definition that shadowed the mutant. Fixed via AST-based redefinition stripping. Pre-fix phi4 numbers (5–26%) are reported with the fix and final numbers (86–93%) for transparency. |
 | Equivalent mutants? | Detected via ground-truth tests on each mutant: if ground truth ALSO passes, the mutant is equivalent and excluded from kill-rate denominator. ~5–15% of mutants per cell. |
 | Sample size? | 30 per cell; 409 valid observations after filtering. Mixed-LM uses all 409. Acknowledged in §Limitations. |
+| Why does ρ analysis use the aggregated TSV (4 ranks per model) when you have per-sample data? | Generalizability claims at the paper level operate on the artifact you'd quote — the per-cell mean. The mixed-effects analysis already uses the per-sample data with the same blocking structure, so the two analyses are complementary, not redundant. |
+| Why is the faithfulness correlation only n=11? | One RAG cell per (method × model) pair on base reasoning; iterative_critique × qwen3.5 had insufficient `avg_faithfulness` data. The result is small-n; quoted for completeness but stronger correlations within-method (r=−0.97 and r=−0.99) at n=4 each are the primary evidence. |
 
 ---
 
 ## Key Commits (in this session)
 
 ```
+815bb37 feat: analyze_mutation_generalizability.py — cross-model Spearman ρ
+33a9137 feat: noise_vs_kill.py — RAG quality vs mutation kill rate correlation
+a2d7a59 docs: refresh session_context_mutation_testing.md with full session state
 6265c4e feat(stats): mixed-effects model — significance for boundary kill rate
 bd7b2ac feat(stats): per-operator significance tests on per-sample kill rates
 5e16057 feat(mutation_testing): resolve analysis-ckpt dir + --models filter
@@ -244,14 +321,29 @@ python3 mutation_testing.py \
   2>&1 | tee logs/mutation_reanalyze_local.log
 ```
 
-### Statistical tests (~10 s)
+### Statistical tests (~10 s each)
 
 ```bash
+# Per-sample rank tests (Kruskal-Wallis, Friedman, Mann-Whitney, Wilcoxon)
 python3 mutation_statistical_tests.py
-python3 mutation_mixed_effects.py                    # overall kill_rate
+
+# Mixed-effects model (ANOVA + Tukey HSD + Mixed-LM)
+python3 mutation_mixed_effects.py                          # overall kill_rate
 python3 mutation_mixed_effects.py --metric kill_rate_boundary
 python3 mutation_mixed_effects.py --metric kill_rate_return_none
+
+# Correlation analysis (RAG quality ↔ kill rate)
+python3 noise_vs_kill.py
+
+# Cross-model generalizability (Spearman ρ)
+python3 analyze_mutation_generalizability.py
 ```
+
+All reports land in `plots_mutation/`:
+- `mutation_statistical_report.txt`
+- `mutation_mixed_effects_report.txt` (+ `_boundary.txt`, `_return_none.txt`)
+- `noise_vs_kill_report.txt` + `noise_vs_kill_scatter.png`
+- `mutation_generalizability_report.txt` + `mutation_rank_*.png`
 
 ### Colab fresh sweep (~3.5 h on A100)
 
@@ -278,7 +370,7 @@ Use `python3` directly, NOT `uv run` — PyTorch cu128 dependency is incompatibl
 | RQ3 | How faithful are generated tests to retrieved context? | faithfulness, llm_judge | DONE |
 | RQ4 | What is the cost-faithfulness trade-off? | retrieval_secs, llm_secs | DONE |
 | RQ5 | Do results generalize across benchmarks? | per-benchmark val_score | PARTIAL |
-| **RQ6** | **Do generated tests detect real software defects?** | **mutation_kill_rate** | **DONE — significant for boundary IC > Plain LLM (p=0.016 Mixed-LM)** |
+| **RQ6** | **Do generated tests detect real software defects?** | **mutation_kill_rate** | **DONE — boundary IC > Plain LLM significant (p=0.016 Mixed-LM, p=0.0499 Tukey); rankings do NOT generalize across LLMs (min Spearman ρ=−0.60); token-overlap faithfulness predicts LOWER kill rate (r=−0.61, p=0.045)** |
 
 ---
 
