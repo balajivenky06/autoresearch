@@ -1,0 +1,110 @@
+==============================================================================
+ MUTATION KILL RATE — PER-BENCHMARK ANALYSIS
+==============================================================================
+
+Total observations: 409
+Methods: ['iterative_critique', 'plain_llm', 'random_rag', 'simple_rag']
+Models : ['llama3.2_latest', 'phi4_14b', 'qwen3-coder_30b', 'qwen3.5_9b']
+Sources: {'mbpp': 287, 'humaneval': 122}
+
+==============================================================================
+ 1. PER-SOURCE × METHOD × MODEL MEANS
+==============================================================================
+  source      model                 method                    n     mean      std
+------------------------------------------------------------------------------
+  humaneval   llama3.2_latest       Iterative Critique        2   1.0000   0.0000
+  humaneval   llama3.2_latest       Plain LLM                 9   0.9321   0.1171
+  humaneval   llama3.2_latest       Random RAG                5   0.9167   0.1179
+  humaneval   llama3.2_latest       Simple RAG                7   0.9246   0.1023
+  humaneval   phi4_14b              Iterative Critique        4   1.0000   0.0000
+  humaneval   phi4_14b              Plain LLM                 9   1.0000   0.0000
+  humaneval   phi4_14b              Random RAG                9   1.0000   0.0000
+  humaneval   phi4_14b              Simple RAG                8   1.0000   0.0000
+  humaneval   qwen3-coder_30b       Iterative Critique        9   0.9877   0.0370
+  humaneval   qwen3-coder_30b       Plain LLM                 9   0.9877   0.0370
+  humaneval   qwen3-coder_30b       Random RAG                9   1.0000   0.0000
+  humaneval   qwen3-coder_30b       Simple RAG                9   0.9877   0.0370
+  humaneval   qwen3.5_9b            Iterative Critique        6   0.8333   0.4082
+  humaneval   qwen3.5_9b            Plain LLM                 9   1.0000   0.0000
+  humaneval   qwen3.5_9b            Random RAG                9   1.0000   0.0000
+  humaneval   qwen3.5_9b            Simple RAG                9   1.0000   0.0000
+  mbpp        llama3.2_latest       Iterative Critique        2   1.0000   0.0000
+  mbpp        llama3.2_latest       Plain LLM                20   0.6273   0.4099
+  mbpp        llama3.2_latest       Random RAG               17   0.5750   0.3974
+  mbpp        llama3.2_latest       Simple RAG               13   0.5391   0.4508
+  mbpp        phi4_14b              Iterative Critique       15   0.9167   0.2616
+  mbpp        phi4_14b              Plain LLM                21   0.7995   0.3813
+  mbpp        phi4_14b              Random RAG               21   0.8178   0.3400
+  mbpp        phi4_14b              Simple RAG               18   0.8506   0.3225
+  mbpp        qwen3-coder_30b       Iterative Critique       20   0.9354   0.1843
+  mbpp        qwen3-coder_30b       Plain LLM                21   0.8735   0.2935
+  mbpp        qwen3-coder_30b       Random RAG               21   0.9013   0.2487
+  mbpp        qwen3-coder_30b       Simple RAG               21   0.8894   0.2497
+  mbpp        qwen3.5_9b            Iterative Critique       14   0.9898   0.0382
+  mbpp        qwen3.5_9b            Plain LLM                21   0.8642   0.2953
+  mbpp        qwen3.5_9b            Random RAG               21   0.9645   0.0894
+  mbpp        qwen3.5_9b            Simple RAG               21   0.9913   0.0397
+
+Per-method × source means (collapsed across models):
+  humaneval   Iterative Critique    n=21     mean=0.9471  std=0.2184
+  humaneval   Plain LLM             n=36     mean=0.9799  std=0.0653
+  humaneval   Random RAG            n=32     mean=0.9870  std=0.0523
+  humaneval   Simple RAG            n=33     mean=0.9806  std=0.0566
+  mbpp        Iterative Critique    n=51     mean=0.9474  std=0.1828
+  mbpp        Plain LLM             n=83     mean=0.7931  std=0.3554
+  mbpp        Random RAG            n=80     mean=0.8267  std=0.3148
+  mbpp        Simple RAG            n=73     mean=0.8468  std=0.3161
+
+==============================================================================
+ 2. SIGNIFICANCE TESTS BY (metric × source)
+==============================================================================
+  Each row: ANOVA on method, Tukey HSD post-hoc, Mixed-LM
+  contrasts vs Iterative Critique baseline (the alphabetical first).
+
+
+Metric: kill_rate
+------------------------------------------------------------------------------
+  [humaneval]   metric = kill_rate   n = 122
+    ANOVA  method:  F=1.012, p=0.3906 
+    Tukey HSD: no pairs significant at α=0.05
+    Mixed-LM    C(method)[T.plain_llm]                    coef=+0.0418  p=0.1439 
+    Mixed-LM    C(method)[T.random_rag]                   coef=+0.0434  p=0.1359 
+    Mixed-LM    C(method)[T.simple_rag]                   coef=+0.0406  p=0.1605 
+
+  [mbpp]   metric = kill_rate   n = 287
+    ANOVA  method:  F=1.303, p=0.2737 
+    Tukey HSD *  Iterative Critique   vs Plain LLM             Δ=-0.1542  p_adj=0.0275
+    Mixed-LM    C(method)[T.plain_llm]                    coef=-0.0816  p=0.0479*
+    Mixed-LM    C(method)[T.random_rag]                   coef=-0.0544  p=0.1889 
+    Mixed-LM    C(method)[T.simple_rag]                   coef=-0.0405  p=0.3334 
+
+  [pooled]   metric = kill_rate   n = 409
+    ANOVA  method:  F=0.794, p=0.4976 
+    Tukey HSD: no pairs significant at α=0.05
+    Mixed-LM    C(method)[T.plain_llm]                    coef=-0.0455  p=0.1441 
+    Mixed-LM    C(method)[T.random_rag]                   coef=-0.0292  p=0.3516 
+    Mixed-LM    C(method)[T.simple_rag]                   coef=-0.0155  p=0.6228 
+
+
+Metric: kill_rate_boundary
+------------------------------------------------------------------------------
+  [humaneval]   metric = kill_rate_boundary   n = 122
+    ANOVA  method:  F=0.128, p=0.9430 
+    Tukey HSD: no pairs significant at α=0.05
+    Mixed-LM    C(method)[T.plain_llm]                    coef=+0.0022  p=0.9688 
+    Mixed-LM    C(method)[T.random_rag]                   coef=+0.0089  p=0.8760 
+    Mixed-LM    C(method)[T.simple_rag]                   coef=+0.0290  p=0.6099 
+
+  [mbpp]   metric = kill_rate_boundary   n = 287
+    ANOVA  method:  F=2.957, p=0.0354*
+    Tukey HSD *  Iterative Critique   vs Plain LLM             Δ=-0.3114  p_adj=0.0251
+    Mixed-LM    C(method)[T.plain_llm]                    coef=-0.2114  p=0.0048*
+    Mixed-LM    C(method)[T.random_rag]                   coef=-0.1176  p=0.1165 
+    Mixed-LM    C(method)[T.simple_rag]                   coef=-0.0862  p=0.2553 
+
+  [pooled]   metric = kill_rate_boundary   n = 409
+    ANOVA  method:  F=2.393, p=0.0700 
+    Tukey HSD *  Iterative Critique   vs Plain LLM             Δ=-0.2050  p_adj=0.0499
+    Mixed-LM    C(method)[T.plain_llm]                    coef=-0.1332  p=0.0162*
+    Mixed-LM    C(method)[T.random_rag]                   coef=-0.0701  p=0.2075 
+    Mixed-LM    C(method)[T.simple_rag]                   coef=-0.0349  p=0.5327 
