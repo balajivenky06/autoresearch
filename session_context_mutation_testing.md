@@ -1,9 +1,9 @@
 # Session Context — Mutation Testing & Analysis
 
-**Last updated**: 2026-05-16
+**Last updated**: 2026-05-17
 **Repo**: `/Users/balajivenktesh/Desktop/Education/autoresearch/`
 **Branch**: `master`
-**Latest commit**: `815bb37` — "feat: analyze_mutation_generalizability.py — cross-model Spearman ρ"
+**Latest commit**: `399cdde` — "feat: per-benchmark mutation analysis + 4×4 heatmaps"
 **Remote**: `https://github.com/balajivenky06/autoresearch.git` (pushed and up to date)
 
 **PhD Topic**: Plain LLM vs Random RAG vs Simple RAG vs Iterative Critique RAG for code generation.
@@ -15,7 +15,7 @@
 
 Three publishable claims now backed by statistics:
 
-1. **Significance** — *After controlling for source-sample difficulty and LLM choice via a linear mixed-effects model, **Iterative Critique RAG generates tests that detect 20.5 percentage points more off-by-one defects than Plain LLM generation** (Tukey HSD Δ=−0.205, p_adj=0.0499; Mixed-LM β=−0.133 for Plain LLM vs IC baseline, p=0.016).*
+1. **Significance (sharpened by benchmark split)** — *On MBPP, **Iterative Critique RAG generates tests that detect 31.1 percentage points more off-by-one defects than Plain LLM generation** (Tukey HSD Δ=−0.311, p_adj=0.025; Mixed-LM β=−0.211, p=0.0048 after controlling for sample and LLM). The pooled result is weaker (Δ=−0.205, p_adj=0.0499) because HumanEval shows no method differences at all (ANOVA p=0.94). The effect is **benchmark-specific** — IC pays off on MBPP's range-check / off-by-one problem mix, not on HumanEval's broader test types.*
 
 2. **Counter-intuitive correlation** — *Token-overlap faithfulness to retrieved testing documentation **negatively** predicts mutation kill rate (Pearson r=−0.61, p=0.045, n=11). Within Random RAG and Simple RAG the inverse is near-perfect (r=−0.97 and r=−0.99). Semantic faithfulness via DeepSeek judge shows no effect (r=−0.24, p=0.48). The harm is specific to **syntactic copy-paste** of retrieved tutorial vocabulary — LLMs that template from docs produce weaker assertions than LLMs that use retrieval as a reference for function-specific reasoning.*
 
@@ -152,9 +152,36 @@ Rank table (1 = best method on that model):
 - Plain LLM is rank 2 on llama3.2 but rank 4 on every stronger model.
 - Why boundary is the most universal metric: it's the operator where the LLM-capability advantage doesn't yet saturate (no ceiling effect), so the method differences are still legible.
 
+### Per-Benchmark Analysis (`mutation_per_benchmark.py`) ★
+
+Splits per-sample kill rates by `source` (recovered from generation pkls via shared `sample_idx`) and re-runs the ANOVA + Tukey HSD + Mixed-LM pipeline within each benchmark. The split is **21 MBPP : 9 HumanEval** per cell (deterministic via seed-42 shuffle), giving n≈287 (MBPP) and n≈122 (HumanEval) per metric in the long form.
+
+| Scope | n | ANOVA F (method) | ANOVA p | Tukey IC vs Plain LLM | Mixed-LM IC vs Plain LLM |
+|---|---|---|---|---|---|
+| **boundary kill rate** | | | | | |
+| MBPP only | 287 | **2.96** | **0.035** ★ | **Δ=−0.311, p_adj=0.025** ★ | **β=−0.211, p=0.0048** ★★ |
+| HumanEval only | 122 | 0.13 | 0.94 | Δ=+0.007, p=1.0 | β=+0.002, p=0.97 |
+| Pooled (for comparison) | 409 | 2.39 | 0.07 | Δ=−0.205, p_adj=0.0499 | β=−0.133, p=0.016 |
+| **overall kill rate** | | | | | |
+| MBPP only | 287 | 1.30 | 0.27 | **Δ=−0.154, p_adj=0.028** ★ | **β=−0.082, p=0.048** ★ |
+| HumanEval only | 122 | 1.01 | 0.39 | none | n.s. |
+| Pooled (for comparison) | 409 | 0.79 | 0.50 | none | β=−0.046, p=0.144 |
+
+**Interpretation**: The defect-detection advantage of Iterative Critique over Plain LLM is **specific to MBPP-style problems**. MBPP leans on numeric boundary conditions (range checks, off-by-one list indexing) where IC's critique loop tightens value-specific assertions. HumanEval's broader problem mix doesn't benefit. The pooled-marginal previous claim averaged across these two regimes; the per-benchmark split makes the claim sharper and more credible.
+
+### 4×4 Heatmaps (`plot_mutation_heatmap.py`) ★
+
+Replaces the original 16-bar chart with three heatmap variants for paper figures:
+
+| File | What it shows |
+|---|---|
+| `kill_rate_heatmap.png` | 4×4 grid (rows=method, cols=model) coloured by mean kill rate, annotated with values + n |
+| `kill_rate_boundary_heatmap.png` | Same grid for boundary kill rate — where the colour spread is widest, suitable for the significance figure |
+| `kill_rate_combined_heatmap.png` | 1×5 mosaic: overall + 4 per-operator panels — supplementary materials |
+
 ---
 
-## Analysis Pipeline (5 scripts)
+## Analysis Pipeline (7 scripts)
 
 | Script | What it does | Key output |
 |---|---|---|
@@ -163,6 +190,8 @@ Rank table (1 = best method on that model):
 | `mutation_mixed_effects.py` ★ | Type-III ANOVA + Tukey HSD + Mixed-LM (sample_idx as random intercept). The right test for this design. Accepts `--metric kill_rate_<operator>`. | `plots_mutation/mutation_mixed_effects_*.txt` |
 | `noise_vs_kill.py` ★ | Joins unitest TSV with mutation TSV; Pearson r + Spearman ρ for noise rate, faithfulness, and DeepSeek judge against kill rate. Per-method and pooled. | `plots_mutation/noise_vs_kill_report.txt`, `noise_vs_kill_scatter.png` |
 | `analyze_mutation_generalizability.py` ★ | Cross-model Spearman ρ of method rankings (overall + per-operator). Heatmaps, rank-stability lines, grouped bars. | `plots_mutation/mutation_generalizability_report.txt`, `mutation_rank_*.png` |
+| `mutation_per_benchmark.py` ★ | Splits per-sample data by `source` (HumanEval vs MBPP) and re-runs ANOVA + Tukey HSD + Mixed-LM within each. Reveals which benchmark drives the pooled significance. | `plots_mutation/mutation_per_benchmark_report.txt` |
+| `plot_mutation_heatmap.py` ★ | 4×4 method × model heatmaps for paper figures: overall, boundary-only, and a 5-panel mosaic with all operators. | `plots_mutation/kill_rate_heatmap*.png` |
 
 ### Why mixed-effects beat the rank tests
 
@@ -226,6 +255,8 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 - [x] **Bug-fixing**: cache path, TSV merge, function-shadow, Ollama retry, per-sample analysis resume, pickle-friendly results, --models filter, dir-resolution fallback
 - [x] **RAG quality ↔ kill rate correlation** — `noise_vs_kill.py`. Found significant negative correlation (r=−0.61, p=0.045) between token-overlap faithfulness and kill rate. Counter-intuitive finding: tests copying retrieved tutorial vocabulary verbatim catch fewer bugs.
 - [x] **Cross-model generalizability** — `analyze_mutation_generalizability.py`. Found that method rankings do not generalize across LLMs (min ρ=−0.60); boundary kill rate has the highest cross-model rank stability (mean ρ=+0.70).
+- [x] **Per-benchmark mutation analysis** (HumanEval vs MBPP) — `mutation_per_benchmark.py`. Found that the boundary IC vs Plain LLM significance is MBPP-driven (Δ=−0.311, Mixed-LM p=0.005) and absent on HumanEval (p=0.94). Sharpens the paper claim from "marginal across both" to "strong on MBPP".
+- [x] **Replot 4×4 heatmaps** — `plot_mutation_heatmap.py`. Three figures for the paper: overall, boundary-only, and a per-operator mosaic.
 
 ### HIGH PRIORITY — directly addresses reviewer feedback
 
@@ -241,8 +272,8 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 
 ### LOWER PRIORITY — nice-to-have
 
-- [ ] **Per-benchmark mutation analysis** — split HumanEval vs MBPP.
-- [ ] **Re-plot with full 4×4 matrix** in a model-grouped heatmap.
+- [x] ~~Per-benchmark mutation analysis~~ — done; MBPP drives the pooled significance.
+- [x] ~~Re-plot with full 4×4 matrix~~ — done; three heatmaps generated.
 
 ### Write the paper
 
@@ -254,7 +285,7 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 
 ### Core narrative
 1. RAG-based test generation methods produce tests with systematically higher mutation kill rates than plain LLM generation (descriptive ordering across 16 model × method cells)
-2. The advantage is **statistically certified for boundary mutations** (the hardest, off-by-one defects): Iterative Critique RAG vs Plain LLM Δ=+0.205 kill rate (Tukey HSD p=0.0499; Mixed-LM p=0.016 after controlling for LLM and sample)
+2. The advantage is **statistically certified for boundary mutations on MBPP**: Iterative Critique RAG vs Plain LLM Δ=+0.311 kill rate on MBPP (Tukey HSD p_adj=0.025; Mixed-LM p=0.005 after controlling for LLM and sample). The pooled (HumanEval + MBPP) effect is weaker (Δ=+0.205, p_adj=0.0499) because HumanEval contributes a null slice (ANOVA p=0.94). The mechanism: MBPP problems lean on numeric range / off-by-one conditions where IC's critique loop tightens value-specific assertions; HumanEval's broader test types don't benefit.
 3. The overall kill-rate advantage narrows to non-significant on capable models because of a 1.0 ceiling effect — methods converge when the base LLM is strong enough
 4. **LLM choice matters more than RAG method**: model F-statistic dominates method F-statistic by 10–20× in every ANOVA fit
 5. **Method rankings do not generalize across LLMs** (min Spearman ρ = −0.60). Iterative Critique wins on 3 of 4 models but Simple RAG wins on the strongest (qwen3.5). Boundary kill rate has the highest cross-model rank stability (mean ρ = +0.70), motivating it as the canonical SE-relevant metric for RAG ablations.
@@ -264,13 +295,16 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 
 | # | Finding | Evidence | Strength |
 |---|---|---|---|
-| 1 | IC > Plain LLM for boundary defects | Tukey p=0.0499; Mixed-LM p=0.016 | Strong (significant) |
+| 1 | **IC > Plain LLM for boundary defects on MBPP** | Tukey p_adj=0.025 (Δ=−0.31); Mixed-LM p=0.005 | **Strong, benchmark-specific** |
+| 1a | (Pooled across HumanEval + MBPP) | Tukey p_adj=0.0499; Mixed-LM p=0.016 | Marginal (averages over the null HumanEval slice) |
+| 1b | IC > Plain LLM for overall kill rate on MBPP | Tukey p_adj=0.028; Mixed-LM p=0.048 | Significant, narrower effect |
 | 2 | LLM choice > RAG method choice | ANOVA F: model 22.1 vs method 0.79 | Strong (huge F-ratio) |
 | 3 | Token-overlap faithfulness ↑ → kill rate ↓ | Pearson r=−0.61, p=0.045 | Strong, novel, counter-intuitive |
 | 4 | Semantic faithfulness DOES NOT correlate with kill rate | DeepSeek judge r=−0.24, p=0.48 | Supporting (validates #3 is about syntax) |
 | 5 | Method rankings don't generalize across LLMs | min ρ=−0.60, mean ρ=+0.23 | Strong |
 | 6 | Boundary is the most universal metric | mean ρ=+0.70, only sig pair | Strong methodological note |
 | 7 | KB curation: noise rate = 0 everywhere | All 7 RAG cells | Methods-section fact |
+| 8 | Method effect is benchmark-specific (MBPP only) | HumanEval ANOVA p=0.94; MBPP p=0.035 | Sharpens claim #1; explains the pooled marginality |
 
 ### Threat-to-validity Q&A (preempt reviewers)
 
@@ -282,12 +316,16 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 | Sample size? | 30 per cell; 409 valid observations after filtering. Mixed-LM uses all 409. Acknowledged in §Limitations. |
 | Why does ρ analysis use the aggregated TSV (4 ranks per model) when you have per-sample data? | Generalizability claims at the paper level operate on the artifact you'd quote — the per-cell mean. The mixed-effects analysis already uses the per-sample data with the same blocking structure, so the two analyses are complementary, not redundant. |
 | Why is the faithfulness correlation only n=11? | One RAG cell per (method × model) pair on base reasoning; iterative_critique × qwen3.5 had insufficient `avg_faithfulness` data. The result is small-n; quoted for completeness but stronger correlations within-method (r=−0.97 and r=−0.99) at n=4 each are the primary evidence. |
+| Why does the IC vs Plain LLM result depend on benchmark? | MBPP problems are numeric-boundary heavy (range checks, off-by-one indexing); IC's critique loop adds value-specific assertions exactly where boundary mutators bite. HumanEval has more varied problem types where boundary mutators are a smaller share of mutants. We report both slices for transparency and frame the headline claim as MBPP-specific. |
+| Why use sample_idx for source lookup rather than re-loading the dataset? | The dataset shuffle (seed=42) deterministically maps sample_idx → source, but generation pkls already store source per sample. The script reads from generation pkls, so source assignment is auditable from on-disk artifacts only — no dependency on a re-shuffle reproducing the same order. |
 
 ---
 
 ## Key Commits (in this session)
 
 ```
+399cdde feat: per-benchmark mutation analysis + 4×4 heatmaps
+7bd2dd5 docs: add correlation + cross-model generalizability findings
 815bb37 feat: analyze_mutation_generalizability.py — cross-model Spearman ρ
 33a9137 feat: noise_vs_kill.py — RAG quality vs mutation kill rate correlation
 a2d7a59 docs: refresh session_context_mutation_testing.md with full session state
@@ -337,6 +375,12 @@ python3 noise_vs_kill.py
 
 # Cross-model generalizability (Spearman ρ)
 python3 analyze_mutation_generalizability.py
+
+# Per-benchmark analysis (HumanEval vs MBPP)
+python3 mutation_per_benchmark.py
+
+# 4×4 heatmaps for paper figures
+python3 plot_mutation_heatmap.py
 ```
 
 All reports land in `plots_mutation/`:
@@ -344,6 +388,8 @@ All reports land in `plots_mutation/`:
 - `mutation_mixed_effects_report.txt` (+ `_boundary.txt`, `_return_none.txt`)
 - `noise_vs_kill_report.txt` + `noise_vs_kill_scatter.png`
 - `mutation_generalizability_report.txt` + `mutation_rank_*.png`
+- `mutation_per_benchmark_report.txt`
+- `kill_rate_heatmap.png`, `kill_rate_boundary_heatmap.png`, `kill_rate_combined_heatmap.png`
 
 ### Colab fresh sweep (~3.5 h on A100)
 
@@ -370,7 +416,7 @@ Use `python3` directly, NOT `uv run` — PyTorch cu128 dependency is incompatibl
 | RQ3 | How faithful are generated tests to retrieved context? | faithfulness, llm_judge | DONE |
 | RQ4 | What is the cost-faithfulness trade-off? | retrieval_secs, llm_secs | DONE |
 | RQ5 | Do results generalize across benchmarks? | per-benchmark val_score | PARTIAL |
-| **RQ6** | **Do generated tests detect real software defects?** | **mutation_kill_rate** | **DONE — boundary IC > Plain LLM significant (p=0.016 Mixed-LM, p=0.0499 Tukey); rankings do NOT generalize across LLMs (min Spearman ρ=−0.60); token-overlap faithfulness predicts LOWER kill rate (r=−0.61, p=0.045)** |
+| **RQ6** | **Do generated tests detect real software defects?** | **mutation_kill_rate** | **DONE — boundary IC > Plain LLM strongly significant on MBPP (Δ=−0.311, Mixed-LM p=0.005, Tukey p_adj=0.025); HumanEval null (p=0.94); pooled marginal (p_adj=0.0499). Rankings do NOT generalize across LLMs (min ρ=−0.60). Token-overlap faithfulness predicts LOWER kill rate (r=−0.61, p=0.045).** |
 
 ---
 
