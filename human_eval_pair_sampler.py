@@ -31,7 +31,7 @@ Output:
 The displayed CSV columns are restricted to:
   sample_id, function_code, generated_tests, ground_truth_tests,
   human_test_idiom, human_correctness, human_completeness,
-  human_overall, annotator_notes
+  annotator_notes
 
 (retrieved chunks aren't stored in the generation pkls, so we don't
 ask annotators to judge "faithfulness to retrieved docs" — the
@@ -205,7 +205,7 @@ def write_worksheets(sampled: pd.DataFrame, blinded_path: Path,
     blinded_cols = ["sample_id", "function_code", "generated_tests",
                     "ground_truth_tests"]
     for col in ("human_test_idiom", "human_correctness",
-                "human_completeness", "human_overall", "annotator_notes"):
+                "human_completeness", "annotator_notes"):
         sampled[col] = ""
         blinded_cols.append(col)
     sampled[blinded_cols].to_csv(blinded_path, index=False)

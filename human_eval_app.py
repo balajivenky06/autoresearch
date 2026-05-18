@@ -31,29 +31,43 @@ WORKSHEET_PATH    = Path("human_eval_pairs.csv")
 ANNOTATIONS_DIR   = Path("human_eval_annotations")
 GUIDE_PATH        = Path("human_eval_guide.txt")  # produced by human_eval_sampler.py
 
+# Each dimension carries a one-line description (for the sidebar) and a
+# 4-tuple of anchor strings — one per scale point — that render directly
+# beneath the radio buttons via st.radio(captions=...).
 DIMENSIONS = [
-    ("test_idiom",
-     "Test idiom quality",
-     "Are the tests written in an idiomatic pytest style? Look for: "
-     "use of pytest features like `@pytest.mark.parametrize` or fixtures "
-     "when they would shorten the suite; descriptive `test_*` names that "
-     "say what is being checked; one logical assertion per test (or a "
-     "clear reason for several); helpful failure messages. "
-     "0 = ad-hoc print-style; 3 = production-grade pytest idioms."),
-    ("correctness",
-     "Correctness",
-     "Are the assertions sound? If the function under test is correct, "
-     "would every test in the cell pass? Penalise tests that reference the "
-     "wrong API, expect the wrong exception, or hallucinate function behaviour."),
-    ("completeness",
-     "Completeness",
-     "Does the test suite cover happy path + edge cases (None / empty / zero) "
-     "+ error cases (invalid input)? A single trivial happy-path test → 0; "
-     "happy + 1-2 edges → 1-2; full coverage → 3."),
-    ("overall",
-     "Overall quality",
-     "Would you actually use this test suite as a starting point for the "
-     "function under test on a real codebase? 0 = useless, 3 = ship as-is."),
+    {
+        "key": "test_idiom",
+        "label": "Test idiom quality",
+        "general": "Are the tests written in idiomatic pytest style?",
+        "anchors": [
+            "ad-hoc / non-pytest (no test_* functions, prints instead of asserts)",
+            "basic test_* functions but generic names; no parametrize / fixtures even when they'd help",
+            "descriptive test_* names; mostly one logical assertion per test; minor style nits",
+            "production-grade: parametrize / fixtures used where they shorten the suite; helpful failure messages",
+        ],
+    },
+    {
+        "key": "correctness",
+        "label": "Correctness",
+        "general": "If the function is implemented correctly, would every test pass?",
+        "anchors": [
+            "most assertions are wrong / reference the wrong API / would fail on a correct function",
+            "some sound assertions, but several incorrect (e.g. expects ValueError, function raises IndexError)",
+            "all assertions sound; tests would pass on a correct function; minor oracle nits",
+            "every assertion matches function behaviour exactly",
+        ],
+    },
+    {
+        "key": "completeness",
+        "label": "Completeness",
+        "general": "Coverage across happy path / edge cases / error cases.",
+        "anchors": [
+            "single trivial happy-path test; no edge cases",
+            "happy path + 1 edge case (empty OR zero OR None)",
+            "happy path + multiple edge cases (None / empty / zero / boundary)",
+            "happy path + edge cases + error cases (invalid input raises as expected)",
+        ],
+    },
 ]
 SCALE = [0, 1, 2, 3]
 
@@ -72,15 +86,17 @@ def load_annotations(annotator_id: str) -> pd.DataFrame:
     p = annotations_path(annotator_id)
     if p.exists():
         df = pd.read_csv(p)
-        # Backward-compat: older sessions may have human_faithfulness column.
-        # Surface it as human_test_idiom so the UI prefills correctly.
+        # Backward-compat:
+        #  - older sessions may have human_faithfulness — surface as human_test_idiom
+        #  - older sessions may have human_overall — preserve column for traceability
+        #    but the UI no longer writes to it
         if "human_faithfulness" in df.columns and "human_test_idiom" not in df.columns:
             df = df.rename(columns={"human_faithfulness": "human_test_idiom"})
         return df
     return pd.DataFrame(columns=[
         "sample_id", "annotator_id", "timestamp",
         "human_test_idiom", "human_correctness",
-        "human_completeness", "human_overall",
+        "human_completeness",
         "annotator_notes",
     ])
 
@@ -95,7 +111,6 @@ def upsert_annotation(annotator_id: str, sample_id: str,
         "human_test_idiom":    ratings["test_idiom"],
         "human_correctness":   ratings["correctness"],
         "human_completeness":  ratings["completeness"],
-        "human_overall":       ratings["overall"],
         "annotator_notes":     notes,
     }
     df = df[df["sample_id"] != sample_id]   # remove prior version if any
@@ -112,17 +127,14 @@ st.set_page_config(page_title="Test Quality Annotation",
 
 # --- Sidebar: rubric + progress -------------------------------------------
 with st.sidebar:
-    st.header("Rubric (0–3 each)")
-    for _, label, desc in DIMENSIONS:
-        with st.expander(label, expanded=False):
-            st.write(desc)
-    st.markdown("**Scale**")
-    st.markdown(
-        "- **0** — absent / wrong / unusable\n"
-        "- **1** — partial / weak\n"
-        "- **2** — solid / mostly right\n"
-        "- **3** — excellent / production-ready"
-    )
+    st.header("Rubric")
+    st.caption("Three dimensions, each scored 0–3 with the anchor that best "
+               "matches what you see.")
+    for d in DIMENSIONS:
+        with st.expander(d["label"], expanded=False):
+            st.write(d["general"])
+            for v, anchor in zip(SCALE, d["anchors"]):
+                st.markdown(f"- **{v}** — {anchor}")
     st.markdown("---")
     st.markdown("**Tips**\n"
                 "- You don't see which method / model produced these tests — "
@@ -238,16 +250,16 @@ def _prior_val(col: str, default: int = 0) -> int:
     return int(v)
 
 ratings = {}
-cols = st.columns(4)
-for (key, label, _desc), col in zip(DIMENSIONS, cols):
-    with col:
-        ratings[key] = st.radio(
-            label,
-            SCALE,
-            index=_prior_val(f"human_{key}", 0),
-            horizontal=True,
-            key=f"rating_{current_id}_{key}",
-        )
+for d in DIMENSIONS:
+    ratings[d["key"]] = st.radio(
+        d["label"],
+        options=SCALE,
+        captions=d["anchors"],
+        index=_prior_val(f"human_{d['key']}", 0),
+        horizontal=True,
+        key=f"rating_{current_id}_{d['key']}",
+    )
+    st.markdown("")  # vertical breathing room between dimensions
 
 notes = st.text_area(
     "Notes (optional)",

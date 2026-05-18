@@ -1,4 +1,4 @@
-sample_id,function_code,generated_tests,ground_truth_tests,human_test_idiom,human_correctness,human_completeness,human_overall,annotator_notes
+sample_id,function_code,generated_tests,ground_truth_tests,human_test_idiom,human_correctness,human_completeness,annotator_notes
 s_000,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -152,7 +152,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_001,"def flatten_list(list1):
     result_list = []
     if not list1: return result_list
@@ -210,7 +210,7 @@ def test_flatten_none_input_raises():
     with pytest.raises(TypeError):
         flatten_list(None)","assert flatten_list([0, 10, [20, 30], 40, 50, [60, 70, 80], [90, 100, 110, 120]])==[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]
 assert flatten_list([[10, 20], [40], [30, 56, 25], [10, 20], [33], [40]])==[10, 20, 40, 30, 56, 25, 10, 20, 33, 40]
-assert flatten_list([[1,2,3], [4,5,6], [10,11,12], [7,8,9]])==[1, 2, 3, 4, 5, 6, 10, 11, 12, 7, 8, 9]",,,,,
+assert flatten_list([[1,2,3], [4,5,6], [10,11,12], [7,8,9]])==[1, 2, 3, 4, 5, 6, 10, 11, 12, 7, 8, 9]",,,,
 s_002,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -240,7 +240,7 @@ def test_bell_number_exception_cases():
     with pytest.raises(RecursionError):
         bell_number(10000)","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_003,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -306,7 +306,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_004,"def common(l1: list, l2: list):
     """"""Return sorted unique common elements for two lists.
     >>> common([1, 4, 3, 34, 653, 2, 5], [5, 7, 1, 5, 9, 653, 121])
@@ -355,7 +355,7 @@ def check(candidate):
     assert candidate([1, 4, 3, 34, 653, 2, 5], [5, 7, 1, 5, 9, 653, 121]) == [1, 5, 653]
     assert candidate([5, 3, 2, 8], [3, 2]) == [2, 3]
     assert candidate([4, 3, 2, 8], [3, 2, 4]) == [2, 3, 4]
-    assert candidate([4, 3, 2, 8], []) == []",,,,,
+    assert candidate([4, 3, 2, 8], []) == []",,,,
 s_005,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -432,7 +432,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_006,"def even_bit_set_number(n): 
     count = 0;res = 0;temp = n 
     while(temp > 0): 
@@ -471,7 +471,7 @@ def test_even_bit_set_number_large_positive_number():
 def test_even_bit_set_number_large_negative_number():
     assert even_bit_set_number(-1024) == -1025","assert even_bit_set_number(10) == 10
 assert even_bit_set_number(20) == 30
-assert even_bit_set_number(30) == 30",,,,,
+assert even_bit_set_number(30) == 30",,,,
 s_007,"def even_bit_set_number(n): 
     count = 0;res = 0;temp = n 
     while(temp > 0): 
@@ -562,7 +562,7 @@ def test_even_bit_set_number_large_negative(input):
 
 import sys","assert even_bit_set_number(10) == 10
 assert even_bit_set_number(20) == 30
-assert even_bit_set_number(30) == 30",,,,,
+assert even_bit_set_number(30) == 30",,,,
 s_008,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -615,7 +615,7 @@ def test_bell_number_none():
 def test_bell_number_large():
     assert bell_number(15) == 16675122506638817628924679","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_009,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -673,7 +673,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_010,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -705,7 +705,7 @@ def test_bell_number_large_input():
     assert bell_number(6) == 203
     assert bell_number(7) == 877","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_011,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -734,7 +734,7 @@ def test_bell_number_exception_value_error():
     with pytest.raises(ValueError):
         bell_number(3.5)","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_012,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -790,7 +790,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_013,"def simplify(x, n):
     """"""Your task is to implement a function that will simplify the expression
     x * n. The function returns True if x * n evaluates to a whole number and False
@@ -866,7 +866,7 @@ def test_simplify_exception_non_string_input():
     # Check some edge cases that are easy to work out by hand.
     assert candidate(""2/4"", ""4/2"") == True, 'test11'
     assert candidate(""1/5"", ""5/1"") == True, 'test12'
-    assert candidate(""1/5"", ""1/5"") == False, 'test13'",,,,,
+    assert candidate(""1/5"", ""1/5"") == False, 'test13'",,,,
 s_014,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -924,7 +924,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_015,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -980,7 +980,7 @@ def test_bell_number_non_integer_input_raises():
     with pytest.raises(ValueError):
         bell_number(""string"")","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_016,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -1059,7 +1059,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_017,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -1165,7 +1165,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_018,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -1210,7 +1210,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_019,"def even_odd_count(num):
     """"""Given an integer. return a tuple that has the number of even and odd digits respectively.
 
@@ -1299,7 +1299,7 @@ def test_even_odd_count_large_numbers_raises(n):
 
 
     # Check some edge cases that are easy to work out by hand.
-    assert True",,,,,
+    assert True",,,,
 s_020,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -1324,7 +1324,7 @@ def test_bell_number_non_integer_input_raises():
     with pytest.raises(TypeError):
         bell_number(1.5)","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_021,"def will_it_fly(q,w):
     '''
     Write a function that returns True if the object q will fly, and False otherwise.
@@ -1447,7 +1447,7 @@ def test_will_it_fly_with_negative_weight_raises_value_error():
 
     # Check some edge cases that are easy to work out by hand.
     assert candidate([1, 2, 3], 6) is False
-    assert candidate([5], 5) is True",,,,,
+    assert candidate([5], 5) is True",,,,
 s_022,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -1489,7 +1489,7 @@ def test_bell_number_zero():
 def test_bell_number_single_element():
     assert bell_number(1) == 1","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_023,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -1548,7 +1548,7 @@ def test_bell_number_large():
     assert bell_number(6) == 203
     assert bell_number(7) == 877","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_024,"def tuple_to_int(nums):
     result = int(''.join(map(str,nums)))
     return result","import pytest
@@ -1590,7 +1590,7 @@ def test_tuple_to_int_none_element():
     with pytest.raises(TypeError):
         tuple_to_int((None,))","assert tuple_to_int((1,2,3))==123
 assert tuple_to_int((4,5,6))==456
-assert tuple_to_int((5,6,7))==567",,,,,
+assert tuple_to_int((5,6,7))==567",,,,
 s_025,"def kth_element(arr, k):
   n = len(arr)
   for i in range(n):
@@ -1633,7 +1633,7 @@ def test_kth_element_exception_value_error():
     with pytest.raises(ValueError):
         kth_element(arr, k)","assert kth_element([12,3,5,7,19], 2) == 3
 assert kth_element([17,24,8,23], 3) == 8
-assert kth_element([16,21,25,36,4], 4) == 36",,,,,
+assert kth_element([16,21,25,36,4], 4) == 36",,,,
 s_026,"def Find_Min_Length(lst):  
     minLength = min(len(x) for x in lst )
     return minLength","import pytest
@@ -1689,7 +1689,7 @@ def test_find_min_length_happy_path_empty_strings():
 def test_find_min_length_happy_path_longest_string():
     assert Find_Min_Length([['hello', 'world'], ['python', 'programming']]) == 11","assert Find_Min_Length([[1],[1,2]]) == 1
 assert Find_Min_Length([[1,2],[1,2,3],[1,2,3,4]]) == 2
-assert Find_Min_Length([[3,3,3],[4,4,4,4]]) == 3",,,,,
+assert Find_Min_Length([[3,3,3],[4,4,4,4]]) == 3",,,,
 s_027,"from typing import List, Any
 
 
@@ -1757,7 +1757,7 @@ def test_filter_integers_with_large_integers():
 def check(candidate):
     assert candidate([]) == []
     assert candidate([4, {}, [], 23.2, 9, 'adasd']) == [4, 9]
-    assert candidate([3, 'c', 3, 3, 'a', 'b']) == [3, 3, 3]",,,,,
+    assert candidate([3, 'c', 3, 3, 'a', 'b']) == [3, 3, 3]",,,,
 s_028,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -1789,7 +1789,7 @@ def test_bell_number_large():
 def test_bell_number_zero():
     assert bell_number(0) == 1","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_029,"def kth_element(arr, k):
   n = len(arr)
   for i in range(n):
@@ -1842,7 +1842,7 @@ def test_kth_element_negative_numbers():
 def test_kth_element_mixed_numbers():
     assert kth_element([-3, 0, 5, -1, 10], 2) == 0","assert kth_element([12,3,5,7,19], 2) == 3
 assert kth_element([17,24,8,23], 3) == 8
-assert kth_element([16,21,25,36,4], 4) == 36",,,,,
+assert kth_element([16,21,25,36,4], 4) == 36",,,,
 s_030,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -1901,7 +1901,7 @@ def test_bell_number_large_negative():
     with pytest.raises(ValueError):
         bell_number(-10)","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_031,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -2003,7 +2003,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_032,"def subject_marks(subjectmarks):
 #subject_marks = [('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)])
  subjectmarks.sort(key = lambda x: x[1])
@@ -2074,7 +2074,7 @@ def test_subject_marks_mixed_types_in_tuples():
     result = subject_marks(input_marks)
     assert result == expected","assert subject_marks([('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)])==[('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
 assert subject_marks([('Telugu',49),('Hindhi',54),('Social',33)])==([('Social',33),('Telugu',49),('Hindhi',54)])
-assert subject_marks([('Physics',96),('Chemistry',97),('Biology',45)])==([('Biology',45),('Physics',96),('Chemistry',97)])",,,,,
+assert subject_marks([('Physics',96),('Chemistry',97),('Biology',45)])==([('Biology',45),('Physics',96),('Chemistry',97)])",,,,
 s_033,"def combinations_list(list1):
     if len(list1) == 0:
         return [[]]
@@ -2122,7 +2122,7 @@ def test_combinations_list_zero():
 def test_combinations_list_floats():
     assert combinations_list([1.5, 2.5]) == [[], [2.5], [1.5], [1.5, 2.5]]","assert combinations_list(['orange', 'red', 'green', 'blue'])==[[], ['orange'], ['red'], ['red', 'orange'], ['green'], ['green', 'orange'], ['green', 'red'], ['green', 'red', 'orange'], ['blue'], ['blue', 'orange'], ['blue', 'red'], ['blue', 'red', 'orange'], ['blue', 'green'], ['blue', 'green', 'orange'], ['blue', 'green', 'red'], ['blue', 'green', 'red', 'orange']]
 assert combinations_list(['red', 'green', 'blue', 'white', 'black', 'orange'])==[[], ['red'], ['green'], ['green', 'red'], ['blue'], ['blue', 'red'], ['blue', 'green'], ['blue', 'green', 'red'], ['white'], ['white', 'red'], ['white', 'green'], ['white', 'green', 'red'], ['white', 'blue'], ['white', 'blue', 'red'], ['white', 'blue', 'green'], ['white', 'blue', 'green', 'red'], ['black'], ['black', 'red'], ['black', 'green'], ['black', 'green', 'red'], ['black', 'blue'], ['black', 'blue', 'red'], ['black', 'blue', 'green'], ['black', 'blue', 'green', 'red'], ['black', 'white'], ['black', 'white', 'red'], ['black', 'white', 'green'], ['black', 'white', 'green', 'red'], ['black', 'white', 'blue'], ['black', 'white', 'blue', 'red'], ['black', 'white', 'blue', 'green'], ['black', 'white', 'blue', 'green', 'red'], ['orange'], ['orange', 'red'], ['orange', 'green'], ['orange', 'green', 'red'], ['orange', 'blue'], ['orange', 'blue', 'red'], ['orange', 'blue', 'green'], ['orange', 'blue', 'green', 'red'], ['orange', 'white'], ['orange', 'white', 'red'], ['orange', 'white', 'green'], ['orange', 'white', 'green', 'red'], ['orange', 'white', 'blue'], ['orange', 'white', 'blue', 'red'], ['orange', 'white', 'blue', 'green'], ['orange', 'white', 'blue', 'green', 'red'], ['orange', 'black'], ['orange', 'black', 'red'], ['orange', 'black', 'green'], ['orange', 'black', 'green', 'red'], ['orange', 'black', 'blue'], ['orange', 'black', 'blue', 'red'], ['orange', 'black', 'blue', 'green'], ['orange', 'black', 'blue', 'green', 'red'], ['orange', 'black', 'white'], ['orange', 'black', 'white', 'red'], ['orange', 'black', 'white', 'green'], ['orange', 'black', 'white', 'green', 'red'], ['orange', 'black', 'white', 'blue'], ['orange', 'black', 'white', 'blue', 'red'], ['orange', 'black', 'white', 'blue', 'green'], ['orange', 'black', 'white', 'blue', 'green', 'red']]
-assert combinations_list(['red', 'green', 'black', 'orange'])==[[], ['red'], ['green'], ['green', 'red'], ['black'], ['black', 'red'], ['black', 'green'], ['black', 'green', 'red'], ['orange'], ['orange', 'red'], ['orange', 'green'], ['orange', 'green', 'red'], ['orange', 'black'], ['orange', 'black', 'red'], ['orange', 'black', 'green'], ['orange', 'black', 'green', 'red']]",,,,,
+assert combinations_list(['red', 'green', 'black', 'orange'])==[[], ['red'], ['green'], ['green', 'red'], ['black'], ['black', 'red'], ['black', 'green'], ['black', 'green', 'red'], ['orange'], ['orange', 'red'], ['orange', 'green'], ['orange', 'green', 'red'], ['orange', 'black'], ['orange', 'black', 'red'], ['orange', 'black', 'green'], ['orange', 'black', 'green', 'red']]",,,,
 s_034,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -2186,7 +2186,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_035,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -2238,7 +2238,7 @@ def test_bell_number_float_raises():
     with pytest.raises(ValueError):
         bell_number(3.5)","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_036,"def bell_number(n):   
     bell = [[0 for i in range(n+1)] for j in range(n+1)] 
     bell[0][0] = 1
@@ -2273,7 +2273,7 @@ def test_bell_number_invalid_type():
     with pytest.raises(TypeError):
         bell_number(1.5)","assert bell_number(2)==2
 assert bell_number(10)==115975
-assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,
 s_037,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
@@ -2864,7 +2864,7 @@ def check(candidate):
     assert candidate('eeeee') == ''
     assert candidate('acBAA') == 'cB'
     assert candidate('EcBOO') == 'cB'
-    assert candidate('ybcd') == 'ybcd'",,,,,
+    assert candidate('ybcd') == 'ybcd'",,,,
 s_038,"def kth_element(arr, k):
   n = len(arr)
   for i in range(n):
@@ -3094,7 +3094,7 @@ def test_kth_element_min_max_k(arr, k, expected):
     result = kth_element(arr, k)
     assert result == expected","assert kth_element([12,3,5,7,19], 2) == 3
 assert kth_element([17,24,8,23], 3) == 8
-assert kth_element([16,21,25,36,4], 4) == 36",,,,,
+assert kth_element([16,21,25,36,4], 4) == 36",,,,
 s_039,"def subject_marks(subjectmarks):
 #subject_marks = [('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)])
  subjectmarks.sort(key = lambda x: x[1])
@@ -3173,4 +3173,4 @@ def test_subject_marks_returns_sorted_list():
     result = subject_marks(subjectmarks)
     assert result[0][1] < result[1][1] < result[2][1] < result[3][1]","assert subject_marks([('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)])==[('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
 assert subject_marks([('Telugu',49),('Hindhi',54),('Social',33)])==([('Social',33),('Telugu',49),('Hindhi',54)])
-assert subject_marks([('Physics',96),('Chemistry',97),('Biology',45)])==([('Biology',45),('Physics',96),('Chemistry',97)])",,,,,
+assert subject_marks([('Physics',96),('Chemistry',97),('Biology',45)])==([('Biology',45),('Physics',96),('Chemistry',97)])",,,,
