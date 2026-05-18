@@ -30,12 +30,12 @@ Output:
 
 The displayed CSV columns are restricted to:
   sample_id, function_code, generated_tests, ground_truth_tests,
-  retrieved_context (placeholder, populated only for RAG rows from logs),
-  human_faithfulness, human_correctness, human_completeness,
+  human_test_idiom, human_correctness, human_completeness,
   human_overall, annotator_notes
 
-(retrieved_context is left empty unless the user runs an explicit
-re-retrieval — generation pkls don't store the retrieved chunks.)
+(retrieved chunks aren't stored in the generation pkls, so we don't
+ask annotators to judge "faithfulness to retrieved docs" — the
+human_test_idiom dimension judges idiomatic pytest style instead.)
 """
 
 from __future__ import annotations
@@ -204,7 +204,7 @@ def write_worksheets(sampled: pd.DataFrame, blinded_path: Path,
     # Annotation worksheet (visible to annotators) — no method/model
     blinded_cols = ["sample_id", "function_code", "generated_tests",
                     "ground_truth_tests"]
-    for col in ("human_faithfulness", "human_correctness",
+    for col in ("human_test_idiom", "human_correctness",
                 "human_completeness", "human_overall", "annotator_notes"):
         sampled[col] = ""
         blinded_cols.append(col)

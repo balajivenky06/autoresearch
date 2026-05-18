@@ -32,11 +32,14 @@ ANNOTATIONS_DIR   = Path("human_eval_annotations")
 GUIDE_PATH        = Path("human_eval_guide.txt")  # produced by human_eval_sampler.py
 
 DIMENSIONS = [
-    ("faithfulness",
-     "Faithfulness",
-     "Do the tests use patterns / vocabulary from the testing docs that "
-     "would have been retrieved (e.g. pytest.parametrize, fixtures)? "
-     "Score 0 for non-RAG-style tests. Skip if you have no retrieval context."),
+    ("test_idiom",
+     "Test idiom quality",
+     "Are the tests written in an idiomatic pytest style? Look for: "
+     "use of pytest features like `@pytest.mark.parametrize` or fixtures "
+     "when they would shorten the suite; descriptive `test_*` names that "
+     "say what is being checked; one logical assertion per test (or a "
+     "clear reason for several); helpful failure messages. "
+     "0 = ad-hoc print-style; 3 = production-grade pytest idioms."),
     ("correctness",
      "Correctness",
      "Are the assertions sound? If the function under test is correct, "
@@ -68,10 +71,15 @@ def annotations_path(annotator_id: str) -> Path:
 def load_annotations(annotator_id: str) -> pd.DataFrame:
     p = annotations_path(annotator_id)
     if p.exists():
-        return pd.read_csv(p)
+        df = pd.read_csv(p)
+        # Backward-compat: older sessions may have human_faithfulness column.
+        # Surface it as human_test_idiom so the UI prefills correctly.
+        if "human_faithfulness" in df.columns and "human_test_idiom" not in df.columns:
+            df = df.rename(columns={"human_faithfulness": "human_test_idiom"})
+        return df
     return pd.DataFrame(columns=[
         "sample_id", "annotator_id", "timestamp",
-        "human_faithfulness", "human_correctness",
+        "human_test_idiom", "human_correctness",
         "human_completeness", "human_overall",
         "annotator_notes",
     ])
@@ -84,7 +92,7 @@ def upsert_annotation(annotator_id: str, sample_id: str,
         "sample_id":           sample_id,
         "annotator_id":        annotator_id,
         "timestamp":           datetime.now().isoformat(timespec="seconds"),
-        "human_faithfulness":  ratings["faithfulness"],
+        "human_test_idiom":    ratings["test_idiom"],
         "human_correctness":   ratings["correctness"],
         "human_completeness":  ratings["completeness"],
         "human_overall":       ratings["overall"],

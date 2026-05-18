@@ -1,4 +1,4 @@
-sample_id,function_code,generated_tests,ground_truth_tests,human_faithfulness,human_correctness,human_completeness,human_overall,annotator_notes
+sample_id,function_code,generated_tests,ground_truth_tests,human_test_idiom,human_correctness,human_completeness,human_overall,annotator_notes
 s_000,"def remove_vowels(text):
     """"""
     remove_vowels is a function that takes string and returns string without vowels.
