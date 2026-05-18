@@ -47,4 +47,10 @@ logs/
 .DS_Store
 .claude/
 
+# Human-evaluation private state — never commit
+# (.meta.csv reveals method/model per sample, defeating annotator blinding;
+#  per-annotator CSVs are personal data)
+human_eval_pairs.meta.csv
+human_eval_annotations/
+
 SKILL.md

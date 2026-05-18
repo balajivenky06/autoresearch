@@ -1,0 +1,3176 @@
+sample_id,function_code,generated_tests,ground_truth_tests,human_faithfulness,human_correctness,human_completeness,human_overall,annotator_notes
+s_000,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def test_remove_vowels_normal():
+    assert remove_vowels(""abcdef"") == ""bcdf""
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels("""") == """"
+
+def test_remove_vowels_only_consonants():
+    assert remove_vowels(""bcdf"") == ""bcdf""
+
+def test_remove_vowels_only_vowels():
+    assert remove_vowels(""aeiou"") == """"
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels(""AbCdEf"") == ""bCdF""
+
+def test_remove_vowels_uppercase_vowels():
+    assert remove_vowels(""AEIOU"") == """"
+
+def test_remove_vowels_mixed_vowels():
+    assert remove_vowels(""aBcDeFgHiJ"") == ""BcFgJ""
+
+def test_remove_vowels_with_newlines():
+    assert remove_vowels(""abcdef\nghijklm"") == ""bcdf\nghjklm""
+
+def test_remove_vowels_with_spaces():
+    assert remove_vowels(""hello world"") == ""hll wrld""
+
+def test_remove_vowels_special_characters():
+    assert remove_vowels(""hello, world!"") == ""hll, wrld!""
+
+def test_remove_vowels_whitespace_only():
+    assert remove_vowels(""   "") == ""   ""
+
+def test_remove_vowels_all_same_char_vowel():
+    assert remove_vowels(""aaa"") == """"
+
+def test_remove_vowels_all_same_char_consonant():
+    assert remove_vowels(""bbb"") == ""bbb""
+
+def test_remove_vowels_single_consonant():
+    assert remove_vowels(""b"") == ""b""
+
+def test_remove_vowels_single_vowel():
+    assert remove_vowels(""a"") == """"
+
+def test_remove_vowels_none_input():
+    with pytest.raises(TypeError):
+        remove_vowels(None)
+
+def test_remove_vowels_integer_input():
+    with pytest.raises(TypeError):
+        remove_vowels(123)
+
+def test_remove_vowels_float_input():
+    with pytest.raises(TypeError):
+        remove_vowels(3.14)
+
+def test_remove_vowels_list_input():
+    with pytest.raises(TypeError):
+        remove_vowels([""hello""])
+
+def test_remove_vowels_tuple_input():
+    with pytest.raises(TypeError):
+        remove_vowels((""hello"", ""world""))
+
+def test_remove_vowels_unicode_characters():
+    assert remove_vowels(""café"") == ""cf""
+
+def test_remove_vowels_mixed_unicode():
+    assert remove_vowels(""naïve"") == ""nv""
+
+def test_remove_vowels_empty_list():
+    with pytest.raises(TypeError):
+        remove_vowels([])
+
+def test_remove_vowels_empty_tuple():
+    with pytest.raises(TypeError):
+        remove_vowels(())
+
+def test_remove_vowels_zero():
+    with pytest.raises(TypeError):
+        remove_vowels(0)
+
+def test_remove_vowels_negative():
+    with pytest.raises(TypeError):
+        remove_vowels(-1)
+
+def test_remove_vowels_boolean_input():
+    with pytest.raises(TypeError):
+        remove_vowels(True)
+
+def test_remove_vowels_bytes_input():
+    with pytest.raises(TypeError):
+        remove_vowels(b""hello"")
+
+def test_remove_vowels_mixed_case_vowels():
+    assert remove_vowels(""aEiOu"") == """"
+
+def test_remove_vowels_consonants_preserved():
+    assert remove_vowels(""xyz"") == ""xyz""
+
+def test_remove_vowels_punctuation_preserved():
+    assert remove_vowels(""hello!@#$%"") == ""hll!@#$%""
+
+def test_remove_vowels_tab_characters():
+    assert remove_vowels(""hello\tworld"") == ""hll\twrld""
+
+def test_remove_vowels_return_type():
+    result = remove_vowels(""hello"")
+    assert isinstance(result, str)
+
+def test_remove_vowels_long_string():
+    text = ""aeiou"" * 100
+    result = remove_vowels(text)
+    assert result == """"
+
+def test_remove_vowels_long_consonant_string():
+    text = ""bcdfg"" * 100
+    result = remove_vowels(text)
+    assert result == text
+
+def test_remove_vowels_single_letter_vowel():
+    assert remove_vowels(""a"") == """"
+
+def test_remove_vowels_single_letter_consonant():
+    assert remove_vowels(""b"") == ""b""","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_001,"def flatten_list(list1):
+    result_list = []
+    if not list1: return result_list
+    stack = [list(list1)]
+    while stack:
+        c_num = stack.pop()
+        next = c_num.pop()
+        if c_num: stack.append(c_num)
+        if isinstance(next, list):
+            if next: stack.append(list(next))
+        else: result_list.append(next)
+    result_list.reverse()
+    return result_list","import pytest
+
+def flatten_list(list1):
+    result_list = []
+    if not list1: 
+        return result_list
+    stack = [list(list1)]
+    while stack:
+        c_num = stack.pop()
+        next = c_num.pop()
+        if c_num: 
+            stack.append(c_num)
+        if isinstance(next, list):
+            if next: 
+                stack.append(list(next))
+        else: 
+            result_list.append(next)
+    result_list.reverse()
+    return result_list
+
+def test_flatten_simple():
+    assert flatten_list([1, 2, [3, 4], 5]) == [1, 2, 3, 4, 5]
+
+def test_flatten_nested():
+    assert flatten_list([1, [2, [3, [4]], 5]]) == [1, 2, 3, 4, 5]
+
+def test_flatten_empty_list():
+    assert flatten_list([]) == []
+
+def test_flatten_single_element():
+    assert flatten_list([42]) == [42]
+
+def test_flatten_multiple_nested_lists():
+    assert flatten_list([[1, 2], [3, [4, 5]], 6]) == [1, 2, 3, 4, 5, 6]
+
+def test_flatten_empty_inner_lists():
+    assert flatten_list([[], [[], []]]) == []
+
+def test_flatten_mixed_types():
+    assert flatten_list([1, ""a"", [2.0, [True]], None]) == [1, ""a"", 2.0, True, None]
+
+def test_flatten_none_input_raises():
+    with pytest.raises(TypeError):
+        flatten_list(None)","assert flatten_list([0, 10, [20, 30], 40, 50, [60, 70, 80], [90, 100, 110, 120]])==[0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120]
+assert flatten_list([[10, 20], [40], [30, 56, 25], [10, 20], [33], [40]])==[10, 20, 40, 30, 56, 25, 10, 20, 33, 40]
+assert flatten_list([[1,2,3], [4,5,6], [10,11,12], [7,8,9]])==[1, 2, 3, 4, 5, 6, 10, 11, 12, 7, 8, 9]",,,,,
+s_002,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def test_bell_number_happy_path():
+    assert bell_number(5) == 52
+
+def test_bell_number_happy_path_2():
+    assert bell_number(10) == 985544187
+
+def test_bell_number_edge_case_zero():
+    with pytest.raises(ValueError):
+        bell_number(0)
+
+def test_bell_number_edge_case_empty_input():
+    with pytest.raises(TypeError):
+        bell_number(None)
+    with pytest.raises(TypeError):
+        bell_number(""hello"")
+
+def test_bell_number_exception_cases():
+    with pytest.raises(RecursionError):
+        bell_number(10000)","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_003,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_basic_happy_path():
+    assert remove_vowels('abcdef') == 'bcdf'
+
+def test_remove_vowels_with_newline():
+    assert remove_vowels(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+
+def test_remove_vowels_all_vowels():
+    assert remove_vowels('aaaaa') == ''
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels('aaBAA') == 'B'
+
+def test_remove_vowels_no_vowels():
+    assert remove_vowels('zbcd') == 'zbcd'
+
+def test_remove_vowels_uppercase_vowels():
+    assert remove_vowels('AEIOU') == ''
+
+def test_remove_vowels_lowercase_vowels():
+    assert remove_vowels('aeiou') == ''
+
+def test_remove_vowels_mixed_vowels():
+    assert remove_vowels('Hello World') == 'Hll Wrld'
+
+def test_remove_vowels_special_characters():
+    assert remove_vowels('h3ll0 w0rld!') == 'h3ll0 w0rld!'
+
+def test_remove_vowels_numbers():
+    assert remove_vowels('12345') == '12345'
+
+def test_remove_vowels_whitespace():
+    assert remove_vowels('a e i o u') == '  '
+
+def test_remove_vowels_complex_string():
+    assert remove_vowels('Programming is fun!') == 'Prgrmmng s fn!'","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_004,"def common(l1: list, l2: list):
+    """"""Return sorted unique common elements for two lists.
+    >>> common([1, 4, 3, 34, 653, 2, 5], [5, 7, 1, 5, 9, 653, 121])
+    [1, 5, 653]
+    >>> common([5, 3, 2, 8], [3, 2])
+    [2, 3]
+
+    """"""
+    ret = set()
+    for e1 in l1:
+        for e2 in l2:
+            if e1 == e2:
+                ret.add(e1)
+    return sorted(list(ret))","import pytest
+
+def test_common_happy_path_1():
+    assert common([1, 4, 3, 34, 653, 2, 5], [5, 7, 1, 5, 9, 653, 121]) == [1, 5, 653]
+
+def test_common_happy_path_2():
+    assert common([5, 3, 2, 8], [3, 2]) == [2, 3]
+
+def test_common_empty_lists():
+    assert common([], []) == []
+
+def test_common_one_empty_list():
+    assert common([1, 4, 3, 34, 653, 2, 5], []) == []
+
+def test_common_negative_numbers():
+    with pytest.raises(ValueError):
+        common([-1, -4, -3, -34, -653, -2, -5], [-5, -7, -1, -5, -9, -653, 121])
+
+def test_common_non_integer_elements():
+    with pytest.raises(TypeError):
+        common([1.5, 'a', [1, 2]], [1, 2, 'b'])
+
+def test_common_none_element():
+    with pytest.raises(TypeError):
+        common([1, None, 3], [1, 2])
+
+def test_common_type_error():
+    with pytest.raises(TypeError):
+        common(None, [1, 2])","METADATA = {}
+
+
+def check(candidate):
+    assert candidate([1, 4, 3, 34, 653, 2, 5], [5, 7, 1, 5, 9, 653, 121]) == [1, 5, 653]
+    assert candidate([5, 3, 2, 8], [3, 2]) == [2, 3]
+    assert candidate([4, 3, 2, 8], [3, 2, 4]) == [2, 3, 4]
+    assert candidate([4, 3, 2, 8], []) == []",,,,,
+s_005,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_basic_happy_path():
+    assert remove_vowels('abcdef') == 'bcdf'
+
+def test_remove_vowels_with_newline():
+    assert remove_vowels('abcdef\nghijklm') == 'bcdf\nghjklm'
+
+def test_remove_vowels_all_vowels():
+    assert remove_vowels('aaaaa') == ''
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels('aaBAA') == 'B'
+
+def test_remove_vowels_no_vowels():
+    assert remove_vowels('zbcd') == 'zbcd'
+
+def test_remove_vowels_only_vowels():
+    assert remove_vowels('aeiou') == ''
+    assert remove_vowels('AEIOU') == ''
+
+def test_remove_vowels_mixed_vowels_and_consonants():
+    assert remove_vowels('Hello World') == 'Hll Wrld'
+    assert remove_vowels('Programming') == 'Prgrmmng'
+
+def test_remove_vowels_special_characters():
+    assert remove_vowels('Hello, World!') == 'Hll, Wrld!'
+    assert remove_vowels('12345') == '12345'
+
+def test_remove_vowels_whitespace():
+    assert remove_vowels('a e i o u') == ' e  '
+    assert remove_vowels('  ') == '  '
+
+def test_remove_vowels_numbers():
+    assert remove_vowels('123abc456') == '123bc456'
+
+def test_remove_vowels_unicode():
+    assert remove_vowels('café') == 'cf'
+    assert remove_vowels('naïve') == 'nv'
+
+def test_remove_vowels_single_character():
+    assert remove_vowels('a') == ''
+    assert remove_vowels('b') == 'b'
+
+def test_remove_vowels_long_string():
+    long_string = 'a' * 1000 + 'b' * 1000
+    expected = 'b' * 1000
+    assert remove_vowels(long_string) == expected","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_006,"def even_bit_set_number(n): 
+    count = 0;res = 0;temp = n 
+    while(temp > 0): 
+        if (count % 2 == 1): 
+            res |= (1 << count)
+        count+=1
+        temp >>= 1
+    return (n | res)","import pytest
+
+def even_bit_set_number(n):
+    count = 0
+    res = 0
+    temp = n
+    while(temp > 0):
+        if (count % 2 == 1):
+            res |= (1 << count)
+        count += 1
+        temp >>= 1
+    return (n | res)
+
+def test_even_bit_set_number_happy_path_1():
+    assert even_bit_set_number(5) == 7
+
+def test_even_bit_set_number_happy_path_2():
+    assert even_bit_set_number(10) == 14
+
+def test_even_bit_set_number_edge_case_zero():
+    assert even_bit_set_number(0) == 0
+
+def test_even_bit_set_number_negative_number():
+    assert even_bit_set_number(-1) == -1
+
+def test_even_bit_set_number_large_positive_number():
+    assert even_bit_set_number(1023) == 1279
+
+def test_even_bit_set_number_large_negative_number():
+    assert even_bit_set_number(-1024) == -1025","assert even_bit_set_number(10) == 10
+assert even_bit_set_number(20) == 30
+assert even_bit_set_number(30) == 30",,,,,
+s_007,"def even_bit_set_number(n): 
+    count = 0;res = 0;temp = n 
+    while(temp > 0): 
+        if (count % 2 == 1): 
+            res |= (1 << count)
+        count+=1
+        temp >>= 1
+    return (n | res)","import pytest
+
+def even_bit_set_number(n):
+    count = 0
+    res = 0
+    temp = n
+    while(temp > 0):
+        if (count % 2 == 1):
+            res |= (1 << count)
+        count += 1
+        temp >>= 1
+    return (n | res)
+
+@pytest.mark.parametrize(""input, expected"", [
+    (0, 0),  # Edge case: zero
+    (5, 7),  # Binary: 101 -> 111
+    (-1, -1),  # Binary (two's complement): 111...111 -> 111...111
+    (1023, 2047),  # Binary: 1111111111 -> 11111111111
+    (8, 15),  # Binary: 1000 -> 1111
+    (255, 511),  # Binary: 11111111 -> 111111111
+    (2, 3),  # Binary: 10 -> 11
+    (1, 1),  # Binary: 1 -> 1
+    (-8, -15),  # Two's complement for negative numbers
+    (-1024, -2047),  # Larger negative number test
+    (16, 31),  # Power of two with even bit set
+    (127, 255)  # All bits set in a smaller range
+])
+def test_even_bit_set_number(input, expected):
+    assert even_bit_set_number(input) == expected
+
+def test_even_bit_set_number_none():
+    with pytest.raises(TypeError):
+        even_bit_set_number(None)
+
+@pytest.mark.parametrize(""input"", [
+    -1025,  # Larger negative number beyond typical two's complement range
+    2048,   # Power of two that is larger than previous tests
+])
+def test_even_bit_set_number_large_values(input):
+    assert even_bit_set_number(input) == (input | ((1 << input.bit_length()) - 1))
+
+@pytest.mark.parametrize(""input"", [
+    ""string"",  # Non-integer type
+    3.14,      # Float type
+    [],        # List type
+])
+def test_even_bit_set_number_invalid_type_raises(input):
+    with pytest.raises(TypeError):
+        even_bit_set_number(input)
+
+@pytest.mark.parametrize(""input"", [
+    sys.maxsize,   # Maximum integer value in Python
+    -sys.maxsize-1,# Minimum integer value in Python
+])
+def test_even_bit_set_number_boundary_conditions(input):
+    result = even_bit_set_number(input)
+    assert (result & input) == input  # Ensure original bits are preserved
+
+@pytest.mark.parametrize(""input"", [
+    0,           # Zero bit length case
+    -1,          # Negative number with all bits set
+])
+def test_even_bit_set_number_edge_cases(input):
+    result = even_bit_set_number(input)
+    assert (result & input) == input  # Ensure original bits are preserved
+
+@pytest.mark.parametrize(""input"", [
+    0b10101010,  # Binary: alternating bits
+    0b11110000,  # Binary: mixed set and unset bits
+])
+def test_even_bit_set_number_alternating_bits(input):
+    result = even_bit_set_number(input)
+    assert (result & input) == input  # Ensure original bits are preserved
+
+@pytest.mark.parametrize(""input"", [
+    -1 << 31,   # Large negative number with all bits set in a typical 32-bit system
+])
+def test_even_bit_set_number_large_negative(input):
+    result = even_bit_set_number(input)
+    assert (result & input) == input  # Ensure original bits are preserved
+
+import sys","assert even_bit_set_number(10) == 10
+assert even_bit_set_number(20) == 30
+assert even_bit_set_number(30) == 30",,,,,
+s_008,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def test_bell_number_zero():
+    assert bell_number(0) == 1
+
+def test_bell_number_one():
+    assert bell_number(1) == 1
+
+def test_bell_number_two():
+    assert bell_number(2) == 2
+
+def test_bell_number_three():
+    assert bell_number(3) == 5
+
+def test_bell_number_four():
+    assert bell_number(4) == 15
+
+def test_bell_number_five():
+    assert bell_number(5) == 52
+
+def test_bell_number_six():
+    assert bell_number(6) == 203
+
+def test_bell_number_ten():
+    assert bell_number(10) == 109594849136981
+
+def test_bell_number_negative():
+    with pytest.raises(IndexError):
+        bell_number(-1)
+
+def test_bell_number_float():
+    with pytest.raises(TypeError):
+        bell_number(1.5)
+
+def test_bell_number_string():
+    with pytest.raises(TypeError):
+        bell_number(""1"")
+
+def test_bell_number_none():
+    with pytest.raises(TypeError):
+        bell_number(None)
+
+def test_bell_number_large():
+    assert bell_number(15) == 16675122506638817628924679","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_009,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels("""") == """"
+
+def test_remove_vowels_multiple_lines():
+    result = remove_vowels(""abcdef\nghijklm"")
+    expected_result = ""bcdf\nghjklm""
+    assert result == expected_result, f""Expected {expected_result} but got {result}""
+
+def test_remove_vowels_single_line():
+    result = remove_vowels(""abcdef"")
+    expected_result = ""bcdf""
+    assert result == expected_result, f""Expected {expected_result} but got {result}""
+
+def test_remove_vowels_all_vowels():
+    result = remove_vowels('aaaaa')
+    expected_result = """"
+    assert result == expected_result, f""Expected {expected_result} but got {result}""
+
+def test_remove_vowels_non_alpha_characters():
+    result = remove_vowels(""zbcd"")
+    expected_result = ""zbcd""
+    assert result == expected_result, f""Expected {expected_result} but got {result}""
+
+def test_remove_vowels_invalid_input_type_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(123)
+
+def test_remove_vowels_none_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(None)","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_010,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def test_bell_number_positive():
+    assert bell_number(0) == 1
+    assert bell_number(1) == 1
+    assert bell_number(2) == 2
+    assert bell_number(3) == 5
+    assert bell_number(4) == 15
+
+def test_bell_number_edge_cases():
+    assert bell_number(0) == 1
+    assert bell_number(5) == 52
+
+def test_bell_number_negative():
+    with pytest.raises(IndexError):
+        bell_number(-1)
+
+def test_bell_number_zero():
+    assert bell_number(0) == 1
+
+def test_bell_number_large_input():
+    assert bell_number(6) == 203
+    assert bell_number(7) == 877","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_011,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def test_bell_number_happy_path():
+    assert bell_number(0) == 1
+    assert bell_number(1) == 1
+
+def test_bell_number_edge_case_zero():
+    assert bell_number(2) == 2
+
+def test_bell_number_edge_case_negative():
+    with pytest.raises(ValueError):
+        bell_number(-1)
+
+def test_bell_number_exception_type_error():
+    with pytest.raises(TypeError):
+        bell_number(""a"")
+
+def test_bell_number_exception_value_error():
+    with pytest.raises(ValueError):
+        bell_number(3.5)","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_012,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def remove_vowels(text):
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_with_newline():
+    assert remove_vowels(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+
+def test_remove_vowels_no_vowel():
+    assert remove_vowels('zbcd') == 'zbcd'
+
+def test_remove_vowels_all_vowels():
+    assert remove_vowels('aaaaa') == ''
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels('aaBAA') == 'B'
+
+def test_remove_vowels_with_punctuation():
+    assert remove_vowels(""hello, world!"") == ""hll, wrld!""
+
+def test_remove_vowels_none_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(None)
+
+def test_remove_vowels_non_string_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(123)","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_013,"def simplify(x, n):
+    """"""Your task is to implement a function that will simplify the expression
+    x * n. The function returns True if x * n evaluates to a whole number and False
+    otherwise. Both x and n, are string representation of a fraction, and have the following format,
+    <numerator>/<denominator> where both numerator and denominator are positive whole numbers.
+
+    You can assume that x, and n are valid fractions, and do not have zero as denominator.
+
+    simplify(""1/5"", ""5/1"") = True
+    simplify(""1/6"", ""2/1"") = False
+    simplify(""7/10"", ""10/2"") = False
+    """"""
+    a, b = x.split(""/"")
+    c, d = n.split(""/"")
+    numerator = int(a) * int(c)
+    denom = int(b) * int(d)
+    if (numerator/denom == int(numerator/denom)):
+        return True
+    return False","import pytest
+
+def test_simplify_happy_path_true():
+    assert simplify(""1/5"", ""5/1"") == True
+
+def test_simplify_happy_path_false():
+    assert simplify(""1/6"", ""2/1"") == False
+
+def test_simplify_edge_case_same_fraction():
+    assert simplify(""2/4"", ""4/2"") == True
+
+def test_simplify_edge_case_large_numbers():
+    assert simplify(""100/50"", ""50/25"") == True
+
+def test_simplify_edge_case_no_reduction():
+    assert simplify(""3/7"", ""7/3"") == False
+
+def test_simplify_edge_case_zero_numerator():
+    # This case won't occur as per function assumptions, but testing robustness
+    pass
+
+def test_simplify_exception_invalid_format():
+    with pytest.raises(ValueError):
+        simplify(""1/2/3"", ""2/1"")  # Invalid fraction format
+
+def test_simplify_exception_invalid_fraction_chars():
+    with pytest.raises(ValueError):
+        simplify(""1/a"", ""2/1"")  # Invalid character in fraction
+
+def test_simplify_exception_empty_string():
+    with pytest.raises(ValueError):
+        simplify("""", ""2/1"")  # Empty string
+
+def test_simplify_exception_none_input():
+    with pytest.raises(TypeError):
+        simplify(None, ""2/1"")  # None input
+
+def test_simplify_exception_non_string_input():
+    with pytest.raises(AttributeError):
+        simplify(123, ""2/1"")  # Non-string input","def check(candidate):
+
+    # Check some simple cases
+    assert candidate(""1/5"", ""5/1"") == True, 'test1'
+    assert candidate(""1/6"", ""2/1"") == False, 'test2'
+    assert candidate(""5/1"", ""3/1"") == True, 'test3'
+    assert candidate(""7/10"", ""10/2"") == False, 'test4'
+    assert candidate(""2/10"", ""50/10"") == True, 'test5'
+    assert candidate(""7/2"", ""4/2"") == True, 'test6'
+    assert candidate(""11/6"", ""6/1"") == True, 'test7'
+    assert candidate(""2/3"", ""5/2"") == False, 'test8'
+    assert candidate(""5/2"", ""3/5"") == False, 'test9'
+    assert candidate(""2/4"", ""8/4"") == True, 'test10'
+
+
+    # Check some edge cases that are easy to work out by hand.
+    assert candidate(""2/4"", ""4/2"") == True, 'test11'
+    assert candidate(""1/5"", ""5/1"") == True, 'test12'
+    assert candidate(""1/5"", ""1/5"") == False, 'test13'",,,,,
+s_014,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_multiple_lines():
+    result = remove_vowels(""abcdef\nghijklm"")
+    assert result == 'bcdf\nghjklm'
+
+def test_remove_vowels_single_line():
+    result = remove_vowels('abcdef')
+    assert result == 'bcdf'
+
+def test_remove_vowels_all_vowels():
+    result = remove_vowels('aaaaa')
+    assert result == ''
+
+def test_remove_vowels_mixed_case():
+    result = remove_vowels('aaBAA')
+    assert result == 'B'
+
+def test_remove_vowels_non_alphabetical_characters():
+    result = remove_vowels('zbcd')
+    assert result == 'zbcd'
+
+def test_remove_vowels_invalid_input_type_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(123)
+
+def test_remove_vowels_none_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(None)","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_015,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def bell_number(n):
+    if n is None:
+        raise TypeError(""Input cannot be None"")
+    if not isinstance(n, int) or n < 0:
+        raise ValueError(""Input must be a non-negative integer"")
+
+    bell = [[0 for i in range(n+1)] for j in range(n+1)]
+    bell[0][0] = 1
+    for i in range(1, n+1):
+        bell[i][0] = bell[i-1][i-1]
+        for j in range(1, i+1):
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]
+    return bell[n][0]
+
+def test_bell_number_happy_path():
+    assert bell_number(3) == 5
+
+def test_bell_number_another_happy_path():
+    assert bell_number(4) == 15
+
+def test_bell_number_edge_case_zero():
+    # Bell number for n=0 is defined as 1
+    assert bell_number(0) == 1
+
+def test_bell_number_boundary_case_one():
+    assert bell_number(1) == 1
+
+def test_bell_number_negative_input_raises():
+    with pytest.raises(ValueError):
+        bell_number(-1)
+
+def test_bell_number_large_input():
+    expected = 115975  # Bell number for n=10
+    assert bell_number(10) == expected
+
+def test_bell_number_none_input_raises():
+    with pytest.raises(TypeError):
+        bell_number(None)
+
+def test_bell_number_non_integer_input_raises():
+    with pytest.raises(ValueError):
+        bell_number(3.5)
+    
+    with pytest.raises(ValueError):
+        bell_number(""string"")","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_016,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def test_remove_vowels_happy_path():
+    assert remove_vowels('abcdef') == 'bcdf'
+
+def test_remove_vowels_all_vowels():
+    assert remove_vowels('aaa') == ''
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_uppercase_vowels():
+    assert remove_vowels('ABC') == 'BC'
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels('aaBAA') == 'B'
+
+def test_remove_vowels_special_chars():
+    assert remove_vowels('hello, world!') == 'hll, wrld!'
+
+def test_remove_vowels_numbers():
+    assert remove_vowels('1234') == '1234'
+
+def test_remove_vowels_all_consonants():
+    assert remove_vowels('bcdfg') == 'bcdfg'
+
+def test_remove_vowels_newlines():
+    assert remove_vowels('abcdef\nghijklm') == 'bcdf\nghjklm'
+
+def test_remove_vowels_none_input():
+    with pytest.raises(TypeError):
+        remove_vowels(None)
+
+def test_remove_vowels_int_input():
+    with pytest.raises(TypeError):
+        remove_vowels(123)
+
+def test_remove_vowels_list_input():
+    with pytest.raises(TypeError):
+        remove_vowels(['a', 'b'])
+
+def test_remove_vowels_float_input():
+    with pytest.raises(TypeError):
+        remove_vowels(3.14)
+
+def test_remove_vowels_single_consonant():
+    assert remove_vowels('b') == 'b'
+
+def test_remove_vowels_single_vowel():
+    assert remove_vowels('a') == ''
+
+def test_remove_vowels_whitespace():
+    assert remove_vowels(' a e i o u ') == ' '","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_017,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def remove_vowels(text):
+    """"""
+    Remove vowels from a given string.
+
+    Args:
+        text (str): The input string.
+
+    Returns:
+        str: The string without vowels.
+
+    Raises:
+        TypeError: If the input is not a string.
+    """"""
+    if not isinstance(text, str):
+        raise TypeError(""Input must be a string"")
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])
+
+def test_remove_vowels_happy_path_empty_string():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_happy_path_single_word():
+    assert remove_vowels('abc') == 'bc'
+
+def test_remove_vowels_happy_path_multiple_words():
+    assert remove_vowels('abcdef') == 'bcdf'
+
+def test_remove_vowels_edge_case_empty_line():
+    assert remove_vowels('\nghijklm') == 'ghjklm'
+
+def test_remove_vowels_edge_case_all_vowels():
+    assert remove_vowels('aaaaa') == ''
+
+def test_remove_vowels_exception_type_error():
+    with pytest.raises(TypeError):
+        remove_vowels(123)
+
+def test_remove_vowels_exception_none_input():
+    with pytest.raises(TypeError):
+        remove_vowels(None)
+
+def test_remove_vowels_edge_case_non_string_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(123.45)
+    with pytest.raises(TypeError):
+        remove_vowels([1, 2, 3])
+
+def test_remove_vowels_edge_case_special_characters():
+    assert remove_vowels('abc!@#') == 'bc'
+    assert remove_vowels('abcdef!@#') == 'bcdf'
+
+def test_remove_vowels_happy_path_uppercase_letters():
+    assert remove_vowels('ABCDEF') == 'BCDF'
+
+def test_remove_vowels_happy_path_punctuation():
+    assert remove_vowels('abc,def!@#') == 'bc,df'
+    assert remove_vowels('abcdef,ghijklm!@#') == 'bcdf,ghjklm'
+
+def test_remove_vowels_happy_path_multiple_words_with_punctuation():
+    assert remove_vowels('abc, def!@# ghi,jklm') == 'bc,df ghjklm'
+
+def test_remove_vowels_happy_path_non_ascii_characters():
+    assert remove_vowels('ábcé') == 'bc'
+
+def test_remove_vowels_edge_case_non_string_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(123.45)
+    with pytest.raises(TypeError):
+        remove_vowels([1, 2, 3])
+
+def test_remove_vowels_happy_path_empty_string_with_punctuation():
+    assert remove_vowels('abc,') == 'bc'
+
+def test_remove_vowels_exception_type_error_non_string_input():
+    with pytest.raises(TypeError):
+        remove_vowels(123)
+
+def test_remove_vowels_happy_path_multiple_words_with_emoji():
+    assert remove_vowels('abc🤔def') == 'bc'","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_018,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def remove_vowels(text):
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_with_newline():
+    assert remove_vowels(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+
+def test_remove_vowels_no_vowels():
+    assert remove_vowels('zbcd') == 'zbcd'
+
+def test_remove_vowels_all_vowels():
+    assert remove_vowels('aaaaa') == ''
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels('aaBAA') == 'B'","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_019,"def even_odd_count(num):
+    """"""Given an integer. return a tuple that has the number of even and odd digits respectively.
+
+     Example:
+        even_odd_count(-12) ==> (1, 1)
+        even_odd_count(123) ==> (1, 2)
+    """"""
+    even_count = 0
+    odd_count = 0
+    for i in str(abs(num)):
+        if int(i)%2==0:
+            even_count +=1
+        else:
+            odd_count +=1
+    return (even_count, odd_count)","import pytest
+
+def test_even_odd_count_positive_numbers():
+    assert even_odd_count(12) == (2, 0)
+    assert even_odd_count(123) == (1, 2)
+
+def test_even_odd_count_zero():
+    assert even_odd_count(0) == (0, 0)
+
+def test_even_odd_count_negative_number():
+    assert even_odd_count(-12) == (1, 1)
+
+def test_even_odd_count_single_digit():
+    assert even_odd_count(5) == (0, 1)
+    assert even_odd_count(7) == (0, 1)
+
+def test_even_odd_count_single_zero_digit():
+    assert even_odd_count(10) == (1, 0)
+
+def test_even_odd_count_leading_zeros():
+    assert even_odd_count(-0123) == (2, 1)
+
+def test_even_odd_count_no_digits():
+    with pytest.raises(TypeError):
+        even_odd_count(""abc"")
+
+def test_even_odd_count_invalid_type_raises():
+    with pytest.raises(TypeError):
+        even_odd_count([1, 2])
+    with pytest.raises(TypeError):
+        even_odd_count({""a"": 1})
+
+def test_even_odd_count_floats():
+    assert even_odd_count(1.5) == (0, 1)
+    assert even_odd_count(-3.14) == (0, 1)
+
+def test_even_odd_count_negative_floats():
+    assert even_odd_count(-2.71) == (0, 1)
+
+def test_even_odd_count_large_numbers():
+    with pytest.raises(OSError):
+        even_odd_count(10**310 - 1)
+    with pytest.raises(OSError):
+        even_odd_count(-(10**310 - 1))
+
+def test_even_odd_count_non_integer_input_raises():
+    with pytest.raises(TypeError):
+        even_odd_count(""a"")
+    with pytest.raises(TypeError):
+        even_odd_count([1, 2])
+    with pytest.raises(TypeError):
+        even_odd_count({""a"": 1})
+
+def test_even_odd_count_integers():
+    assert even_odd_count(1000000000) == (500000000, 500000000)
+    assert even_odd_count(-1000000000) == (500000000, 500000000)
+
+@pytest.mark.parametrize(""n"", [10**310 - 1, -(10**310 - 1)])
+def test_even_odd_count_large_numbers_raises(n):
+    with pytest.raises(OSError):
+        even_odd_count(n)","def check(candidate):
+
+    # Check some simple cases
+    assert candidate(7) == (0, 1)
+    assert candidate(-78) == (1, 1)
+    assert candidate(3452) == (2, 2)
+    assert candidate(346211) == (3, 3)
+    assert candidate(-345821) == (3, 3)
+    assert candidate(-2) == (1, 0)
+    assert candidate(-45347) == (2, 3)
+    assert candidate(0) == (1, 0)
+
+
+    # Check some edge cases that are easy to work out by hand.
+    assert True",,,,,
+s_020,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def test_bell_number_happy_path():
+    assert bell_number(0) == 1
+    assert bell_number(5) == 52
+
+def test_bell_number_edge_case_zero():
+    assert bell_number(0) == 1
+
+def test_bell_number_negative_input_raises():
+    with pytest.raises(ValueError):
+        bell_number(-1)
+
+def test_bell_number_non_integer_input_raises():
+    with pytest.raises(TypeError):
+        bell_number(1.5)","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_021,"def will_it_fly(q,w):
+    '''
+    Write a function that returns True if the object q will fly, and False otherwise.
+    The object q will fly if it's balanced (it is a palindromic list) and the sum of its elements is less than or equal the maximum possible weight w.
+
+    Example:
+    will_it_fly([1, 2], 5) ➞ False 
+    # 1+2 is less than the maximum possible weight, but it's unbalanced.
+
+    will_it_fly([3, 2, 3], 1) ➞ False
+    # it's balanced, but 3+2+3 is more than the maximum possible weight.
+
+    will_it_fly([3, 2, 3], 9) ➞ True
+    # 3+2+3 is less than the maximum possible weight, and it's balanced.
+
+    will_it_fly([3], 5) ➞ True
+    # 3 is less than the maximum possible weight, and it's balanced.
+    '''
+    if sum(q) > w:
+        return False
+
+    i, j = 0, len(q)-1
+    while i<j:
+        if q[i] != q[j]:
+            return False
+        i+=1
+        j-=1
+    return True","import pytest
+
+def will_it_fly(q, w):
+    if not isinstance(w, (int, float)) or w < 0:
+        raise ValueError(""Weight must be a non-negative number."")
+    
+    if not all(isinstance(x, int) for x in q):
+        raise TypeError(""All elements of the list must be integers."")
+
+    if sum(q) > w:
+        return False
+
+    i, j = 0, len(q)-1
+    while i < j:
+        if q[i] != q[j]:
+            return False
+        i += 1
+        j -= 1
+    return True
+
+
+def test_will_it_fly_balanced_and_within_weight():
+    assert will_it_fly([3, 2, 3], 9) is True
+
+def test_will_it_fly_unbalanced_but_within_weight():
+    assert will_it_fly([1, 2], 5) is False
+
+def test_will_it_fly_balanced_but_overweight():
+    assert will_it_fly([3, 2, 3], 1) is False
+
+def test_will_it_fly_single_element_and_within_weight():
+    assert will_it_fly([3], 5) is True
+
+def test_will_it_fly_empty_list_and_non_negative_weight():
+    assert will_it_fly([], 10) is True
+
+def test_will_it_fly_empty_list_and_zero_weight():
+    assert will_it_fly([], 0) is True
+
+def test_will_it_fly_with_zero_sum():
+    assert will_it_fly([0, 0, 0], 1) is True
+
+def test_will_it_fly_negative_elements_balanced_within_weight():
+    assert will_it_fly([-1, -2, -1], -3) is True
+
+def test_will_it_fly_negative_elements_overweight():
+    assert will_it_fly([1, -1, 1], 0) is False
+
+def test_will_it_fly_with_none_raises_type_error():
+    with pytest.raises(TypeError):
+        will_it_fly(None, 5)
+
+def test_will_it_fly_non_iterable_raises_type_error():
+    with pytest.raises(TypeError):
+        will_it_fly(123, 10)
+
+def test_will_it_fly_mixed_positive_and_negative_not_palindromic_within_weight():
+    assert will_it_fly([1, -2, 3], 5) is False
+
+def test_will_it_fly_with_non_integer_elements_raises_type_error():
+    with pytest.raises(TypeError):
+        will_it_fly([1.5, 2.5], 4)
+
+def test_will_it_fly_with_mixed_types_raises_type_error():
+    with pytest.raises(TypeError):
+        will_it_fly([1, 'a', 3], 10)
+
+def test_will_it_fly_with_negative_weight_raises_value_error():
+    with pytest.raises(ValueError):
+        will_it_fly([1, 2, 3], -5)
+
+def test_will_it_fly_with_large_list_and_large_weight():
+    large_list = list(range(10000))
+    assert will_it_fly(large_list + large_list[::-1], sum(large_list) * 2) is True
+
+def test_will_it_fly_with_single_negative_element_raises_type_error():
+    with pytest.raises(TypeError):
+        will_it_fly([-3], 5)
+
+def test_will_it_fly_with_large_numbers_within_weight():
+    assert will_it_fly([10**6, 10**6], 2 * 10**6) is True
+
+def test_will_it_fly_with_negative_weight_raises_value_error():
+    with pytest.raises(ValueError):
+        will_it_fly([1, 2, 3], -5)","def check(candidate):
+
+    # Check some simple cases
+    assert candidate([3, 2, 3], 9) is True
+    assert candidate([1, 2], 5) is False
+    assert candidate([3], 5) is True
+    assert candidate([3, 2, 3], 1) is False
+
+
+    # Check some edge cases that are easy to work out by hand.
+    assert candidate([1, 2, 3], 6) is False
+    assert candidate([5], 5) is True",,,,,
+s_022,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def bell_number(n):
+    if n < 0:
+        raise ValueError(""n must be a non-negative integer"")
+    
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]
+
+def test_bell_number_happy_path():
+    assert bell_number(0) == 1
+    assert bell_number(1) == 1
+    assert bell_number(2) == 2
+    assert bell_number(3) == 5
+
+def test_bell_number_large_n():
+    assert bell_number(5) == 52
+    assert bell_number(6) == 203
+
+def test_bell_number_edge_cases():
+    with pytest.raises(ValueError):
+        bell_number(-1)
+
+def test_bell_number_zero():
+    assert bell_number(0) == 1
+
+def test_bell_number_single_element():
+    assert bell_number(1) == 1","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_023,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def test_bell_number_zero():
+    """"""Test Bell number for n=0""""""
+    assert bell_number(0) == 1
+
+def test_bell_number_one():
+    """"""Test Bell number for n=1""""""
+    assert bell_number(1) == 1
+
+def test_bell_number_two():
+    """"""Test Bell number for n=2""""""
+    assert bell_number(2) == 2
+
+def test_bell_number_three():
+    """"""Test Bell number for n=3""""""
+    assert bell_number(3) == 5
+
+def test_bell_number_four():
+    """"""Test Bell number for n=4""""""
+    assert bell_number(4) == 15
+
+def test_bell_number_five():
+    """"""Test Bell number for n=5""""""
+    assert bell_number(5) == 52
+
+def test_bell_number_negative():
+    """"""Test that negative n raises ValueError""""""
+    with pytest.raises(ValueError):
+        bell_number(-1)
+
+def test_bell_number_float():
+    """"""Test that float n raises TypeError""""""
+    with pytest.raises(TypeError):
+        bell_number(1.5)
+
+def test_bell_number_string():
+    """"""Test that string n raises TypeError""""""
+    with pytest.raises(TypeError):
+        bell_number(""1"")
+
+def test_bell_number_none():
+    """"""Test that None n raises TypeError""""""
+    with pytest.raises(TypeError):
+        bell_number(None)
+
+def test_bell_number_large():
+    """"""Test Bell number for larger n""""""
+    assert bell_number(6) == 203
+    assert bell_number(7) == 877","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_024,"def tuple_to_int(nums):
+    result = int(''.join(map(str,nums)))
+    return result","import pytest
+
+def tuple_to_int(nums):
+    result = int(''.join(map(str, nums)))
+    return result
+
+
+def test_tuple_to_int_positive():
+    assert tuple_to_int((1, 2, 3)) == 123
+
+
+def test_tuple_to_int_with_zero():
+    assert tuple_to_int((0, 1, 2)) == 12
+    assert tuple_to_int((1, 0, 2)) == 102
+
+
+def test_tuple_to_int_negative_numbers():
+    assert tuple_to_int((-1, -2, -3)) == -123
+
+
+def test_tuple_to_int_single_element():
+    assert tuple_to_int((5,)) == 5
+    assert tuple_to_int((0,)) == 0
+
+
+def test_tuple_to_int_empty_tuple():
+    with pytest.raises(ValueError):
+        tuple_to_int(())
+
+
+def test_tuple_to_int_with_non_numeric():
+    with pytest.raises(ValueError):
+        tuple_to_int((1, 'a', 3))
+
+
+def test_tuple_to_int_none_element():
+    with pytest.raises(TypeError):
+        tuple_to_int((None,))","assert tuple_to_int((1,2,3))==123
+assert tuple_to_int((4,5,6))==456
+assert tuple_to_int((5,6,7))==567",,,,,
+s_025,"def kth_element(arr, k):
+  n = len(arr)
+  for i in range(n):
+    for j in range(0, n-i-1):
+      if arr[j] > arr[j+1]:
+        arr[j], arr[j+1] == arr[j+1], arr[j]
+  return arr[k-1]","import pytest
+
+def test_kth_element_happy_path():
+    arr = [3, 5, 2, 7, 10]
+    k = 3
+    assert kth_element(arr, k) == 7
+
+def test_kth_element_happy_path_sorted():
+    arr = [1, 2, 3, 4, 5]
+    k = 3
+    assert kth_element(arr, k) == 3
+
+def test_kth_element_edge_case_zero():
+    arr = []
+    k = 0
+    with pytest.raises(IndexError):
+        kth_element(arr, k)
+
+def test_kth_element_edge_case_negative_index():
+    arr = [1, 2, 3]
+    k = -1
+    with pytest.raises(IndexError):
+        kth_element(arr, k)
+
+def test_kth_element_exception_type_error():
+    arr = ['a', 'b', 'c']
+    k = 2
+    with pytest.raises(TypeError):
+        kth_element(arr, k)
+
+def test_kth_element_exception_value_error():
+    arr = [1, 2, '3']
+    k = 2
+    with pytest.raises(ValueError):
+        kth_element(arr, k)","assert kth_element([12,3,5,7,19], 2) == 3
+assert kth_element([17,24,8,23], 3) == 8
+assert kth_element([16,21,25,36,4], 4) == 36",,,,,
+s_026,"def Find_Min_Length(lst):  
+    minLength = min(len(x) for x in lst )
+    return minLength","import pytest
+
+def test_find_min_length_happy_path():
+    assert Find_Min_Length([['a'], ['b', 'c']]) == 1
+    assert Find_Min_Length([['hello'], ['world']]) == 5
+
+def test_find_min_length_edge_case_empty_list():
+    with pytest.raises(ValueError):
+        Find_Min_Length([])
+
+def test_find_min_length_edge_case_single_element_list():
+    assert Find_Min_Length([['a', 'b', 'c']]) == 1
+    assert Find_Min_Length([['hello']]) == 5
+
+def test_find_min_length_edge_case_non_string_elements():
+    with pytest.raises(TypeError):
+        Find_Min_Length([['a'], [1, 2], ['b', 'c']])
+
+def test_find_min_length_exception_type_error():
+    with pytest.raises(TypeError):
+        Find_Min_Length('abc')
+
+def test_find_min_length_exception_none_input():
+    with pytest.raises(TypeError):
+        Find_Min_Length(None)
+
+def test_find_min_length_edge_case_list_with_zero_elements():
+    assert Find_Min_Length([['', ''], ['a']]) == 1
+
+def test_find_min_length_happy_path_floats():
+    assert Find_Min_Length([['hello'], [0.5, 2.5]]) == pytest.approx(1)
+
+def test_find_min_length_edge_case_list_with_negative_elements():
+    with pytest.raises(TypeError):
+        Find_Min_Length([['a', -1], ['b']])
+
+def test_find_min_length_happy_path_multiple_strings():
+    assert Find_Min_Length([['hello'], ['world', 'python']]) == 4
+
+def test_find_min_length_exception_invalid_input_type_raises():
+    with pytest.raises(TypeError):
+        Find_Min_Length(123)
+
+def test_find_min_length_edge_case_list_with_non_string_elements():
+    with pytest.raises(TypeError):
+        Find_Min_Length(['a', [1, 2], ['b', 'c']])
+
+def test_find_min_length_happy_path_empty_strings():
+    assert Find_Min_Length([['', '', ''], ['hello']]) == 0
+
+def test_find_min_length_happy_path_longest_string():
+    assert Find_Min_Length([['hello', 'world'], ['python', 'programming']]) == 11","assert Find_Min_Length([[1],[1,2]]) == 1
+assert Find_Min_Length([[1,2],[1,2,3],[1,2,3,4]]) == 2
+assert Find_Min_Length([[3,3,3],[4,4,4,4]]) == 3",,,,,
+s_027,"from typing import List, Any
+
+
+def filter_integers(values: List[Any]) -> List[int]:
+    """""" Filter given list of any python values only for integers
+    >>> filter_integers(['a', 3.14, 5])
+    [5]
+    >>> filter_integers([1, 2, 3, 'abc', {}, []])
+    [1, 2, 3]
+    """"""
+    return [x for x in values if isinstance(x, int)]","import pytest
+
+def test_filter_integers_mixed_types():
+    assert filter_integers(['a', 3.14, 5]) == [5]
+
+def test_filter_integers_all_integers():
+    assert filter_integers([1, 2, 3, 4, 5]) == [1, 2, 3, 4, 5]
+
+def test_filter_integers_empty_list():
+    assert filter_integers([]) == []
+
+def test_filter_integers_all_non_integers():
+    assert filter_integers(['a', 'b', 'c']) == []
+
+def test_filter_integers_floats_filtered():
+    assert filter_integers([1.0, 2.5, 3.14]) == []
+
+def test_filter_integers_with_none():
+    assert filter_integers([None, 1, 2, None]) == [1, 2]
+
+def test_filter_integers_with_zero():
+    assert filter_integers([0, 1, -1]) == [0, 1, -1]
+
+def test_filter_integers_with_negative():
+    assert filter_integers([-5, -3, -1, 0, 1, 3, 5]) == [-5, -3, -1, 0, 1, 3, 5]
+
+def test_filter_integers_with_bools():
+    assert filter_integers([True, False, 1, 2]) == [True, False, 1, 2]
+
+def test_filter_integers_with_dict_and_list():
+    assert filter_integers([{}, [], {}, [1, 2]]) == []
+
+def test_filter_integers_with_none_input():
+    with pytest.raises(TypeError):
+        filter_integers(None)
+
+def test_filter_integers_with_non_list_input():
+    with pytest.raises(TypeError):
+        filter_integers(""not a list"")
+
+def test_filter_integers_with_tuple_input():
+    with pytest.raises(TypeError):
+        filter_integers((1, 2, 3))
+
+def test_filter_integers_with_float_zero():
+    assert filter_integers([0.0, 0.1, 0.5]) == []
+
+def test_filter_integers_with_large_integers():
+    assert filter_integers([10**10, 10**9, -10**10]) == [10**10, 10**9, -10**10]","METADATA = {
+    'author': 'jt',
+    'dataset': 'test'
+}
+
+
+def check(candidate):
+    assert candidate([]) == []
+    assert candidate([4, {}, [], 23.2, 9, 'adasd']) == [4, 9]
+    assert candidate([3, 'c', 3, 3, 'a', 'b']) == [3, 3, 3]",,,,,
+s_028,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def test_bell_number_positive():
+    assert bell_number(0) == 1
+    assert bell_number(1) == 1
+    assert bell_number(2) == 2
+    assert bell_number(3) == 5
+    assert bell_number(4) == 15
+
+def test_bell_number_edge_cases():
+    assert bell_number(0) == 1
+    assert bell_number(1) == 1
+
+def test_bell_number_negative():
+    with pytest.raises(IndexError):
+        bell_number(-1)
+
+def test_bell_number_large():
+    assert bell_number(5) == 52
+    assert bell_number(6) == 203
+
+def test_bell_number_zero():
+    assert bell_number(0) == 1","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_029,"def kth_element(arr, k):
+  n = len(arr)
+  for i in range(n):
+    for j in range(0, n-i-1):
+      if arr[j] > arr[j+1]:
+        arr[j], arr[j+1] == arr[j+1], arr[j]
+  return arr[k-1]","import pytest
+
+def test_kth_element_sorted_array():
+    assert kth_element([5, 2, 8, 1, 9], 3) == 5
+
+def test_kth_element_single_element():
+    assert kth_element([10], 1) == 10
+
+def test_kth_element_descending():
+    assert kth_element([9, 8, 7, 6, 5], 1) == 5
+    assert kth_element([9, 8, 7, 6, 5], 5) == 9
+
+def test_kth_element_empty_array():
+    with pytest.raises(IndexError):
+        kth_element([], 1)
+
+def test_kth_element_k_out_of_bounds_high():
+    with pytest.raises(IndexError):
+        kth_element([1, 2, 3], 4)
+
+def test_kth_element_k_out_of_bounds_low():
+    with pytest.raises(IndexError):
+        kth_element([1, 2, 3], 0)
+
+def test_kth_element_negative_k():
+    with pytest.raises(IndexError):
+        kth_element([1, 2, 3], -1)
+
+def test_kth_element_unsorted_array():
+    assert kth_element([3, 1, 4, 1, 5, 9, 2, 6], 5) == 5
+
+def test_kth_element_first_element():
+    assert kth_element([1, 2, 3, 4, 5], 1) == 1
+
+def test_kth_element_last_element():
+    assert kth_element([1, 2, 3, 4, 5], 5) == 5
+
+def test_kth_element_all_same_values():
+    assert kth_element([5, 5, 5, 5], 3) == 5
+
+def test_kth_element_negative_numbers():
+    assert kth_element([-5, -2, -8, -1, -9], 3) == -2
+
+def test_kth_element_mixed_numbers():
+    assert kth_element([-3, 0, 5, -1, 10], 2) == 0","assert kth_element([12,3,5,7,19], 2) == 3
+assert kth_element([17,24,8,23], 3) == 8
+assert kth_element([16,21,25,36,4], 4) == 36",,,,,
+s_030,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+
+def test_bell_number_zero():
+    assert bell_number(0) == 1
+
+
+def test_bell_number_one():
+    assert bell_number(1) == 1
+
+
+def test_bell_number_two():
+    assert bell_number(2) == 2
+
+
+def test_bell_number_three():
+    assert bell_number(3) == 5
+
+
+def test_bell_number_four():
+    assert bell_number(4) == 15
+
+
+def test_bell_number_large():
+    assert bell_number(10) == 115975
+
+
+def test_bell_number_negative_raises():
+    with pytest.raises(ValueError):
+        bell_number(-1)
+
+
+def test_bell_number_none_raises():
+    with pytest.raises(TypeError):
+        bell_number(None)
+
+
+def test_bell_number_float_raises():
+    with pytest.raises(TypeError):
+        bell_number(3.5)
+
+
+def test_bell_number_string_raises():
+    with pytest.raises(TypeError):
+        bell_number(""3"")
+
+
+def test_bell_number_large_negative():
+    with pytest.raises(ValueError):
+        bell_number(-10)","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_031,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def test_remove_vowels_normal():
+    assert remove_vowels(""abcdef"") == ""bcdf""
+
+def test_remove_vowels_with_newline():
+    assert remove_vowels(""abcdef\nghijklm"") == ""bcdf\nghjklm""
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels("""") == """"
+
+def test_remove_vowels_all_vowels():
+    assert remove_vowels(""aaa"") == """"
+
+def test_remove_vowels_all_consonants():
+    assert remove_vowels(""bcd"") == ""bcd""
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels(""aaBAA"") == ""B""
+
+def test_remove_vowels_single_consonant():
+    assert remove_vowels(""b"") == ""b""
+
+def test_remove_vowels_single_vowel():
+    assert remove_vowels(""a"") == """"
+
+def test_remove_vowels_lowercase_vowels():
+    assert remove_vowels(""aeiou"") == """"
+
+def test_remove_vowels_uppercase_vowels():
+    assert remove_vowels(""AEIOU"") == """"
+
+def test_remove_vowels_mixed_case_vowels():
+    assert remove_vowels(""AbCdEf"") == ""CdF""
+
+def test_remove_vowels_with_numbers():
+    assert remove_vowels(""abc123def"") == ""bc123df""
+
+def test_remove_vowels_with_special_chars():
+    assert remove_vowels(""abc!@#def"") == ""bc!@#df""
+
+def test_remove_vowels_with_spaces():
+    assert remove_vowels(""a b c d e"") == "" b c d ""
+
+def test_remove_vowels_with_unicode():
+    assert remove_vowels(""café"") == ""cfr""
+
+def test_remove_vowels_with_diacritics():
+    assert remove_vowels(""naïve"") == ""nv""
+
+def test_remove_vowels_with_mixed_diacritics():
+    assert remove_vowels(""àéïòü"") == """"
+
+def test_remove_vowels_none_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(None)
+
+def test_remove_vowels_integer_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(123)
+
+def test_remove_vowels_list_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels([""a"", ""b"", ""c""])
+
+def test_remove_vowels_float_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels(1.5)
+
+def test_remove_vowels_dict_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels({""a"": 1})
+
+def test_remove_vowels_set_input_raises():
+    with pytest.raises(TypeError):
+        remove_vowels({""a"", ""b""})","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_032,"def subject_marks(subjectmarks):
+#subject_marks = [('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)])
+ subjectmarks.sort(key = lambda x: x[1])
+ return subjectmarks","import pytest
+
+def test_subject_marks_happy_path():
+    input_marks = [('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)]
+    expected = [('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
+    result = subject_marks(input_marks)
+    assert result == expected
+
+def test_subject_marks_single_element():
+    input_marks = [('Maths', 97)]
+    expected = [('Maths', 97)]
+    result = subject_marks(input_marks)
+    assert result == expected
+
+def test_subject_marks_empty_list():
+    input_marks = []
+    expected = []
+    result = subject_marks(input_marks)
+    assert result == expected
+
+def test_subject_marks_already_sorted():
+    input_marks = [('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
+    expected = [('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
+    result = subject_marks(input_marks)
+    assert result == expected
+
+def test_subject_marks_equal_scores():
+    input_marks = [('English', 88), ('Science', 88), ('Maths', 97)]
+    expected = [('English', 88), ('Science', 88), ('Maths', 97)]
+    result = subject_marks(input_marks)
+    assert result == expected
+
+def test_subject_marks_negative_scores():
+    input_marks = [('English', -10), ('Science', 0), ('Maths', 50)]
+    expected = [('English', -10), ('Science', 0), ('Maths', 50)]
+    result = subject_marks(input_marks)
+    assert result == expected
+
+def test_subject_marks_float_scores():
+    input_marks = [('English', 88.5), ('Science', 90.2), ('Maths', 97.1)]
+    expected = [('English', 88.5), ('Science', 90.2), ('Maths', 97.1)]
+    result = subject_marks(input_marks)
+    assert result == expected
+
+def test_subject_marks_none_input_raises():
+    with pytest.raises(AttributeError):
+        subject_marks(None)
+
+def test_subject_marks_invalid_tuple_elements():
+    input_marks = [('English', 'invalid'), ('Science', 90)]
+    with pytest.raises(TypeError):
+        subject_marks(input_marks)
+
+def test_subject_marks_inplace_modification():
+    input_marks = [('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)]
+    original_id = id(input_marks)
+    result = subject_marks(input_marks)
+    assert id(result) == original_id
+    assert result == [('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
+    assert input_marks == [('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
+
+def test_subject_marks_mixed_types_in_tuples():
+    input_marks = [('English', 88), ('Science', 90), ('Maths', 97)]
+    expected = [('English', 88), ('Science', 90), ('Maths', 97)]
+    result = subject_marks(input_marks)
+    assert result == expected","assert subject_marks([('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)])==[('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
+assert subject_marks([('Telugu',49),('Hindhi',54),('Social',33)])==([('Social',33),('Telugu',49),('Hindhi',54)])
+assert subject_marks([('Physics',96),('Chemistry',97),('Biology',45)])==([('Biology',45),('Physics',96),('Chemistry',97)])",,,,,
+s_033,"def combinations_list(list1):
+    if len(list1) == 0:
+        return [[]]
+    result = []
+    for el in combinations_list(list1[1:]):
+        result += [el, el+[list1[0]]]
+    return result","import pytest
+
+def test_combinations_list_empty():
+    assert combinations_list([]) == [[]]
+
+def test_combinations_list_single_element():
+    assert combinations_list([1]) == [[], [1]]
+
+def test_combinations_list_two_elements():
+    assert combinations_list([1, 2]) == [[], [2], [1], [1, 2]]
+
+def test_combinations_list_three_elements():
+    assert combinations_list([1, 2, 3]) == [[], [3], [2], [2, 3], [1], [1, 3], [1, 2], [1, 2, 3]]
+
+def test_combinations_list_with_none():
+    assert combinations_list([None]) == [[], [None]]
+
+def test_combinations_list_with_duplicates():
+    assert combinations_list([1, 1]) == [[], [1], [1], [1, 1]]
+
+def test_combinations_list_with_negative_numbers():
+    assert combinations_list([-1, -2]) == [[], [-2], [-1], [-1, -2]]
+
+def test_combinations_list_with_mixed_types():
+    assert combinations_list([1, 'a']) == [[], ['a'], [1], [1, 'a']]
+
+def test_combinations_list_large_list():
+    result = combinations_list([1, 2, 3, 4])
+    assert len(result) == 16
+    assert [] in result
+    assert [1, 2, 3, 4] in result
+
+def test_combinations_list_string_input():
+    assert combinations_list(""abc"") == [[], ['c'], ['b'], ['b', 'c'], ['a'], ['a', 'c'], ['a', 'b'], ['a', 'b', 'c']]
+
+def test_combinations_list_zero():
+    assert combinations_list([0]) == [[], [0]]
+
+def test_combinations_list_floats():
+    assert combinations_list([1.5, 2.5]) == [[], [2.5], [1.5], [1.5, 2.5]]","assert combinations_list(['orange', 'red', 'green', 'blue'])==[[], ['orange'], ['red'], ['red', 'orange'], ['green'], ['green', 'orange'], ['green', 'red'], ['green', 'red', 'orange'], ['blue'], ['blue', 'orange'], ['blue', 'red'], ['blue', 'red', 'orange'], ['blue', 'green'], ['blue', 'green', 'orange'], ['blue', 'green', 'red'], ['blue', 'green', 'red', 'orange']]
+assert combinations_list(['red', 'green', 'blue', 'white', 'black', 'orange'])==[[], ['red'], ['green'], ['green', 'red'], ['blue'], ['blue', 'red'], ['blue', 'green'], ['blue', 'green', 'red'], ['white'], ['white', 'red'], ['white', 'green'], ['white', 'green', 'red'], ['white', 'blue'], ['white', 'blue', 'red'], ['white', 'blue', 'green'], ['white', 'blue', 'green', 'red'], ['black'], ['black', 'red'], ['black', 'green'], ['black', 'green', 'red'], ['black', 'blue'], ['black', 'blue', 'red'], ['black', 'blue', 'green'], ['black', 'blue', 'green', 'red'], ['black', 'white'], ['black', 'white', 'red'], ['black', 'white', 'green'], ['black', 'white', 'green', 'red'], ['black', 'white', 'blue'], ['black', 'white', 'blue', 'red'], ['black', 'white', 'blue', 'green'], ['black', 'white', 'blue', 'green', 'red'], ['orange'], ['orange', 'red'], ['orange', 'green'], ['orange', 'green', 'red'], ['orange', 'blue'], ['orange', 'blue', 'red'], ['orange', 'blue', 'green'], ['orange', 'blue', 'green', 'red'], ['orange', 'white'], ['orange', 'white', 'red'], ['orange', 'white', 'green'], ['orange', 'white', 'green', 'red'], ['orange', 'white', 'blue'], ['orange', 'white', 'blue', 'red'], ['orange', 'white', 'blue', 'green'], ['orange', 'white', 'blue', 'green', 'red'], ['orange', 'black'], ['orange', 'black', 'red'], ['orange', 'black', 'green'], ['orange', 'black', 'green', 'red'], ['orange', 'black', 'blue'], ['orange', 'black', 'blue', 'red'], ['orange', 'black', 'blue', 'green'], ['orange', 'black', 'blue', 'green', 'red'], ['orange', 'black', 'white'], ['orange', 'black', 'white', 'red'], ['orange', 'black', 'white', 'green'], ['orange', 'black', 'white', 'green', 'red'], ['orange', 'black', 'white', 'blue'], ['orange', 'black', 'white', 'blue', 'red'], ['orange', 'black', 'white', 'blue', 'green'], ['orange', 'black', 'white', 'blue', 'green', 'red']]
+assert combinations_list(['red', 'green', 'black', 'orange'])==[[], ['red'], ['green'], ['green', 'red'], ['black'], ['black', 'red'], ['black', 'green'], ['black', 'green', 'red'], ['orange'], ['orange', 'red'], ['orange', 'green'], ['orange', 'green', 'red'], ['orange', 'black'], ['orange', 'black', 'red'], ['orange', 'black', 'green'], ['orange', 'black', 'green', 'red']]",,,,,
+s_034,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def remove_vowels(text):
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])
+
+# Happy path tests
+def test_remove_vowels_empty_string():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_basic():
+    assert remove_vowels(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+
+# Edge case tests
+def test_remove_vowels_all_vowels():
+    assert remove_vowels('aaaaa') == ''
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels('aaBAA') == 'B'
+
+def test_remove_vowels_no_vowels():
+    assert remove_vowels('zbcd') == 'zbcd'
+
+# Additional happy path tests
+def test_remove_vowels_single_word():
+    assert remove_vowels('abcdef') == 'bcdf'
+
+# Error case tests (function should handle these gracefully)
+def test_remove_vowels_none_input():
+    with pytest.raises(TypeError):
+        remove_vowels(None)
+
+def test_remove_vowels_non_string_input():
+    with pytest.raises(TypeError):
+        remove_vowels(12345)
+
+def test_remove_vowels_list_input():
+    with pytest.raises(TypeError):
+        remove_vowels(['a', 'e', 'i'])","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_035,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def bell_number(n):
+    if not isinstance(n, int) or n < 0:
+        raise ValueError(""Input must be a non-negative integer."")
+    
+    bell = [[0 for i in range(n+1)] for j in range(n+1)]
+    bell[0][0] = 1
+    for i in range(1, n+1):
+        bell[i][0] = bell[i-1][i-1]
+        for j in range(1, i+1):
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]
+    return bell[n][0]
+
+def test_bell_number_zero():
+    assert bell_number(0) == 1
+
+def test_bell_number_one():
+    assert bell_number(1) == 1
+
+def test_bell_number_two():
+    assert bell_number(2) == 2
+
+def test_bell_number_three():
+    assert bell_number(3) == 5
+
+def test_bell_number_four():
+    assert bell_number(4) == 15
+
+def test_bell_number_larger():
+    assert bell_number(5) == 52
+
+def test_bell_number_negative_raises():
+    with pytest.raises(ValueError):
+        bell_number(-1)
+
+def test_bell_number_non_integer_raises():
+    with pytest.raises(ValueError):
+        bell_number(""a"")
+
+def test_bell_number_float_raises():
+    with pytest.raises(ValueError):
+        bell_number(3.5)","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_036,"def bell_number(n):   
+    bell = [[0 for i in range(n+1)] for j in range(n+1)] 
+    bell[0][0] = 1
+    for i in range(1, n+1): 
+        bell[i][0] = bell[i-1][i-1]  
+        for j in range(1, i+1): 
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]   
+    return bell[n][0]","import pytest
+
+def test_bell_number_positive():
+    assert bell_number(0) == 1
+    assert bell_number(1) == 1
+    assert bell_number(2) == 2
+    assert bell_number(3) == 5
+    assert bell_number(4) == 15
+
+def test_bell_number_edge_cases():
+    assert bell_number(0) == 1
+    assert bell_number(1) == 1
+
+def test_bell_number_negative():
+    with pytest.raises(IndexError):
+        bell_number(-1)
+
+def test_bell_number_invalid_type():
+    with pytest.raises(TypeError):
+        bell_number(""string"")
+    
+    with pytest.raises(TypeError):
+        bell_number(None)
+    
+    with pytest.raises(TypeError):
+        bell_number(1.5)","assert bell_number(2)==2
+assert bell_number(10)==115975
+assert bell_number(56)==6775685320645824322581483068371419745979053216268760300",,,,,
+s_037,"def remove_vowels(text):
+    """"""
+    remove_vowels is a function that takes string and returns string without vowels.
+    >>> remove_vowels('')
+    ''
+    >>> remove_vowels(""abcdef\nghijklm"")
+    'bcdf\nghjklm'
+    >>> remove_vowels('abcdef')
+    'bcdf'
+    >>> remove_vowels('aaaaa')
+    ''
+    >>> remove_vowels('aaBAA')
+    'B'
+    >>> remove_vowels('zbcd')
+    'zbcd'
+    """"""
+    return """".join([s for s in text if s.lower() not in [""a"", ""e"", ""i"", ""o"", ""u""]])","import pytest
+
+def test_remove_vowels_empty_string():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_all_consonants():
+    assert remove_vowels('zbcd') == 'zbcd'
+
+def test_remove_vowels_all_vowels():
+    assert remove_vowels('aaa') == ''
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels('aaBAA') == 'B'
+
+def test_remove_vowels_with_newline():
+    assert remove_vowels(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+
+def test_remove_vowels_lowercase():
+    assert remove_vowels('hello world') == 'hll wrld'
+
+def test_remove_vowels_uppercase():
+    assert remove_vowels('HELLO WORLD') == 'HLL WRLD'
+
+def test_remove_vowels_mixed_case():
+    assert remove_vowels('Hello World') == 'Hll Wrld'
+
+def test_remove_vowels_single_consonant():
+    assert remove_vowels('b') == 'b'
+
+def test_remove_vowels_single_vowel():
+    assert remove_vowels('a') == ''
+
+def test_remove_vowels_single_vowel_upper():
+    assert remove_vowels('A') == ''
+
+def test_remove_vowels_numbers():
+    assert remove_vowels('123') == '123'
+
+def test_remove_vowels_spaces():
+    assert remove_vowels('a b c') == ' b c'
+
+def test_remove_vowels_special_chars():
+    assert remove_vowels('hello!@#') == 'hll!@#'
+
+def test_remove_vowels_unicode():
+    assert remove_vowels('café') == 'cfé'
+
+def test_remove_vowels_with_umlaut():
+    assert remove_vowels('über') == 'br'
+
+def test_remove_vowels_mixed_vowels_consonants():
+    assert remove_vowels('aeiouAEIOU') == ''
+
+def test_remove_vowels_only_e():
+    assert remove_vowels('eee') == ''
+
+def test_remove_vowels_only_i():
+    assert remove_vowels('iii') == ''
+
+def test_remove_vowels_only_o():
+    assert remove_vowels('ooo') == ''
+
+def test_remove_vowels_only_u():
+    assert remove_vowels('uuu') == ''
+
+def test_remove_vowels_only_a():
+    assert remove_vowels('aaa') == ''
+
+def test_remove_vowels_mixed_vowels():
+    assert remove_vowels('aeiou') == ''
+
+def test_remove_vowels_consonants_with_vowels():
+    assert remove_vowels('bcdfg') == 'bcdfg'
+
+def test_remove_vowels_consonants_with_vowels_mixed():
+    assert remove_vowels('bCdEfG') == 'bCdEfG'
+
+def test_remove_vowels_long_string():
+    assert remove_vowels('aeiouaeiouaeiou') == ''
+
+def test_remove_vowels_long_string_mixed():
+    assert remove_vowels('bCdEfGhIjKlMnOpQrStUvWxYz') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_only_vowels_lowercase():
+    assert remove_vowels('aeiou') == ''
+
+def test_remove_vowels_only_vowels_uppercase():
+    assert remove_vowels('AEIOU') == ''
+
+def test_remove_vowels_only_vowels_mixed():
+    assert remove_vowels('aEiOu') == ''
+
+def test_remove_vowels_with_tabs():
+    assert remove_vowels('a\tb\tc') == '\tb\tc'
+
+def test_remove_vowels_with_multiple_newlines():
+    assert remove_vowels('a\nb\nc') == '\n\n'
+
+def test_remove_vowels_with_spaces_and_vowels():
+    assert remove_vowels('a b c d e') == ' b c d '
+
+def test_remove_vowels_with_punctuation():
+    assert remove_vowels('hello, world!') == 'hll, wrld!'
+
+def test_remove_vowels_with_emoji():
+    assert remove_vowels('café☕') == 'cfé☕'
+
+def test_remove_vowels_with_diacritics():
+    assert remove_vowels('naïve') == 'nv'
+
+def test_remove_vowels_with_apostrophes():
+    assert remove_vowels(""don't"") == ""dn't""
+
+def test_remove_vowels_with_hyphens():
+    assert remove_vowels(""re-enter"") == ""r-nt""
+
+def test_remove_vowels_with_dashes():
+    assert remove_vowels(""test-case"") == ""tst-cs""
+
+def test_remove_vowels_with_slashes():
+    assert remove_vowels(""a/b/c"") == ""/b/c""
+
+def test_remove_vowels_with_backslashes():
+    assert remove_vowels(""a\\b\\c"") == ""b\\c""
+
+def test_remove_vowels_with_colons():
+    assert remove_vowels(""a:b:c"") == "":b:c""
+
+def test_remove_vowels_with_semicolons():
+    assert remove_vowels(""a;b;c"") == "";b;c""
+
+def test_remove_vowels_with_commas():
+    assert remove_vowels(""a,b,c"") == "",b,c""
+
+def test_remove_vowels_with_parentheses():
+    assert remove_vowels(""a(b)c"") == ""(b)c""
+
+def test_remove_vowels_with_brackets():
+    assert remove_vowels(""a[b]c"") == ""[b]c""
+
+def test_remove_vowels_with_braces():
+    assert remove_vowels(""a{b}c"") == ""{b}c""
+
+def test_remove_vowels_with_at_sign():
+    assert remove_vowels(""a@b"") == ""@b""
+
+def test_remove_vowels_with_hash():
+    assert remove_vowels(""a#b"") == ""#b""
+
+def test_remove_vowels_with_percent():
+    assert remove_vowels(""a%b"") == ""%b""
+
+def test_remove_vowels_with_dollar():
+    assert remove_vowels(""a$b"") == ""$b""
+
+def test_remove_vowels_with_ampersand():
+    assert remove_vowels(""a&b"") == ""&b""
+
+def test_remove_vowels_with_pipes():
+    assert remove_vowels(""a|b"") == ""|b""
+
+def test_remove_vowels_with_less_than():
+    assert remove_vowels(""a<b"") == ""<b""
+
+def test_remove_vowels_with_greater_than():
+    assert remove_vowels(""a>b"") == "">b""
+
+def test_remove_vowels_with_equal():
+    assert remove_vowels(""a=b"") == ""=b""
+
+def test_remove_vowels_with_plus():
+    assert remove_vowels(""a+b"") == ""+b""
+
+def test_remove_vowels_with_asterisk():
+    assert remove_vowels(""a*b"") == ""*b""
+
+def test_remove_vowels_with_question_mark():
+    assert remove_vowels(""a?b"") == ""?b""
+
+def test_remove_vowels_with_exclamation():
+    assert remove_vowels(""a!b"") == ""!b""
+
+def test_remove_vowels_with_double_quotes():
+    assert remove_vowels('a""b') == '""b'
+
+def test_remove_vowels_with_single_quotes():
+    assert remove_vowels(""a'b"") == ""'b""
+
+def test_remove_vowels_with_backticks():
+    assert remove_vowels(""a`b"") == ""`b""
+
+def test_remove_vowels_with_tilde():
+    assert remove_vowels(""a~b"") == ""~b""
+
+def test_remove_vowels_with_caret():
+    assert remove_vowels(""a^b"") == ""^b""
+
+def test_remove_vowels_with_underscore():
+    assert remove_vowels(""a_b"") == ""_b""
+
+def test_remove_vowels_with_dot():
+    assert remove_vowels(""a.b"") == "".b""
+
+def test_remove_vowels_with_slash():
+    assert remove_vowels(""a/b"") == ""/b""
+
+def test_remove_vowels_with_forward_slash():
+    assert remove_vowels(""a/b"") == ""/b""
+
+def test_remove_vowels_with_null():
+    assert remove_vowels('a\0b') == '\0b'
+
+def test_remove_vowels_with_cr():
+    assert remove_vowels('a\rb') == '\rb'
+
+def test_remove_vowels_with_form_feed():
+    assert remove_vowels('a\f b') == '\f b'
+
+def test_remove_vowels_with_vertical_tab():
+    assert remove_vowels('a\v b') == '\v b'
+
+def test_remove_vowels_with_space_and_vowels():
+    assert remove_vowels(' a e i o u ') == '  '
+
+def test_remove_vowels_with_only_whitespace():
+    assert remove_vowels('   ') == '   '
+
+def test_remove_vowels_with_tabs_and_spaces():
+    assert remove_vowels('a\tb\tc') == '\tb\tc'
+
+def test_remove_vowels_with_newlines_and_spaces():
+    assert remove_vowels('a\n b\n c') == '\n b\n c'
+
+def test_remove_vowels_with_mixed_whitespace():
+    assert remove_vowels('a b\nc d\ne f') == ' b\nc d\n f'
+
+def test_remove_vowels_with_leading_vowels():
+    assert remove_vowels('aeiou') == ''
+
+def test_remove_vowels_with_trailing_vowels():
+    assert remove_vowels('aeiou') == ''
+
+def test_remove_vowels_with_vowels_in_middle():
+    assert remove_vowels('bce') == 'bc'
+
+def test_remove_vowels_with_single_consonant_between_vowels():
+    assert remove_vowels('aBa') == 'B'
+
+def test_remove_vowels_with_two_consonants_between_vowels():
+    assert remove_vowels('aBcA') == 'BC'
+
+def test_remove_vowels_with_three_consonants_between_vowels():
+    assert remove_vowels('aBcDe') == 'BCD'
+
+def test_remove_vowels_with_four_consonants_between_vowels():
+    assert remove_vowels('aBcDeFg') == 'BCDFG'
+
+def test_remove_vowels_with_five_consonants_between_vowels():
+    assert remove_vowels('aBcDeFgHi') == 'BCDFGH'
+
+def test_remove_vowels_with_six_consonants_between_vowels():
+    assert remove_vowels('aBcDeFgHiJk') == 'BCDFGHJK'
+
+def test_remove_vowels_with_seven_consonants_between_vowels():
+    assert remove_vowels('aBcDeFgHiJkLm') == 'BCDFGHJKLM'
+
+def test_remove_vowels_with_eight_consonants_between_vowels():
+    assert remove_vowels('aBcDeFgHiJkLmN') == 'BCDFGHJKLMN'
+
+def test_remove_vowels_with_nine_consonants_between_vowels():
+    assert remove_vowels('aBcDeFgHiJkLmNo') == 'BCDFGHJKLMN'
+
+def test_remove_vowels_with_ten_consonants_between_vowels():
+    assert remove_vowels('aBcDeFgHiJkLmNoP') == 'BCDFGHJKLMNP'
+
+def test_remove_vowels_with_consonants_only():
+    assert remove_vowels('bcdfghjklmnpqrstvwxyz') == 'bcdfghjklmnpqrstvwxyz'
+
+def test_remove_vowels_with_consonants_only_uppercase():
+    assert remove_vowels('BCDFGHJKLMNPQRSTVWXYZ') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_consonants_only_mixed():
+    assert remove_vowels('BcDfGhJkLmNpQrStVwXyZ') == 'BcDfGhJkLmNpQrStVwXyZ'
+
+def test_remove_vowels_with_vowels_only_lowercase():
+    assert remove_vowels('aeiou') == ''
+
+def test_remove_vowels_with_vowels_only_uppercase():
+    assert remove_vowels('AEIOU') == ''
+
+def test_remove_vowels_with_vowels_only_mixed():
+    assert remove_vowels('aEiOu') == ''
+
+def test_remove_vowels_with_all_vowels_and_consonants():
+    assert remove_vowels('aeiouAEIOUbcdfghjklmnpqrstvwxyz') == 'bcdfghjklmnpqrstvwxyz'
+
+def test_remove_vowels_with_all_vowels_and_consonants_mixed():
+    assert remove_vowels('aEiOuBcDfGhJkLmNpQrStVwXyZ') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_special_characters_and_vowels():
+    assert remove_vowels('aeiou!@#$%^&*()') == '!@#$%^&*()'
+
+def test_remove_vowels_with_special_characters_and_consonants():
+    assert remove_vowels('bcdfghjklmnpqrstvwxyz!@#$%^&*()') == 'bcdfghjklmnpqrstvwxyz!@#$%^&*()'
+
+def test_remove_vowels_with_special_characters_and_mixed():
+    assert remove_vowels('aEiOuBcDfGhJkLmNpQrStVwXyZ!@#$%^&*()') == 'BCDFGHJKLMNPQRSTVWXYZ!@#$%^&*()'
+
+def test_remove_vowels_with_unicode_vowels():
+    assert remove_vowels('café naïve') == 'cfé nv'
+
+def test_remove_vowels_with_german_umlauts():
+    assert remove_vowels('über') == 'br'
+
+def test_remove_vowels_with_french_accented():
+    assert remove_vowels('résumé') == 'rsms'
+
+def test_remove_vowels_with_spanish_tilde():
+    assert remove_vowels('niño') == 'nño'
+
+def test_remove_vowels_with_italian_accented():
+    assert remove_vowels('città') == 'cttà'
+
+def test_remove_vowels_with_portuguese_accented():
+    assert remove_vowels('café') == 'cfé'
+
+def test_remove_vowels_with_chinese_characters():
+    assert remove_vowels('你好') == '你好'
+
+def test_remove_vowels_with_japanese_characters():
+    assert remove_vowels('こんにちは') == 'こんにちは'
+
+def test_remove_vowels_with_korean_characters():
+    assert remove_vowels('안녕하세요') == '안녕하세요'
+
+def test_remove_vowels_with_russian_cyrillic():
+    assert remove_vowels('привет') == 'првт'
+
+def test_remove_vowels_with_arabic_characters():
+    assert remove_vowels('مرحبا') == 'مرحبا'
+
+def test_remove_vowels_with_hindi_characters():
+    assert remove_vowels('नमस्ते') == 'नमस्ते'
+
+def test_remove_vowels_with_thai_characters():
+    assert remove_vowels('สวัสดี') == 'สวัสดี'
+
+def test_remove_vowels_with_emoji():
+    assert remove_vowels('🎉🎊🎈') == '🎉🎊🎈'
+
+def test_remove_vowels_with_mixed_text_and_emoji():
+    assert remove_vowels('Hello 🎉 World') == 'Hll Wrld 🎉'
+
+def test_remove_vowels_with_mixed_text_and_emoji_vowels():
+    assert remove_vowels('Hello 🎉aeiou World') == 'Hll Wrld 🎉'
+
+def test_remove_vowels_with_empty_string_input():
+    assert remove_vowels('') == ''
+
+def test_remove_vowels_with_whitespace_only():
+    assert remove_vowels('   ') == '   '
+
+def test_remove_vowels_with_newlines_only():
+    assert remove_vowels('\n\n\n') == '\n\n\n'
+
+def test_remove_vowels_with_tabs_only():
+    assert remove_vowels('\t\t\t') == '\t\t\t'
+
+def test_remove_vowels_with_mixed_whitespace():
+    assert remove_vowels(' \t\n ') == ' \t\n '
+
+def test_remove_vowels_with_vowels_and_whitespace():
+    assert remove_vowels(' a e i o u ') == '  '
+
+def test_remove_vowels_with_consonants_and_whitespace():
+    assert remove_vowels(' b c d ') == ' b c d '
+
+def test_remove_vowels_with_vowels_consonants_and_whitespace():
+    assert remove_vowels(' a b c d e ') == '  b c d '
+
+def test_remove_vowels_with_single_character_vowel():
+    assert remove_vowels('a') == ''
+
+def test_remove_vowels_with_single_character_consonant():
+    assert remove_vowels('b') == 'b'
+
+def test_remove_vowels_with_single_character_uppercase_vowel():
+    assert remove_vowels('A') == ''
+
+def test_remove_vowels_with_single_character_uppercase_consonant():
+    assert remove_vowels('B') == 'B'
+
+def test_remove_vowels_with_single_character_mixed_vowel():
+    assert remove_vowels('a') == ''
+
+def test_remove_vowels_with_single_character_mixed_consonant():
+    assert remove_vowels('b') == 'b'
+
+def test_remove_vowels_with_two_character_vowels():
+    assert remove_vowels('ae') == ''
+
+def test_remove_vowels_with_two_character_consonants():
+    assert remove_vowels('bc') == 'bc'
+
+def test_remove_vowels_with_two_character_mixed():
+    assert remove_vowels('ab') == 'b'
+
+def test_remove_vowels_with_three_character_vowels():
+    assert remove_vowels('aei') == ''
+
+def test_remove_vowels_with_three_character_consonants():
+    assert remove_vowels('bcd') == 'bcd'
+
+def test_remove_vowels_with_three_character_mixed():
+    assert remove_vowels('abc') == 'bc'
+
+def test_remove_vowels_with_four_character_vowels():
+    assert remove_vowels('aeio') == ''
+
+def test_remove_vowels_with_four_character_consonants():
+    assert remove_vowels('bcdf') == 'bcdf'
+
+def test_remove_vowels_with_four_character_mixed():
+    assert remove_vowels('abcd') == 'bcd'
+
+def test_remove_vowels_with_five_character_vowels():
+    assert remove_vowels('aeiou') == ''
+
+def test_remove_vowels_with_five_character_consonants():
+    assert remove_vowels('bcdfg') == 'bcdfg'
+
+def test_remove_vowels_with_five_character_mixed():
+    assert remove_vowels('abcde') == 'bcd'
+
+def test_remove_vowels_with_six_character_vowels():
+    assert remove_vowels('aeiouA') == ''
+
+def test_remove_vowels_with_six_character_consonants():
+    assert remove_vowels('bcdfgh') == 'bcdfgh'
+
+def test_remove_vowels_with_six_character_mixed():
+    assert remove_vowels('abcdef') == 'bcdf'
+
+def test_remove_vowels_with_seven_character_vowels():
+    assert remove_vowels('aeiouAE') == ''
+
+def test_remove_vowels_with_seven_character_consonants():
+    assert remove_vowels('bcdfghi') == 'bcdfghi'
+
+def test_remove_vowels_with_seven_character_mixed():
+    assert remove_vowels('abcdefg') == 'bcdfg'
+
+def test_remove_vowels_with_eight_character_vowels():
+    assert remove_vowels('aeiouAEI') == ''
+
+def test_remove_vowels_with_eight_character_consonants():
+    assert remove_vowels('bcdfghij') == 'bcdfghij'
+
+def test_remove_vowels_with_eight_character_mixed():
+    assert remove_vowels('abcdefgh') == 'bcdfgh'
+
+def test_remove_vowels_with_nine_character_vowels():
+    assert remove_vowels('aeiouAEIO') == ''
+
+def test_remove_vowels_with_nine_character_consonants():
+    assert remove_vowels('bcdfghijk') == 'bcdfghijk'
+
+def test_remove_vowels_with_nine_character_mixed():
+    assert remove_vowels('abcdefghi') == 'bcdfghi'
+
+def test_remove_vowels_with_ten_character_vowels():
+    assert remove_vowels('aeiouAEIOU') == ''
+
+def test_remove_vowels_with_ten_character_consonants():
+    assert remove_vowels('bcdfghijkl') == 'bcdfghijkl'
+
+def test_remove_vowels_with_ten_character_mixed():
+    assert remove_vowels('abcdefghij') == 'bcdfghi'
+
+def test_remove_vowels_with_all_vowels_lowercase():
+    assert remove_vowels('aeiou') == ''
+
+def test_remove_vowels_with_all_vowels_uppercase():
+    assert remove_vowels('AEIOU') == ''
+
+def test_remove_vowels_with_all_vowels_mixed():
+    assert remove_vowels('aEiOu') == ''
+
+def test_remove_vowels_with_all_consonants_lowercase():
+    assert remove_vowels('bcdfghjklmnpqrstvwxyz') == 'bcdfghjklmnpqrstvwxyz'
+
+def test_remove_vowels_with_all_consonants_uppercase():
+    assert remove_vowels('BCDFGHJKLMNPQRSTVWXYZ') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_consonants_mixed():
+    assert remove_vowels('BcDfGhJkLmNpQrStVwXyZ') == 'BcDfGhJkLmNpQrStVwXyZ'
+
+def test_remove_vowels_with_all_letters_lowercase():
+    assert remove_vowels('abcdefghijklmnopqrstuvwxyz') == 'bcdfghjklmnpqrstvwxyz'
+
+def test_remove_vowels_with_all_letters_uppercase():
+    assert remove_vowels('ABCDEFGHIJKLMNOPQRSTUVWXYZ') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BcDfGhJkLmNpQrStVwXyZ'
+
+def test_remove_vowels_with_all_letters_mixed_case():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_2():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed_case_3():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_4():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed_case_5():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_6():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed_case_7():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_8():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed_case_9():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_10():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed_case_11():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_12():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed_case_13():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_14():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed_case_15():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_16():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed_case_17():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_18():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'
+
+def test_remove_vowels_with_all_letters_mixed_case_19():
+    assert remove_vowels('aBcDeFgHiJkLmNoPqRsTuVwXyZ') == 'bCdEfGhIjKlMnOpQrStUvWxYz'
+
+def test_remove_vowels_with_all_letters_mixed_case_20():
+    assert remove_vowels('AbCdEfGhIjKlMnOpQrStUvWxYz') == 'BCDFGHJKLMNPQRSTVWXYZ'","METADATA = {}
+
+
+def check(candidate):
+    assert candidate('') == ''
+    assert candidate(""abcdef\nghijklm"") == 'bcdf\nghjklm'
+    assert candidate('fedcba') == 'fdcb'
+    assert candidate('eeeee') == ''
+    assert candidate('acBAA') == 'cB'
+    assert candidate('EcBOO') == 'cB'
+    assert candidate('ybcd') == 'ybcd'",,,,,
+s_038,"def kth_element(arr, k):
+  n = len(arr)
+  for i in range(n):
+    for j in range(0, n-i-1):
+      if arr[j] > arr[j+1]:
+        arr[j], arr[j+1] == arr[j+1], arr[j]
+  return arr[k-1]","import pytest
+
+
+@pytest.mark.parametrize(""arr,k,expected"", [
+    # Happy path - sorted arrays
+    ([5, 2, 8, 1, 9], 3, 5),
+    ([1, 2, 3, 4, 5], 3, 3),
+    ([5, 4, 3, 2, 1], 3, 3),
+    
+    # Single element
+    ([42], 1, 42),
+    
+    # Two elements
+    ([10, 20], 1, 10),
+    ([10, 20], 2, 20),
+    
+    # All same values
+    ([5, 5, 5, 5, 5], 3, 5),
+    
+    # With duplicates
+    ([3, 1, 4, 1, 5, 1, 9], 4, 1),
+    
+    # Large array
+    (list(range(100, 0, -1)), 50, 51),
+    
+    # Edge k values
+    ([1, 2, 3, 4, 5], 1, 1),
+    ([1, 2, 3, 4, 5], 5, 5),
+    
+    # Negative numbers
+    ([-5, -2, -8, -1, -9], 3, -5),
+    ([-5, -2, -8, -1, -9], 1, -9),
+    ([-5, -2, -8, -1, -9], 5, -1),
+    
+    # Mixed positive and negative
+    ([-3, 0, 3, -1, 1], 3, 0),
+    
+    # Float values
+    ([1.5, 2.5, 3.5], 2, 2.5),
+    ([1.5, 2.5, 3.5], 1, 1.5),
+    ([1.5, 2.5, 3.5], 3, 3.5),
+])
+def test_kth_element(arr, k, expected):
+    result = kth_element(arr, k)
+    assert result == expected
+
+
+@pytest.mark.parametrize(""arr,k"", [
+    # Empty array
+    ([], 1),
+    # k out of bounds
+    ([1, 2, 3], 10),
+    ([1, 2, 3], 0),
+    ([1, 2, 3], -1),
+    ([1, 2, 3], -5),
+    # k larger than array length
+    ([1, 2], 5),
+    # k larger than array length (negative)
+    ([1, 2], -3),
+])
+def test_kth_element_invalid_k_raises(arr, k):
+    with pytest.raises(IndexError):
+        kth_element(arr, k)
+
+
+@pytest.mark.parametrize(""arr,k"", [
+    # None as array
+    (None, 1),
+    # String as array
+    (""123"", 1),
+    # Dict as array
+    ({1: 2}, 1),
+    # Float as array
+    (1.5, 1),
+    # List of strings
+    ([""a"", ""b"", ""c""], 1),
+])
+def test_kth_element_invalid_array_type_raises(arr, k):
+    with pytest.raises((TypeError, IndexError)):
+        kth_element(arr, k)
+
+
+@pytest.mark.parametrize(""arr,k"", [
+    # k as string
+    ([1, 2, 3], ""1""),
+    # k as float
+    ([1, 2, 3], 1.5),
+    # k as boolean
+    ([1, 2, 3], True),
+    # k as None
+    ([1, 2, 3], None),
+])
+def test_kth_element_invalid_k_type_raises(arr, k):
+    with pytest.raises((TypeError, IndexError)):
+        kth_element(arr, k)
+
+
+@pytest.mark.parametrize(""arr,k"", [
+    # Very large k
+    ([1, 2, 3], 1000000),
+    # Very negative k
+    ([1, 2, 3], -1000000),
+])
+def test_kth_element_extreme_values_raises(arr, k):
+    with pytest.raises(IndexError):
+        kth_element(arr, k)
+
+
+@pytest.mark.parametrize(""arr,k"", [
+    # k=0
+    ([1, 2, 3], 0),
+    # k=-1
+    ([1, 2, 3], -1),
+    # k=-2
+    ([1, 2, 3], -2),
+])
+def test_kth_element_boundary_k_raises(arr, k):
+    with pytest.raises(IndexError):
+        kth_element(arr, k)
+
+
+@pytest.mark.parametrize(""arr,k,expected"", [
+    # Already sorted
+    ([1, 2, 3, 4, 5], 3, 3),
+    # Reverse sorted
+    ([5, 4, 3, 2, 1], 3, 3),
+    # Single element
+    ([10], 1, 10),
+    # Two elements sorted
+    ([1, 2], 1, 1),
+    # Two elements reverse sorted
+    ([2, 1], 1, 1),
+])
+def test_kth_element_sorted_arrays(arr, k, expected):
+    result = kth_element(arr, k)
+    assert result == expected
+
+
+@pytest.mark.parametrize(""arr,k,expected"", [
+    # k=1 (first element after sort)
+    ([3, 1, 4, 1, 5, 9, 2, 6], 1, 1),
+    # k=len (last element after sort)
+    ([3, 1, 4, 1, 5, 9, 2, 6], 8, 9),
+    # k=len-1 (second to last after sort)
+    ([3, 1, 4, 1, 5, 9, 2, 6], 7, 6),
+])
+def test_kth_element_first_last(arr, k, expected):
+    result = kth_element(arr, k)
+    assert result == expected
+
+
+@pytest.mark.parametrize(""arr,k,expected"", [
+    # Empty list passed with k=1
+    ([], 1),
+    # List with one element and k=1
+    ([5], 1),
+    # List with one element and k=2
+    ([5], 2),
+])
+def test_kth_element_edge_cases(arr, k, expected):
+    with pytest.raises(IndexError):
+        kth_element(arr, k)
+
+
+@pytest.mark.parametrize(""arr,k,expected"", [
+    # Large negative numbers
+    ([-1000000, -500000, 0, 500000, 1000000], 3, 0),
+    # Large positive numbers
+    ([1000000, 500000, 0, -500000, -1000000], 3, 0),
+])
+def test_kth_element_large_values(arr, k, expected):
+    result = kth_element(arr, k)
+    assert result == expected
+
+
+@pytest.mark.parametrize(""arr,k,expected"", [
+    # All zeros
+    ([0, 0, 0, 0, 0], 3, 0),
+    # Mix of zeros and positives
+    ([0, 1, 0, 2, 0], 3, 1),
+    # Mix of zeros and negatives
+    ([0, -1, 0, -2, 0], 3, 0),
+])
+def test_kth_element_zeros(arr, k, expected):
+    result = kth_element(arr, k)
+    assert result == expected
+
+
+@pytest.mark.parametrize(""arr,k,expected"", [
+    # Very small floats
+    ([0.001, 0.002, 0.003], 2, 0.002),
+    # Very large floats
+    ([1e10, 1e9, 1e8], 2, 1e9),
+])
+def test_kth_element_float_precision(arr, k, expected):
+    result = kth_element(arr, k)
+    assert result == expected
+
+
+@pytest.mark.parametrize(""arr,k"", [
+    # Empty array with various k
+    ([], 1),
+    ([], 0),
+    ([], -1),
+    ([], 100),
+])
+def test_kth_element_empty_array(arr, k):
+    with pytest.raises(IndexError):
+        kth_element(arr, k)
+
+
+@pytest.mark.parametrize(""arr,k,expected"", [
+    # k=1 with sorted array
+    ([1, 2, 3, 4, 5], 1, 1),
+    # k=5 with sorted array
+    ([1, 2, 3, 4, 5], 5, 5),
+    # k=3 with sorted array
+    ([1, 2, 3, 4, 5], 3, 3),
+])
+def test_kth_element_min_max_k(arr, k, expected):
+    result = kth_element(arr, k)
+    assert result == expected","assert kth_element([12,3,5,7,19], 2) == 3
+assert kth_element([17,24,8,23], 3) == 8
+assert kth_element([16,21,25,36,4], 4) == 36",,,,,
+s_039,"def subject_marks(subjectmarks):
+#subject_marks = [('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)])
+ subjectmarks.sort(key = lambda x: x[1])
+ return subjectmarks","import pytest
+
+def test_subject_marks_happy_path():
+    subjectmarks = [('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)]
+    result = subject_marks(subjectmarks)
+    assert result[0][1] == 82
+    assert result[1][1] == 88
+    assert result[2][1] == 90
+    assert result[3][1] == 97
+
+def test_subject_marks_already_sorted():
+    subjectmarks = [('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
+    result = subject_marks(subjectmarks)
+    assert result == subjectmarks
+
+def test_subject_marks_empty_list():
+    subjectmarks = []
+    result = subject_marks(subjectmarks)
+    assert result == []
+
+def test_subject_marks_single_item():
+    subjectmarks = [('English', 88)]
+    result = subject_marks(subjectmarks)
+    assert result == [('English', 88)]
+
+def test_subject_marks_negative_marks():
+    subjectmarks = [('Maths', -5), ('English', 10)]
+    result = subject_marks(subjectmarks)
+    assert result[0][1] == -5
+    assert result[1][1] == 10
+
+def test_subject_marks_same_marks():
+    subjectmarks = [('English', 88), ('Maths', 88), ('Science', 90)]
+    result = subject_marks(subjectmarks)
+    assert len(result) == 3
+    assert result[0][1] == 88
+    assert result[2][1] == 90
+
+def test_subject_marks_float_marks():
+    subjectmarks = [('English', 88.5), ('Maths', 90.5), ('Science', 85.5)]
+    result = subject_marks(subjectmarks)
+    assert result[0][1] == 85.5
+    assert result[1][1] == 88.5
+    assert result[2][1] == 90.5
+
+def test_subject_marks_mixed_marks():
+    subjectmarks = [('English', 88), ('Maths', 90), ('Science', 88), ('Physics', 95)]
+    result = subject_marks(subjectmarks)
+    assert result[0][1] == 88
+    assert result[1][1] == 88
+    assert result[2][1] == 90
+    assert result[3][1] == 95
+
+def test_subject_marks_returns_same_object():
+    subjectmarks = [('English', 88), ('Science', 90)]
+    result = subject_marks(subjectmarks)
+    assert result is subjectmarks
+
+def test_subject_marks_none_raises():
+    with pytest.raises(TypeError):
+        subject_marks(None)
+
+def test_subject_marks_invalid_type_raises():
+    with pytest.raises(TypeError):
+        subject_marks(""invalid"")
+
+def test_subject_marks_mixed_types_raises():
+    with pytest.raises(TypeError):
+        subject_marks([('English', 88), 'invalid'])
+
+def test_subject_marks_returns_sorted_list():
+    subjectmarks = [('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)]
+    result = subject_marks(subjectmarks)
+    assert result[0][1] < result[1][1] < result[2][1] < result[3][1]","assert subject_marks([('English', 88), ('Science', 90), ('Maths', 97), ('Social sciences', 82)])==[('Social sciences', 82), ('English', 88), ('Science', 90), ('Maths', 97)]
+assert subject_marks([('Telugu',49),('Hindhi',54),('Social',33)])==([('Social',33),('Telugu',49),('Hindhi',54)])
+assert subject_marks([('Physics',96),('Chemistry',97),('Biology',45)])==([('Biology',45),('Physics',96),('Chemistry',97)])",,,,,
