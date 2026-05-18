@@ -32,18 +32,20 @@ ANNOTATIONS_DIR   = Path("human_eval_annotations")
 GUIDE_PATH        = Path("human_eval_guide.txt")  # produced by human_eval_sampler.py
 
 # Each dimension carries a one-line description (for the sidebar) and a
-# 4-tuple of anchor strings — one per scale point — that render directly
-# beneath the radio buttons via st.radio(captions=...).
+# 6-tuple of anchor strings — one per scale point on a 0–5 scale — that
+# render directly beneath the radio buttons via st.radio(captions=...).
 DIMENSIONS = [
     {
         "key": "test_idiom",
         "label": "Test idiom quality",
         "general": "Are the tests written in idiomatic pytest style?",
         "anchors": [
-            "ad-hoc / non-pytest (no test_* functions, prints instead of asserts)",
-            "basic test_* functions but generic names; no parametrize / fixtures even when they'd help",
-            "descriptive test_* names; mostly one logical assertion per test; minor style nits",
-            "production-grade: parametrize / fixtures used where they shorten the suite; helpful failure messages",
+            "not pytest-style (no test_* functions, prints instead of asserts)",
+            "raw assertions at module level, no proper test functions",
+            "basic test_* functions but generic names; no parametrize / fixtures",
+            "descriptive test_* names; mostly one logical assertion per test",
+            "good structure + uses parametrize OR fixtures appropriately",
+            "production-grade: parametrize / fixtures used; helpful failure messages; consistent style",
         ],
     },
     {
@@ -51,10 +53,12 @@ DIMENSIONS = [
         "label": "Correctness",
         "general": "If the function is implemented correctly, would every test pass?",
         "anchors": [
-            "most assertions are wrong / reference the wrong API / would fail on a correct function",
-            "some sound assertions, but several incorrect (e.g. expects ValueError, function raises IndexError)",
-            "all assertions sound; tests would pass on a correct function; minor oracle nits",
-            "every assertion matches function behaviour exactly",
+            "most assertions wrong; references wrong API / would fail on a correct function",
+            "many wrong; only ~25% would pass on a correct function",
+            "mixed; about half would pass; some wrong exceptions or expected values",
+            "most assertions sound; ~75% pass on a correct function; a few wrong",
+            "all assertions sound; pass on a correct function; minor oracle nits",
+            "every oracle exact; assertions match function behaviour perfectly",
         ],
     },
     {
@@ -63,13 +67,15 @@ DIMENSIONS = [
         "general": "Coverage across happy path / edge cases / error cases.",
         "anchors": [
             "single trivial happy-path test; no edge cases",
+            "only happy-path tests (multiple values but no edge cases)",
             "happy path + 1 edge case (empty OR zero OR None)",
-            "happy path + multiple edge cases (None / empty / zero / boundary)",
-            "happy path + edge cases + error cases (invalid input raises as expected)",
+            "happy path + 2-3 edge cases",
+            "happy path + multiple edge cases + at least one error/exception test",
+            "happy path + edge cases + error cases + boundary values (full coverage)",
         ],
     },
 ]
-SCALE = [0, 1, 2, 3]
+SCALE = [0, 1, 2, 3, 4, 5]
 
 
 # ---------------------------------------------------------------------------
@@ -128,7 +134,7 @@ st.set_page_config(page_title="Test Quality Annotation",
 # --- Sidebar: rubric + progress -------------------------------------------
 with st.sidebar:
     st.header("Rubric")
-    st.caption("Three dimensions, each scored 0–3 with the anchor that best "
+    st.caption("Three dimensions, each scored 0–5 with the anchor that best "
                "matches what you see.")
     for d in DIMENSIONS:
         with st.expander(d["label"], expanded=False):
