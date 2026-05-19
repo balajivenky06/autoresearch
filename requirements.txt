@@ -1,0 +1,11 @@
+# Minimal runtime deps for the human-evaluation Streamlit app
+# (annotator-facing — does NOT pull in the heavy research/analysis stack).
+#
+# Install:
+#     pip install -r requirements.txt
+#
+# Then:
+#     streamlit run human_eval_app.py
+
+streamlit>=1.30
+pandas>=2.0

@@ -130,7 +130,24 @@ Open `unitest_colab.ipynb` on a Colab A100:
 | `statistical_report.txt` | Kruskal-Wallis + pairwise Mann-Whitney U significance table (in `plots_generalizability/`) |
 | `human_eval_samples.csv` | Annotation worksheet for 40 stratified samples (not committed) |
 | `human_eval_guide.txt`   | Annotation instructions for human raters |
+| `human_eval_pairs.csv`   | Per-pair worksheet (function, generated_tests) for the Streamlit app |
 | `summary_all_experiments.csv` | Pivot summary across all models (not committed) |
+
+## Human Evaluation (Streamlit app)
+
+A separate Streamlit annotation app is bundled for the human evaluation
+study that backs the EMSE resubmission. Annotators rate 40 stratified
+(function, generated_tests) pairs on three 0–5 dimensions: Test idiom
+quality, Correctness, Completeness.
+
+```bash
+pip install -r requirements.txt
+python3 human_eval_pair_sampler.py        # build the blinded worksheet (one-time)
+streamlit run human_eval_app.py           # opens http://localhost:8501
+```
+
+Full setup, rubric, and distribution options: see
+[`README_human_eval.md`](README_human_eval.md).
 
 ## License
 
