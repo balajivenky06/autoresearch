@@ -14,6 +14,219 @@
 
 ---
 
+## 1. Introduction
+
+Automated unit-test generation has been a target of empirical
+software-engineering research for decades, motivated by the well-
+documented cost of manual test authoring and the high marginal value
+of each additional test (Daka and Fraser 2014; Almasi et al. 2017).
+The dominant paradigm prior to 2022 was **search-based software
+testing** (SBST): tools like EvoSuite for Java and Pynguin for Python
+treat test-suite synthesis as an optimisation problem, evolving a
+population of candidate test cases against a coverage- or
+mutation-based fitness function (Fraser and Arcuri 2011; Lukasczyk and
+Fraser 2022). These tools achieve high branch coverage on
+self-contained functions and have demonstrated practical value in
+industrial deployments, but they suffer two well-known limitations:
+the **regression-oracle problem** (their assertions encode observed
+return values, not specifications) and a **per-function search-budget
+cost** that scales poorly to large codebases.
+
+The arrival of large language models capable of synthesising readable
+test code has shifted this landscape. LLMs trained on public source
+code can produce pytest- or JUnit-formatted test suites that read like
+hand-written tests, encode specifications drawn from docstrings or
+function signatures, and require no per-function search budget beyond
+inference time (Schäfer et al. 2023; Tufano et al. 2022; Pan et al.
+2024). Multiple recent studies have benchmarked LLM-generated tests
+against SBST baselines and reported competitive or superior coverage
+on standard benchmarks (HumanEval, MBPP, CodeContests). The question
+that frames the present paper is no longer "can LLMs replace
+SBST?" — the empirical answer to that is "yes, on coverage
+metrics" — but rather: **once we accept LLM-based test generation,
+which augmentation methodology produces the best tests, on which kinds
+of code, with which underlying LLM?**
+
+### 1.1 The retrieval-augmentation question
+
+A natural augmentation for LLM test generators is
+**retrieval-augmented generation** (RAG). The original RAG framework
+(Lewis et al. 2020) augments an LLM's prompt with passages retrieved
+from a knowledge base; in the test-generation context, the knowledge
+base is typically a curated set of testing tutorials, framework
+documentation, and example test suites. Several RAG variants have been
+proposed for code-generation tasks more broadly — Simple RAG (a single
+top-k retrieval pass), Iterative-Critique RAG (a generate-and-refine
+loop that injects the retrieved context across multiple iterations),
+and Random RAG (an ablation baseline where retrieval is unrelated to
+the task) — and there is now a small empirical literature comparing
+their effectiveness on docstring generation, code-completion, and
+related tasks (Liu et al. 2023; Khoury et al. 2024; Zhang et al.
+2024). Comparable work on **unit-test generation specifically** is
+sparser, and the work that does exist has three methodological gaps
+that we address in this paper.
+
+### 1.2 Three gaps in existing work
+
+**Gap 1: Surface-level evaluation metrics.** Most LLM-test-generation
+studies report syntactic-validity rates, BLEU or ROUGE similarity to
+ground-truth tests, embedding-based semantic similarity, or
+edge-case-coverage proxies. These are useful for distinguishing
+working LLM pipelines from broken ones, but they do not answer the
+question that matters for downstream deployment: **do the generated
+tests catch bugs?** A test suite with high BLEU similarity to a
+ground-truth reference can have zero defect-detection capability if it
+asserts only structural properties (return type, list length) rather
+than specific oracle values. The SE-relevant operationalisation of
+"do the tests catch bugs?" is **mutation kill rate** — the fraction of
+systematically-injected code defects that the test suite detects
+(Andrews et al. 2005; Just et al. 2014). Mutation testing has been a
+gold-standard metric in the SBST literature for two decades but has
+been used only sporadically in LLM-test-generation evaluations.
+
+**Gap 2: Single-LLM studies.** The bulk of recent LLM-test-generation
+work evaluates a single LLM (typically a frontier closed-weight model
+like GPT-4) and reports the best RAG variant under that LLM. This
+methodology answers "which RAG variant is best?" but not "which RAG
+variant is best **conditional on the underlying LLM**?". As we
+demonstrate in §4.3, the answer to the conditional question is
+non-trivial: **method rankings do not generalise across LLMs**.
+Iterative-Critique RAG wins on three of the four open-weight LLMs we
+test (llama3.2 3B, phi4 14B, qwen3-coder 30B-MoE) but loses to Simple
+RAG on the strongest dense model in our pool (qwen3.5 9B). A study
+that evaluated only on qwen3.5 would draw the opposite conclusion from
+a study that evaluated only on phi4, and neither study would surface
+the underlying interaction effect.
+
+**Gap 3: Limited connection to developer outcomes.** The first round
+of peer review on our prior work, conducted by *Empirical Software
+Engineering*, flagged precisely this gap: "The study is primarily an
+ML engineering evaluation; it lacks developer-impact studies,
+comparison with existing tools, and SE-relevant evaluation metrics."
+The reviewer identified three concrete deficits — human evaluation,
+tool comparison, and a behavioural metric — that we address directly
+in the present paper. **All three components are independent
+methodological additions**; together they shift the evaluation from
+"does the pipeline produce tests?" to "do the tests do what
+developers and bug-detection tools say they should?"
+
+### 1.3 Research questions
+
+The present paper addresses six research questions, organised around
+the three gaps identified above:
+
+- **RQ1**: Does retrieval-augmented LLM test generation produce tests
+  with higher mutation kill rate than plain (un-augmented) LLM
+  generation, across four open-weight LLMs spanning 3 B – 30 B
+  parameters?
+- **RQ2**: Is the method effect on mutation kill rate **statistically
+  significant** after controlling for source-sample difficulty and LLM
+  choice, and does it concentrate on specific mutation operators or
+  source benchmarks?
+- **RQ3**: Do **method rankings generalise across LLMs**, or does the
+  best method depend on the underlying LLM's capability tier?
+- **RQ4**: Does the **token-overlap faithfulness** between
+  generated tests and retrieved documentation predict mutation kill
+  rate? Does **semantic faithfulness** (an LLM-judge metric) predict
+  it differently?
+- **RQ5**: Do **human annotators** rate the best LLM-generated tests
+  higher than the worst LLM-generated tests on dimensions of test
+  idiom quality, correctness, and completeness — and does their
+  ranking match the mutation-testing ranking?
+- **RQ6**: How do LLM-based test generators **compare against
+  search-based test generation** (Pynguin) on the same matched
+  functions, under a fixed search budget?
+
+### 1.4 Contributions
+
+This paper makes five contributions to the empirical literature on
+LLM-based unit-test generation:
+
+1. **First cross-LLM mutation-testing study** of plain-vs-RAG test
+   generation. We evaluate four methods (Plain LLM, Random RAG, Simple
+   RAG, Iterative Critique) across four open-weight LLMs spanning 3 B
+   – 30 B parameters and dense vs mixture-of-experts architectures,
+   on a 100-sample subset of HumanEval + MBPP. To our knowledge no
+   prior study has reported this 4 × 4 mutation-testing matrix.
+
+2. **Statistically rigorous analysis** using a multi-test strategy:
+   Type-III ANOVA on the per-sample data, mixed-effects regression
+   with `sample_idx` as a random intercept, Tukey HSD post-hoc
+   comparisons, and per-operator + per-benchmark decompositions. We
+   identify a statistically significant effect of Iterative Critique
+   RAG over Plain LLM specifically on **boundary mutators in MBPP-
+   style numeric problems** (Tukey HSD ∆ = −0.311, p_adj = 0.025;
+   Mixed-LM Wald-test p = 0.005) — a finding that did not surface in
+   the pooled analysis.
+
+3. **First human-evaluation study** of LLM-generated unit tests under
+   a behaviourally-anchored 0–5 rubric. Three independent annotators
+   rated 40 stratified `(function, generated_tests)` pairs blinded to
+   method and model. **Iterative Critique RAG ranked highest on all
+   three rubric dimensions** (test idiom quality, correctness,
+   completeness), replicating the mutation-testing method ordering
+   with completely independent evidence.
+
+4. **First LLM-vs-SBST head-to-head comparison on mutation kill
+   rate** in Python. We benchmark our LLM methods against Pynguin
+   0.45.0 on the same 40 functions used in the human-evaluation
+   study, with a 60-second per-function search budget. LLM methods
+   outperform Pynguin overall, but the gap is concentrated on
+   **comparison-operator mutators** (Pynguin 0.33 vs Iterative
+   Critique 0.96), with parity on arithmetic and negate-boolean
+   operators. This suggests SBST and LLM-based generators are
+   complementary on different operator families — a finding with
+   direct implications for the design of hybrid generators.
+
+5. **A counterintuitive finding** about RAG retrieval quality:
+   **token-overlap faithfulness between generated tests and retrieved
+   documentation negatively predicts mutation kill rate** (Pearson
+   r = −0.61, p = 0.045 across 11 RAG cells; within each individual
+   RAG method, r approaches −0.99). Semantic faithfulness — measured
+   via an LLM-judge metric (DeepSeek-Coder 6.7B) — shows no such
+   effect, pinpointing the harm as **lexical copy-paste of generic
+   testing-tutorial vocabulary** rather than principled grounding in
+   retrieved context. RAG pipelines that reward syntactic faithfulness
+   are optimising the wrong objective.
+
+A sixth, partly methodological, contribution: we release the
+**replication package** including the experimental sweep TSV, the
+40-pair human-evaluation worksheet (blinded), the three annotators'
+ratings, the Pynguin runner, the analysis scripts, and the Streamlit
+annotation application that any group can fork to run an analogous
+study on their own corpus.
+
+### 1.5 Roadmap
+
+The remainder of the paper is organised as follows. §2 reviews related
+work on LLM-based and search-based test generation, on mutation-
+testing-based evaluation, and on RAG variants for code-generation
+tasks. §3 describes our experimental setup, the mutation-testing
+pipeline, the statistical methodology, the human-evaluation protocol,
+and the Pynguin tool comparison. §4 reports the empirical results
+across all six research questions. §5 develops the mechanistic
+interpretation of the results and presents four practical
+recommendations for engineers building LLM-based test generators.
+§6 concludes and outlines directions for future research. §7 lists the
+threats to validity (construct, internal, external, and conclusion)
+that scope the present findings. The replication package is described
+in §9 and hosted at the URL given in §1.6.
+
+### 1.6 Replication
+
+All empirical results in this paper are reproducible from the
+artefacts at `https://github.com/balajivenky06/autoresearch` (tag
+`emse-resubmission-v1`). The repository contains the experimental
+sweep results, the analysis scripts, the human-evaluation Streamlit
+application, the per-pair annotation worksheet, the three annotators'
+returned CSVs, the Pynguin runner script, and the figure-generation
+scripts. We document the exact regeneration commands in the project
+`README` and in
+`session_context_mutation_testing.md`'s "Reproducibility cheat-sheet"
+section.
+
+---
+
 ## 3. Methods
 
 This section describes the experimental setup, the mutation-testing
