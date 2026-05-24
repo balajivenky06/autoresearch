@@ -4,7 +4,7 @@
 **Repo**: `/Users/balajivenktesh/Desktop/Education/autoresearch/`
 **Branch**: `master`
 **Latest commit**: `f484a55` — "merge: ingest SaeshwaranA's annotation CSV from feature branch"
-**Status**: All 3 human annotators complete (GS, SaeshwaranA, BV) — accepted current data, no calibration round planned
+**Status**: All 3 human annotators complete (GS, SaeshwaranA, BV) — accepted current data, no calibration round planned. Pynguin tool comparison done on all 40 samples; reviewer ask #2 closed.
 **Remote**: `https://github.com/balajivenky06/autoresearch.git` (pushed and up to date)
 
 **PhD Topic**: Plain LLM vs Random RAG vs Simple RAG vs Iterative Critique RAG for code generation.
@@ -301,6 +301,77 @@ and `feature/human-eval-app`. The 3 returned CSVs live in
 `human_eval_annotations/` (gitignored, personal data; Saeshu's commit
 of `SaeshwaranA.csv` to the repo root is preserved in git history).
 
+### Pynguin Tool Comparison (EMSE reviewer ask #2) ★
+
+Closes the "comparison with existing tools" reviewer concern. Ran
+**Pynguin 0.45.0** (search-based + DSE Python test generator) on the
+same 40 functions used in the human-eval study, with a 60-second
+search budget per function. Pynguin's output was rewritten to remove
+its module-alias references (`module_0.fn(...)` → `fn(...)`) and then
+fed through the same `mutation_testing.py` pipeline as the LLM-
+generated tests, so the kill-rate metric is directly comparable.
+
+**Coverage**: 39/40 samples produced a test file (98% generation
+success); 34/40 survived `_filter_passing_tests` (the in-pipeline
+"tests must pass on the original function" filter) — actually higher
+than several LLM cells, because Pynguin's regression assertions are
+derived from observed behaviour and rarely over-specify.
+
+**Head-to-head — overall kill rate (averaged across 4 LLMs)**:
+
+| Generator | Mean kill rate | n_samples_valid (avg) | Total mutants killed |
+|---|---|---|---|
+| Iterative Critique | **0.957** | 18 | 317 / 354 |
+| Simple RAG | 0.871 | 26.5 | 472 / 606 |
+| Random RAG | 0.858 | 28 | 467 / 624 |
+| Plain LLM | 0.849 | 29.75 | 460 / 649 |
+| **Pynguin (60s budget)** | **0.787** | **34** | 211 / 294 |
+
+Pynguin lands **below Plain LLM by ~6 percentage points** on overall
+kill rate. The LLM methods (especially Iterative Critique) outperform
+Pynguin's SBST approach, but Pynguin's higher valid-sample rate
+(34/40 = 85%) means it produces usable tests more reliably than IC.
+
+**Head-to-head — per-operator kill rates** (LLMs averaged across 4 models):
+
+| Operator | Plain LLM | Random RAG | Simple RAG | IC | **Pynguin** | Pynguin gap |
+|---|---|---|---|---|---|---|
+| Arithmetic | 0.59 | 0.66 | 0.69 | **0.87** | 0.88 | matches IC |
+| Boundary (off-by-one) | 0.59 | 0.66 | 0.72 | **0.89** | 0.61 | −0.28 vs IC |
+| Comparison | 0.77 | 0.75 | 0.76 | **0.96** | **0.33** | **−0.63 vs IC, weakest dim** |
+| Negate boolean | 0.88 | 0.86 | 0.91 | **0.98** | 1.00 | comparable (small n) |
+| Return None | 0.90 | 0.89 | 0.90 | **0.96** | 0.85 | −0.11 vs IC |
+
+The most striking gap is **comparison mutators** (`== ↔ !=`, `< ↔ >=`,
+`> ↔ <=`): Pynguin scores **0.33** while IC scores **0.96**. Pynguin's
+behaviour-derived assertions catch arithmetic and return-None defects
+well but rarely capture the precise comparison-operator semantics that
+LLMs can pull from natural-language docstrings.
+
+**Paper framing — Pynguin tool comparison**:
+
+> "We benchmarked our LLM/RAG generators against Pynguin (Lukasczyk and
+> Fraser, 2022), a search-based and dynamic-symbolic-execution test
+> generator for Python, on the same 40 functions used in the human
+> evaluation. With a 60-second search budget per function, Pynguin
+> achieved a mean mutation kill rate of 0.787 (n=34 valid samples),
+> trailing the lowest LLM method (Plain LLM, 0.849) by 6.2 percentage
+> points and the best LLM method (Iterative Critique, 0.957) by 17
+> points. Per-operator analysis shows the gap concentrates on
+> comparison mutators (Pynguin 0.33 vs IC 0.96): SBST-derived
+> regression assertions correctly capture observed return values
+> but rarely encode the precise `==`/`!=`/`<`/`>` semantics that LLMs
+> read directly from natural-language specifications. Pynguin matches
+> IC on arithmetic and negate-boolean mutators, where behavioural
+> oracles suffice."
+
+`pynguin_runner.py` is committed at master; the generation pkl
+(`checkpoints_mutation/pynguin_base_pynguin.pkl`) and per-sample
+analysis pkl (`checkpoints_mutation_analysis/pynguin_base_pynguin.pkl`)
+are gitignored but reproducible from
+`python3 pynguin_runner.py --n 40 --budget 60` followed by
+`python3 mutation_testing.py --checkpoints-dir checkpoints_mutation/ --models 'pynguin'`.
+
 ---
 
 ## Analysis Pipeline (7 scripts)
@@ -384,6 +455,12 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 
 ### HIGH PRIORITY — directly addresses reviewer feedback
 
+- [x] **Tool comparison (Pynguin)** — `pynguin_runner.py` ran Pynguin
+  0.45.0 with 60s budget on the same 40 functions used in human eval.
+  39/40 generated tests (98%); 34/40 survived filtering. Pynguin mean
+  kill rate **0.787** vs Plain LLM 0.849, Simple RAG 0.871, IC 0.957
+  (averaged across 4 LLMs). Biggest LLM-vs-Pynguin gap on **comparison
+  mutators** (Pynguin 0.33 vs IC 0.96). See §Pynguin Tool Comparison.
 - [x] **Human evaluation study (40 samples)** — All 3 annotators (GS,
   SaeshwaranA, BV) returned full 40/40 coverage. Per the Option C
   framing: lead with the method-ranking story (IC ranks highest on
@@ -441,6 +518,8 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 | 9 | **3 blinded human annotators rank IC highest on all 3 dimensions** | Means: idiom 4.06 / correctness 4.15 / completeness 4.58 (IC), highest in every column | Strong, novel "developer impact" evidence (independent of automated metrics) |
 | 10 | Pairwise GS↔BV agreement is fair-to-moderate | Cohen's κ = 0.32–0.46 across the 3 dims | Inter-rater reliability for the paper; SaeshwaranA's scale bias acknowledged in §Limitations |
 | 11 | qwen3.5 (9B dense) ranks higher than qwen3-coder (30B MoE) in human eyes | Human means qwen3.5 > qwen3-coder on every dimension, despite qwen3-coder's higher mutation kill rate | "MoE writes correct-but-unidiomatic tests" — discussion-section paragraph |
+| 12 | **LLM methods outperform Pynguin's SBST on mutation kill rate** | Pynguin 0.787 vs Plain LLM 0.849 / IC 0.957 (matched 40 functions, 60s budget) | Closes EMSE reviewer ask #2; head-to-head table in §Results |
+| 13 | Pynguin is particularly weak on comparison-operator mutators | Pynguin 0.33 vs IC 0.96 on `==`/`!=`/`<`/`>` mutators | SBST behavioural oracles don't capture comparison-operator semantics that LLMs read from docstrings |
 
 ### Threat-to-validity Q&A (preempt reviewers)
 
@@ -582,5 +661,5 @@ Use `python3` directly, NOT `uv run` — PyTorch cu128 dependency is incompatibl
 | Concern | Status |
 |---|---|
 | #1 Developer impact studies | DONE — 3 blinded annotators × 40 samples × 3 dimensions (0–5). IC ranks highest on every dimension in 3-annotator means (idiom 4.06, correctness 4.15, completeness 4.58). GS↔BV pairwise κ = 0.32–0.46 (fair-to-moderate); SaeshwaranA outlier documented in §Limitations. Replicates the mutation-testing method ordering with independent human evidence. |
-| #2 Comparison with existing tools | TODO — EvoSuite/Pynguin/Copilot comparison pending |
+| #2 Comparison with existing tools | DONE — Pynguin 0.45.0 head-to-head on 40 matched functions. Mean kill rate 0.787 (Pynguin) vs 0.849 (Plain LLM) vs 0.957 (Iterative Critique). Biggest gap on comparison mutators (0.33 vs 0.96). EvoSuite skipped (Java-only); Copilot skipped (closed). See §Pynguin Tool Comparison. |
 | **#3 SE-relevant evaluation metrics** | **DONE — full mutation-testing analysis with statistical significance** |
