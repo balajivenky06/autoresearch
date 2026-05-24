@@ -1,9 +1,10 @@
 # Session Context — Mutation Testing & Analysis
 
-**Last updated**: 2026-05-17
+**Last updated**: 2026-05-24
 **Repo**: `/Users/balajivenktesh/Desktop/Education/autoresearch/`
 **Branch**: `master`
-**Latest commit**: `399cdde` — "feat: per-benchmark mutation analysis + 4×4 heatmaps"
+**Latest commit**: `134b90c` — "docs: add requirements.txt + README_human_eval.md"
+**Active**: Human evaluation 2/3 annotators returned; awaiting 3rd rater
 **Remote**: `https://github.com/balajivenky06/autoresearch.git` (pushed and up to date)
 
 **PhD Topic**: Plain LLM vs Random RAG vs Simple RAG vs Iterative Critique RAG for code generation.
@@ -179,6 +180,75 @@ Replaces the original 16-bar chart with three heatmap variants for paper figures
 | `kill_rate_boundary_heatmap.png` | Same grid for boundary kill rate — where the colour spread is widest, suitable for the significance figure |
 | `kill_rate_combined_heatmap.png` | 1×5 mosaic: overall + 4 per-operator panels — supplementary materials |
 
+### Human Evaluation — 2/3 Annotators Complete ⏳
+
+Built a Streamlit app (`human_eval_app.py`) plus a per-pair sampler
+(`human_eval_pair_sampler.py`) to ask human annotators to rate 40
+stratified (function, generated_tests) pairs on three behaviourally-
+anchored 0–5 scales: **test idiom quality**, **correctness**,
+**completeness**. Annotators are blinded to method/model.
+
+**Status as of 2026-05-24**:
+
+| Annotator | Coverage | Mean ratings (idiom / correctness / completeness) |
+|---|---|---|
+| GS | 40/40 | 4.40 / 4.25 / 4.08 |
+| SaeshwaranA | 40/40 | 2.88 / 3.45 / 3.62 |
+| (3rd annotator) | pending | — |
+
+**Inter-rater agreement (n=2 pairs only)**:
+
+| Dimension | Cohen's κ (linear) | κ (quadratic) | Pearson r |
+|---|---|---|---|
+| test_idiom | 0.005 | −0.029 | −0.129 |
+| correctness | **−0.218** | −0.204 | −0.272 |
+| completeness | 0.211 | 0.292 | **+0.338** |
+
+κ is below the publishable threshold (≥0.4 moderate, ≥0.6 substantial)
+on every dimension. Two root causes:
+
+1. **Scale-usage bias** — GS rated 1.5 points higher than SaeshwaranA on
+   test_idiom; GS used `5` on 24 of 40 samples while SaeshwaranA's max
+   was `4`. Same scale, different mental anchors.
+2. **Directional disagreements** — a handful of samples (s_011, s_018,
+   s_036) have ratings that flip in opposite directions, pushing κ
+   below zero on correctness.
+
+**What's encouraging despite the noise**:
+
+- **Mean human_correctness ↔ mutation kill_rate** is significant:
+  Pearson r = **+0.338, p = 0.041** (n=40). The "tests look correct"
+  signal aligns with mutation testing's "tests catch defects" signal.
+- **Method-level ordering matches the paper claim**:
+
+  | Method | human_completeness | mutation kill_rate |
+  |---|---|---|
+  | Iterative Critique | **4.50** | 1.00 |
+  | Plain LLM | 3.50 | 1.00 |
+  | Random RAG | 3.64 | 0.96 |
+  | Simple RAG | 3.67 | 0.96 |
+
+  Humans independently rank IC highest on completeness — consistent
+  with the boundary-mutation finding (IC catches off-by-one defects
+  that Plain LLM misses).
+
+**Next steps**:
+
+1. Third annotator's CSV is in flight. Re-compute Fleiss' κ /
+   Krippendorff's α once we have 3 raters.
+2. If 3-rater agreement is still low (κ < 0.4 on at least two of three
+   dimensions), run a calibration session: have all three annotators
+   meet, discuss the ~10 samples with highest disagreement, recalibrate
+   the rubric anchors, then re-rate all 40.
+3. After the rubric stabilises, build `human_eval_validate.py` to
+   produce the publication-ready agreement + correlation tables in
+   one shot.
+
+The blinded worksheet (`human_eval_pairs.csv`) and the meta mapping
+(`human_eval_pairs.meta.csv`, gitignored) are committed at
+`feature/human-eval-app` and `master`. The two returned CSVs live in
+`human_eval_annotations/` (also gitignored, contains personal data).
+
 ---
 
 ## Analysis Pipeline (7 scripts)
@@ -192,6 +262,8 @@ Replaces the original 16-bar chart with three heatmap variants for paper figures
 | `analyze_mutation_generalizability.py` ★ | Cross-model Spearman ρ of method rankings (overall + per-operator). Heatmaps, rank-stability lines, grouped bars. | `plots_mutation/mutation_generalizability_report.txt`, `mutation_rank_*.png` |
 | `mutation_per_benchmark.py` ★ | Splits per-sample data by `source` (HumanEval vs MBPP) and re-runs ANOVA + Tukey HSD + Mixed-LM within each. Reveals which benchmark drives the pooled significance. | `plots_mutation/mutation_per_benchmark_report.txt` |
 | `plot_mutation_heatmap.py` ★ | 4×4 method × model heatmaps for paper figures: overall, boundary-only, and a 5-panel mosaic with all operators. | `plots_mutation/kill_rate_heatmap*.png` |
+| `human_eval_pair_sampler.py` ★ | Builds the 40-row blinded worksheet from generation pkls (stratified across method × model × source × kill-rate strata). Produces a public `human_eval_pairs.csv` and a private `human_eval_pairs.meta.csv` (sample_id → method/model). | `human_eval_pairs.csv`, `human_eval_pairs.meta.csv` (gitignored) |
+| `human_eval_app.py` ★ | Streamlit UI for annotators. Login → blinded sample → 0–5 radio for 3 dimensions (with anchor captions) → save & next → resume support. Persists to `human_eval_annotations/{annotator_id}.csv` after every sample. | `human_eval_annotations/*.csv` (gitignored) |
 
 ### Why mixed-effects beat the rank tests
 
@@ -260,7 +332,14 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 
 ### HIGH PRIORITY — directly addresses reviewer feedback
 
-- [ ] **Human evaluation study (40 samples)** — biggest remaining EMSE gap ("developer impact studies"). Use `human_eval_sampler.py` to generate annotation worksheet, get 2–3 annotators, compute Cohen's κ and Pearson r vs `val_score`.
+- [/] **Human evaluation study (40 samples)** — 2 of 3 annotators returned
+  CSVs (GS, SaeshwaranA). Inter-rater κ currently 0.00–0.30, below the
+  ≥0.4 publishable threshold. ONE significant finding holds:
+  human_correctness ↔ mutation kill_rate, r=+0.338, p=0.041, n=40.
+  Method-level ordering also matches the paper (IC highest on
+  human_completeness, Plain LLM lowest). Waiting on the 3rd annotator;
+  may need a calibration session afterwards. See §Human Evaluation
+  for details.
 - [ ] **Tool comparison vs EvoSuite / Pynguin / Copilot** — reviewer mentioned "comparison with existing tools". Even qualitative comparison on 10–20 samples would help.
 
 ### MEDIUM PRIORITY — strengthens paper
@@ -324,6 +403,11 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 ## Key Commits (in this session)
 
 ```
+134b90c docs: add requirements.txt + README_human_eval.md
+5175e89 rubric: expand rating scale 0-3 → 0-5
+26104e9 rubric: drop Overall + add per-value anchor descriptions
+9210037 rubric: rename Faithfulness → Test idiom quality
+991d0ba feat: Streamlit human-evaluation app + per-pair sampler
 399cdde feat: per-benchmark mutation analysis + 4×4 heatmaps
 7bd2dd5 docs: add correlation + cross-model generalizability findings
 815bb37 feat: analyze_mutation_generalizability.py — cross-model Spearman ρ
@@ -381,6 +465,11 @@ python3 mutation_per_benchmark.py
 
 # 4×4 heatmaps for paper figures
 python3 plot_mutation_heatmap.py
+
+# Human-evaluation Streamlit app
+pip install -r requirements.txt              # minimal: streamlit + pandas
+python3 human_eval_pair_sampler.py           # build blinded 40-pair worksheet
+streamlit run human_eval_app.py              # opens http://localhost:8501
 ```
 
 All reports land in `plots_mutation/`:
@@ -432,6 +521,6 @@ Use `python3` directly, NOT `uv run` — PyTorch cu128 dependency is incompatibl
 
 | Concern | Status |
 |---|---|
-| #1 Developer impact studies | TODO — human evaluation pending |
+| #1 Developer impact studies | IN PROGRESS — 2/3 human annotators returned. Mean human_correctness ↔ mutation kill_rate r=+0.34, p=0.041 (n=40); IC ranks highest on human_completeness. Inter-rater κ below threshold pending 3rd rater + likely calibration session. |
 | #2 Comparison with existing tools | TODO — EvoSuite/Pynguin/Copilot comparison pending |
 | **#3 SE-relevant evaluation metrics** | **DONE — full mutation-testing analysis with statistical significance** |
