@@ -701,6 +701,318 @@ implications for the design of LLM-based test generators, in §5.
 
 ---
 
+## 5. Discussion
+
+The six findings summarised in §4.8 form a coherent picture that
+complicates the simple narrative of "RAG-augmented LLMs are better
+than plain LLMs for unit-test generation". This section develops
+the mechanistic interpretation underlying each finding, the
+implications for practitioners building LLM-based test generators,
+and the directions for future research that our results suggest.
+
+### 5.1 Why does Iterative Critique win on boundary defects but not overall?
+
+The clearest statistically significant result in our data (§4.2.2) is
+that Iterative Critique RAG outperforms Plain LLM at killing **boundary
+mutators** (`n ↔ n±1`) on MBPP problems. On the overall kill rate
+metric the same comparison is null, and on HumanEval problems both
+overall and boundary kill rates are null. Why does the effect localise
+to boundary mutators on the MBPP slice?
+
+The mechanism, we argue, is **assertion specificity**. Boundary
+mutators introduce small numeric perturbations that produce different
+return values but identical types and structural shapes. A test of
+the form `assert sort_descending([3,1,2])[-1] == 1` kills a boundary
+mutation that drops the last element; a test of the form
+`assert isinstance(result, list) and len(result) == 3` does not.
+Iterative Critique's refinement loop is well-suited to driving
+generated tests toward the former category: when the LLM critiques its
+own draft, it tends to flag generic structural assertions as inadequate
+and replace them with value-specific oracles in the next iteration.
+The first-iteration draft on a sort function might assert that the
+result is "a list of length 3"; the critique loop notices this is
+satisfied by the wrong sort order, and the refined draft adds explicit
+element-wise checks. **Plain LLM, lacking this self-correction step,
+disproportionately produces structural-but-not-value-specific
+assertions** that boundary mutators sail past.
+
+The benchmark-specificity (MBPP yes, HumanEval no) follows from this
+mechanism plus the empirical observation that **MBPP problems lean
+much more heavily on numeric range / off-by-one conditions** than
+HumanEval problems do. A spot-check of the 21 MBPP and 9 HumanEval
+problems in our seed-42 subset confirms this: 16 of the 21 MBPP
+problems involve loop bounds, list indexing, or integer-range checks
+where a single boundary mutation flips the return value; only 4 of
+the 9 HumanEval problems share this property. **Where boundary
+mutations are the discriminating defect family, IC's assertion-
+tightening pays off; where they are not, IC's extra effort is wasted
+on a defect class that all methods already cover.**
+
+This interpretation suggests a practical recommendation: **the value of
+RAG-augmented generation is conditional on the defect family that
+matters for the target software**. For testing code with extensive
+numeric boundary conditions — financial calculations, indexing-heavy
+data structures, range queries — Iterative Critique is the right
+choice. For testing code dominated by structural correctness — JSON
+parsers, schema validators, simple data transformations — Plain LLM
+suffices.
+
+### 5.2 Why does the method ordering not generalise across LLMs?
+
+The Spearman rank correlation analysis (§4.3) shows that **no metric
+exhibits cross-model rank stability above the ρ ≥ 0.8 threshold**, and
+the underlying rank table (Table 5) makes the picture concrete:
+**Iterative Critique is rank 1 on three of four LLMs but rank 3 on
+qwen3.5**, while Simple RAG (which is the rank-3 method on three LLMs)
+takes the rank-1 spot on qwen3.5.
+
+Two mechanisms contribute. The first is **test-filter dropout
+asymmetry**. The mutation harness filters tests that fail on the
+original function before computing kill rate (cf. §3.3). Iterative
+Critique's refinement loop produces more behaviourally-specific
+assertions; when an assertion is *almost* right but not exactly right,
+the filter drops it. On llama3.2 — our weakest model — IC's per-sample
+filter-drop rate climbs so high (only 4 of 30 samples survive in the IC
+cell) that the small surviving subset is dominated by trivially
+verifiable cases, inflating the kill rate above what would be observed
+on a balanced sample. **The IC × llama3.2 cell is statistical noise,
+not signal**, and we exclude it from our method-mean computations.
+
+The second mechanism is **the ceiling effect on the strongest model**.
+qwen3.5's 9B-dense architecture is strong enough that Simple RAG
+already reaches 0.994 mutation kill rate — essentially every
+non-equivalent mutant in our suite. At that ceiling, Iterative
+Critique's refinement loop has no room to add value; if anything, it
+introduces additional opportunities for over-specification (and
+filter-dropout). The IC × qwen3.5 kill rate of 0.943 reflects this:
+on a hypothetical mutation suite that contained mutations the simpler
+methods could not catch, IC might do better, but on our standard
+five-operator suite the ceiling has been reached and IC's extra
+machinery costs more than it pays.
+
+This explains the non-generalisation: **method ordering depends on
+where in the capability spectrum the LLM sits**. On weak LLMs (llama3.2
+3B), IC's behavioural assertions are too brittle and the filter drops
+them. On mid-range LLMs (phi4, qwen3-coder), IC's refinement loop adds
+real value, and IC wins. On the strongest LLMs (qwen3.5 9B dense), the
+ceiling is reached by Simple RAG alone, and IC's extra refinement is a
+loss. **The right RAG method depends on the LLM in a non-monotonic
+way**.
+
+### 5.3 The qwen3.5 (9B dense) > qwen3-coder (30B MoE) ratings puzzle
+
+A side finding in §4.6 deserves its own discussion: **on per-model human
+ratings, qwen3.5 (9B dense) ranks higher than qwen3-coder (30B MoE) on
+all three dimensions — idiom 3.97 vs 3.62, correctness 4.03 vs 3.67,
+completeness 4.27 vs 3.75 — despite qwen3-coder having the higher
+mutation kill rate** (0.986 vs 0.975).
+
+Mutation kill rate measures whether the tests *catch defects*. The
+human ratings — particularly the idiom and correctness dimensions —
+measure whether the tests *look right to a Python developer reading
+them*. The two are correlated but not identical, and the divergence
+points at a real architectural difference between dense and
+mixture-of-experts models.
+
+Our hypothesis, based on spot-checks of the underlying test files, is
+that **qwen3-coder's MoE architecture produces tests with correct
+oracles but syntactic patterns that look slightly off to a human
+reader**: occasional bare assertions without `test_*` function
+wrappers, unusual variable naming (`var_0`, `result_2`), and a tendency
+to chain multiple unrelated assertions in a single test. The
+behavioural content is correct — these tests do catch the mutants —
+but the surface style is non-idiomatic. The smaller, denser qwen3.5
+model produces shorter and more uniformly-styled tests that look like
+they came out of a Python style guide, even though their behavioural
+catch-rate is marginally lower.
+
+This is a methodologically important finding: **mutation kill rate and
+human-perceived test quality are not the same construct**. A future
+test generator that optimised for human-perceived quality (e.g., by
+fine-tuning on human-rated test corpora) would not necessarily produce
+the same outputs as one optimised for mutation kill rate. For
+contexts where humans will be the long-term maintainers of the
+generated tests — which is the typical industrial scenario — the
+human-perceived quality metric is the one that matters in the long
+run.
+
+### 5.4 What does the negative faithfulness correlation mean?
+
+The third novel finding from §4.5 is that **token-overlap faithfulness
+between generated tests and retrieved documentation negatively
+predicts mutation kill rate** (Pearson r = −0.61, p = 0.045 across 11
+RAG cells; within Random RAG and Simple RAG individually, r ≈ −0.98).
+The same effect is absent for the DeepSeek-judge faithfulness metric
+(r = −0.24, p = 0.48), which evaluates *semantic* rather than
+*lexical* alignment with the retrieved context.
+
+This finding cuts against the naive expectation that "RAG-grounded
+tests should be better than ungrounded tests". The mechanism, we
+argue, is that **token-overlap faithfulness is dominated by templating
+behaviour**, not by principled grounding. When an LLM is given a
+generic testing-tutorial chunk that contains code like
+`@pytest.mark.parametrize('input,expected', [...])` and the
+template-style assertion `assert isinstance(result, list)`, the
+straightforward way to produce "faithful" output is to **echo that
+vocabulary back** into the generated test file. The result looks
+faithful — the token-overlap metric registers high — but the
+generated assertions are generic and structural rather than specific
+to the function under test. Boundary mutators, which depend on
+function-specific numeric oracles, sail past such tests untouched.
+
+By contrast, when the LLM uses the retrieved chunk as a **reference for
+patterns** rather than as a **template to copy** — recognising that
+parametrize is a useful idiom and applying it with function-specific
+test data — the token-overlap score is lower (because the surface
+vocabulary diverges) but the kill rate is higher (because the
+assertions are about the function, not about the tutorial). This is
+exactly the behaviour we suspect Iterative Critique encourages:
+**critique-and-refine pushes the LLM away from copy-paste outputs
+toward synthesis outputs**, which is why IC's faithfulness correlation
+flips sign to positive (r = +0.75, n = 3) within the IC cells alone,
+albeit with too few data points to be statistically certified.
+
+The DeepSeek judge's null result is the corroborating evidence. The
+judge was instructed to evaluate semantic alignment — does the test
+*correctly use* what the retrieved context describes — rather than
+surface token alignment. On that semantic metric, the LLMs that score
+high are the ones that integrate the retrieval into their behaviour,
+and there is no relationship with kill rate. **The harm is specific to
+lexical copy-paste, not to grounded retrieval use.**
+
+For practitioners, the takeaway is that **token-overlap faithfulness is
+an anti-signal in this domain**. RAG-test-generation pipelines should
+explicitly de-emphasise lexical match with retrieved context and
+instead reward semantic integration — e.g., via the critique-and-refine
+mechanism in Iterative Critique, or via reranking based on a semantic
+faithfulness judge.
+
+### 5.5 SBST and LLM-based test generation are complementary
+
+The Pynguin comparison (§4.7) shows a clear overall ordering — every
+LLM method outperforms Pynguin's 60-second SBST run — but the
+per-operator decomposition (Table 12) reveals a more nuanced picture.
+**On arithmetic and negate-boolean operators, Pynguin matches
+Iterative Critique** (0.88 vs 0.87 and 1.00 vs 0.98 respectively).
+The LLM-versus-Pynguin gap concentrates on the comparison operator
+family, where Pynguin kills only 33 % of mutators while Iterative
+Critique kills 96 %.
+
+The mechanism is straightforward: **Pynguin's behavioural oracles are
+derived from observed return values**, not from operator-level
+semantics. A test that asserts `result == 5` will kill an arithmetic
+mutation that changes the function's output from 5 to 3, but will
+**not** kill a comparison mutation that flips an internal `if x > 0`
+to `if x >= 0` if the resulting output is still 5 for the specific
+input chosen. Pynguin can only catch comparison mutations when its
+search happens to pick an input that bridges the comparison's
+true/false boundary — which, for a random or low-coverage search, is
+unreliable. LLMs, by contrast, can read the function's natural-language
+specification and write tests that explicitly target the comparison
+boundary, even without knowing what the comparison's "interesting"
+input is.
+
+This points at a clear hybrid architecture: **use Pynguin for high-
+coverage behavioural assertions and use an LLM for the comparison-
+boundary specific oracles**. A Pynguin-LLM ensemble that ran Pynguin
+first, extracted Pynguin's covered branches, and then prompted an LLM
+to add comparison-specific oracles for each uncovered comparison
+boundary, would likely outperform either approach alone. We do not
+build this hybrid in this paper, but the per-operator data suggests
+it is a fruitful direction.
+
+Two methodological caveats to the Pynguin comparison: we used Pynguin's
+default 60-second budget, and Pynguin's recommended use case is
+coverage-driven testing rather than mutation killing. A budget of
+300–600 seconds (recommended in some Pynguin publications for harder
+functions) might close some of the boundary-mutation gap. Our results
+should therefore be read as "Pynguin under conventional defaults" not
+"Pynguin at its theoretical best".
+
+### 5.6 LLM capability dominates RAG method choice
+
+A theme that runs through all six findings is that **LLM capability is
+the dominant factor in test-generation quality**. The ANOVA
+decomposition in §4.2.1 captures this quantitatively: the model
+factor's F-statistic (22.1) is roughly 28 times larger than the method
+factor's F-statistic (0.79). In effect-size terms, switching from
+llama3.2 (3B) to qwen3.5 (9B) buys a 0.31-point increase in mean kill
+rate, while switching from Plain LLM to Iterative Critique buys only a
+0.05-point increase.
+
+For the practitioner deploying an LLM-based test generator, **this
+finding inverts the typical RAG-research framing**. The literature
+tends to compare RAG variants at a fixed LLM and present the best RAG
+variant as the headline result. Our data suggests this is the wrong
+frame: **the headline gain comes from choosing the right LLM, with
+RAG-method choice contributing a smaller follow-up improvement**. The
+ranking-question that matters most is not "which RAG method?" but
+"which open-weight LLM in the 9B – 30B range produces the best
+defects-per-dollar test generator?". Once that's chosen, the
+RAG-method choice should be made conditionally — Iterative Critique
+for mid-range models, Simple RAG for the strongest dense models.
+
+This finding also reframes what RAG-research progress looks like. A
+RAG method that adds 5 points to a mid-range model but doesn't help
+or hurts the strongest model is not a unilateral improvement; it's
+a conditional improvement. Future research should report **interaction
+effects between RAG methods and LLM capability**, not just
+RAG-method-effect-at-a-fixed-LLM means.
+
+### 5.7 Implications for practitioners
+
+We distil our findings into four recommendations for engineers
+building LLM-based test generators:
+
+1. **Choose the LLM first, then the RAG method**. LLM choice accounts
+   for an order of magnitude more variance than RAG-method choice
+   (§4.2.1). Spending engineering effort on a sophisticated RAG
+   pipeline before selecting a capable LLM is a misallocation.
+
+2. **Match the RAG method to the LLM's capability tier**. On the
+   weakest models in our suite (llama3.2 3B), Plain LLM and Simple RAG
+   are the safest choices because Iterative Critique's tests get
+   filtered out. On mid-range models (phi4 14B, qwen3-coder 30B MoE),
+   Iterative Critique is the best choice. On the strongest dense models
+   (qwen3.5 9B), Simple RAG already saturates the kill-rate metric and
+   IC's extra refinement adds no value.
+
+3. **Reward semantic faithfulness, penalise lexical copy-paste**.
+   Token-overlap faithfulness to retrieved testing documentation is an
+   anti-signal for kill rate (§4.5). RAG pipelines should explicitly
+   encourage the LLM to *use* the retrieval as a reference rather than
+   *copy* its vocabulary. The critique-and-refine loop in Iterative
+   Critique is one mechanism that produces this effect; explicit
+   reranking against a semantic-faithfulness judge is another.
+
+4. **Optimise for the defect family that matters**. The
+   benchmark-specificity finding (§4.2.2) and the per-operator
+   decomposition (§4.4) together imply that the choice of generator
+   should depend on what kinds of defects matter for the target
+   software. Boundary and arithmetic defects favour Iterative Critique;
+   comparison and structural defects favour the LLM methods over
+   Pynguin; throughput-sensitive deployments where filter-dropout
+   matters may favour Plain LLM or Pynguin over IC.
+
+### 5.8 Threats to the broader interpretation
+
+Two threats warrant brief mention here (we address validity threats
+more comprehensively in §8). First, our findings derive from four
+specific open-weight LLMs; we do not claim that our method-versus-LLM
+interaction effects extend to closed-weight models like GPT-4o or
+Claude Sonnet 4.6. A replication on closed-weight models is necessary
+to test whether the "Simple RAG wins on the strongest LLM" finding
+holds on stronger LLMs still.
+
+Second, our human-evaluation result (the IC-wins-on-all-three-
+dimensions finding) was obtained on a sample where IC's tests were
+already filtered for original-code passage. A more comprehensive
+human evaluation would also rate the *pre-filter* tests, so that the
+filter-dropout effect on IC's apparent quality could be measured
+directly rather than excluded by construction.
+
+---
+
 ## 8. Limitations and Threats to Validity
 
 We organise the limitations along Wohlin et al. (2012)'s standard
