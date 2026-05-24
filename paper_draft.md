@@ -6,11 +6,71 @@
 **Target venue**: EMSE (resubmission)
 **Tag**: `emse-resubmission-v1` (commit `c9c125e`)
 
-> This file holds first-pass prose for the paper sections. §Methods,
-> §Results, and §Limitations are drafted here and ready to refine;
-> §Introduction, §Related Work, §Discussion, §Conclusion, and the
-> Abstract remain to be written. Pull figures from `plots_mutation/`
-> (see §Paper Figures Inventory in `session_context_mutation_testing.md`).
+> This file holds the paper draft. §Abstract, §1 Introduction,
+> §3 Methods, §4 Results, §5 Discussion, §6 Conclusion, and
+> §8 Limitations are drafted and ready to refine; §2 Related Work
+> and the bibliography remain to be written. Pull figures from
+> `plots_mutation/` (see §Paper Figures Inventory in
+> `session_context_mutation_testing.md`).
+
+---
+
+## Abstract
+
+**Context.** Large language models can generate readable unit-test
+suites from natural-language specifications, and retrieval-augmented
+generation (RAG) is widely used to ground LLM outputs in
+documentation. Prior empirical evaluations of LLM-based test
+generation have relied on surface-level metrics (BLEU, ROUGE, syntactic
+validity) that do not measure whether the generated tests catch real
+software defects, and have typically benchmarked a single LLM at a
+time.
+
+**Objective.** We evaluate four unit-test generation methods —
+Plain LLM, Random RAG, Simple RAG, and Iterative Critique RAG —
+across four open-weight LLMs (llama3.2 3B, phi4 14B, qwen3.5 9B,
+qwen3-coder 30B-MoE) on the SE-relevant mutation-testing metric, and
+complement the automated analysis with a three-annotator human-
+evaluation study and a head-to-head comparison against Pynguin's
+search-based test generation.
+
+**Method.** We ran each (method × model) combination on a fixed
+30-sample subset of HumanEval + MBPP, applied five canonical
+mutation operators, and computed kill rate per cell after filtering
+tests that fail on the original function. We tested method effects
+with Type-III ANOVA, mixed-effects regression (sample_idx as random
+intercept), Tukey HSD post-hoc, and per-operator and per-benchmark
+decompositions. Three independent annotators rated 40 stratified
+test pairs blinded to method and model on a behaviourally-anchored
+0–5 rubric. Pynguin 0.45.0 was run on the same 40 functions with a
+60-second per-function search budget.
+
+**Results.** Iterative Critique RAG significantly outperforms Plain
+LLM on boundary-mutation kill rate in MBPP-style numeric problems
+(Tukey HSD ∆ = +0.31, p_adj = 0.025; Mixed-LM Wald-test p = 0.005),
+but on the overall kill rate the method effect is not significant
+after controlling for model and sample. Method rankings do not
+generalise across LLMs (minimum pairwise Spearman ρ = −0.60).
+Token-overlap faithfulness to retrieved documentation negatively
+predicts kill rate (Pearson r = −0.61, p = 0.045), suggesting that
+lexical copy-paste of generic testing-tutorial vocabulary harms
+defect-detection capability; the DeepSeek-Coder 6.7B semantic-
+faithfulness judge shows no such effect. Three human annotators
+ranked Iterative Critique highest on all three quality dimensions,
+replicating the mutation-testing ordering. Pynguin's overall kill
+rate (0.787) trails the worst LLM method (Plain LLM, 0.849) and the
+best (Iterative Critique, 0.957), with the gap concentrated on
+comparison-operator mutators (Pynguin 0.33 vs IC 0.96).
+
+**Implications.** LLM capability dominates RAG-method choice in
+explained variance. RAG pipelines should reward semantic faithfulness
+and explicitly de-emphasise lexical copy-paste. SBST and LLM-based
+test generation are complementary on different operator families,
+suggesting hybrid generators as a productive research direction.
+
+**Keywords:** unit-test generation, mutation testing, retrieval-
+augmented generation, large language models, search-based software
+testing, human evaluation, empirical software engineering.
 
 ---
 
@@ -1223,6 +1283,159 @@ already filtered for original-code passage. A more comprehensive
 human evaluation would also rate the *pre-filter* tests, so that the
 filter-dropout effect on IC's apparent quality could be measured
 directly rather than excluded by construction.
+
+---
+
+## 6. Conclusion
+
+We presented a mutation-testing-based empirical evaluation of four
+LLM-based unit-test generation methods — Plain LLM, Random RAG,
+Simple RAG, and Iterative Critique RAG — across four open-weight
+LLMs spanning 3 B to 30 B parameters and dense vs mixture-of-experts
+architectures. The 4 × 4 matrix yielded 409 valid per-sample
+observations after filtering, which we analysed with Type-III ANOVA,
+mixed-effects regression, Tukey HSD post-hoc comparisons,
+per-operator and per-benchmark decompositions, and cross-model
+Spearman rank correlation. We complemented the automated analysis with
+a 3-annotator human-evaluation study on 40 stratified samples using
+a behaviourally-anchored 0–5 rubric, and with a head-to-head
+comparison against Pynguin 0.45.0 — a Python-native search-based
+test generator — on the same 40 functions.
+
+### 6.1 Robust findings
+
+Six findings survived all our statistical tests and limitations
+analyses:
+
+1. **Mutation kill rate scales more strongly with LLM capability than
+   with RAG-method choice.** Switching from llama3.2 (3B) to qwen3.5
+   (9B dense) buys a 0.31-point increase in mean kill rate; switching
+   from Plain LLM to Iterative Critique buys 0.05 points. The model
+   F-statistic exceeds the method F-statistic by approximately 28× in
+   every ANOVA fit we ran.
+
+2. **Iterative Critique RAG significantly improves boundary-mutation
+   detection over Plain LLM on MBPP-style numeric problems.** Tukey
+   HSD ∆ = +0.31 kill rate, p_adj = 0.025; Mixed-LM Wald-test
+   p = 0.005. The effect is benchmark-specific (HumanEval shows
+   no method effect, ANOVA p = 0.94) and concentrates on the
+   `n ↔ n±1` operator family.
+
+3. **Method rankings do not generalise across LLMs.** Iterative
+   Critique is rank 1 on three of four models but rank 3 on
+   qwen3.5. The minimum cross-model Spearman ρ on overall kill rate
+   is −0.60; the best ρ (on boundary kill rate, mean 0.70) does not
+   clear the conventional ≥ 0.8 threshold.
+
+4. **Token-overlap faithfulness between generated tests and retrieved
+   documentation negatively predicts kill rate.** Pearson r = −0.61,
+   p = 0.045 across 11 RAG cells. The DeepSeek-Coder 6.7B semantic-
+   faithfulness judge shows no such effect (r = −0.24, p = 0.48),
+   pinpointing the harm as lexical copy-paste of generic testing-
+   tutorial vocabulary rather than principled grounding in retrieved
+   context.
+
+5. **Three independent annotators ranked Iterative Critique highest
+   on all three rubric dimensions** (test idiom quality 4.06,
+   correctness 4.15, completeness 4.58 on a 0 – 5 scale), replicating
+   the mutation-testing method ordering with independent human
+   evidence.
+
+6. **LLM-based test generation outperforms Pynguin's SBST on overall
+   mutation kill rate but is concentrated on the comparison-operator
+   family.** Pynguin's overall kill rate of 0.787 trails the worst
+   LLM method (Plain LLM, 0.849) by 6.2 percentage points and the
+   best LLM method (Iterative Critique, 0.957) by 17. The largest
+   gap is on `== ↔ !=` / `< ↔ >=` / `> ↔ <=` mutators, where
+   Pynguin's behavioural oracles cannot encode operator-level
+   semantics that LLMs can read from natural-language docstrings.
+
+### 6.2 Implications for practice
+
+The findings suggest four explicit recommendations for engineers
+building LLM-based test generators:
+
+1. **Choose the LLM before the RAG method.** LLM choice dominates
+   RAG-method choice in explained variance. Engineering effort on a
+   sophisticated RAG pipeline before selecting a capable underlying
+   LLM is a misallocation.
+
+2. **Match the RAG method to the LLM's capability tier.** Plain LLM
+   or Simple RAG on the weakest models (where Iterative Critique's
+   tests get filtered out at high rates); Iterative Critique on
+   mid-range models (where its refinement loop pays off); Simple
+   RAG on the strongest dense models (where the kill-rate metric is
+   saturated and IC adds no value).
+
+3. **Reward semantic faithfulness; penalise lexical copy-paste.**
+   Token-overlap faithfulness to retrieved documentation is an
+   anti-signal for defect-detection capability. RAG pipelines should
+   explicitly de-emphasise lexical match and reward semantic
+   integration, e.g., via a critique-and-refine loop or via reranking
+   against a semantic-faithfulness judge.
+
+4. **Optimise for the defect family that matters.** Boundary and
+   arithmetic defects favour Iterative Critique; comparison defects
+   favour LLM methods over SBST; throughput-sensitive deployments
+   where filter-dropout matters may favour Plain LLM or Pynguin over
+   IC.
+
+### 6.3 Implications for research
+
+For the empirical software-engineering research community, our
+findings suggest two methodological shifts:
+
+**Report interaction effects between RAG methods and LLM
+capability**, not just RAG-method-effect-at-a-fixed-LLM means. The
+non-generalisation we observed (§4.3) implies that a study reporting
+"method X is best" on a single LLM is reporting a conditional, not a
+universal, result. Cross-LLM evaluation should become a default
+methodological requirement for RAG-test-generation research.
+
+**Evaluate on SE-relevant metrics, not surface-level proxies.** Our
+key positive finding — Iterative Critique's significant advantage on
+boundary mutation kill rate in MBPP-style problems — would not
+appear in a study that used BLEU, ROUGE, or semantic-similarity
+metrics: the IC × Plain-LLM gap on those metrics is small. Mutation
+kill rate, with its per-operator decomposition, surfaces the
+substantive behavioural improvement that LLM-based test generation
+provides.
+
+### 6.4 Future work
+
+Three directions stand out as natural follow-ups. First, the
+**Pynguin–LLM hybrid** we sketched in §5.5 — running Pynguin first
+for coverage-driven assertions, then adding LLM-generated
+comparison-operator oracles on uncovered branches — should outperform
+either approach alone on the mutation-testing metric, given the
+complementarity we observed. Second, **closed-weight LLM
+replication**: our finding that "Simple RAG wins on the strongest
+dense model in our pool" should be tested against GPT-4o, Claude
+Sonnet 4.6, and Gemini 2.5 to see whether the ceiling effect
+generalises to closed-weight models in the 100 B – trillion-parameter
+range. Third, **class-level and real-world benchmarks**: HumanEval
+and MBPP are function-level benchmarks with clear input/output
+specifications. Class-level evaluation (ClassEval) and real-world
+project evaluation (e.g., on PyPI packages) are necessary to test
+whether the IC advantage transfers to code with non-trivial state
+and side effects.
+
+A fourth, methodological, direction concerns the **human-evaluation
+rubric**. Our 3-annotator inter-rater agreement fell below the
+conventional ≥ 0.4 threshold on two of three dimensions, driven by
+one annotator's systematic scale bias (§4.6). A future replication
+should run a rubric-calibration session before annotation, increase
+the rater pool to five or more, and consider including pre-filter
+test suites in the annotation worksheet so the filter-dropout
+asymmetry can be measured directly rather than excluded by
+construction.
+
+The empirical machinery developed in this paper — the experimental
+sweep, the analysis scripts, the human-evaluation Streamlit
+application, the Pynguin runner — is released as a replication
+package (`https://github.com/balajivenky06/autoresearch`, tag
+`emse-resubmission-v1`) so that all four future-work directions can
+be pursued with the same evaluation framework we used here.
 
 ---
 
