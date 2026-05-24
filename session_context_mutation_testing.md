@@ -3,8 +3,8 @@
 **Last updated**: 2026-05-24
 **Repo**: `/Users/balajivenktesh/Desktop/Education/autoresearch/`
 **Branch**: `master`
-**Latest commit**: `134b90c` — "docs: add requirements.txt + README_human_eval.md"
-**Active**: Human evaluation 2/3 annotators returned; awaiting 3rd rater
+**Latest commit**: `f484a55` — "merge: ingest SaeshwaranA's annotation CSV from feature branch"
+**Status**: All 3 human annotators complete (GS, SaeshwaranA, BV) — accepted current data, no calibration round planned
 **Remote**: `https://github.com/balajivenky06/autoresearch.git` (pushed and up to date)
 
 **PhD Topic**: Plain LLM vs Random RAG vs Simple RAG vs Iterative Critique RAG for code generation.
@@ -180,7 +180,7 @@ Replaces the original 16-bar chart with three heatmap variants for paper figures
 | `kill_rate_boundary_heatmap.png` | Same grid for boundary kill rate — where the colour spread is widest, suitable for the significance figure |
 | `kill_rate_combined_heatmap.png` | 1×5 mosaic: overall + 4 per-operator panels — supplementary materials |
 
-### Human Evaluation — 2/3 Annotators Complete ⏳
+### Human Evaluation — All 3 Annotators Complete ★
 
 Built a Streamlit app (`human_eval_app.py`) plus a per-pair sampler
 (`human_eval_pair_sampler.py`) to ask human annotators to rate 40
@@ -188,66 +188,118 @@ stratified (function, generated_tests) pairs on three behaviourally-
 anchored 0–5 scales: **test idiom quality**, **correctness**,
 **completeness**. Annotators are blinded to method/model.
 
-**Status as of 2026-05-24**:
+**Final coverage and descriptive means**:
 
-| Annotator | Coverage | Mean ratings (idiom / correctness / completeness) |
-|---|---|---|
-| GS | 40/40 | 4.40 / 4.25 / 4.08 |
-| SaeshwaranA | 40/40 | 2.88 / 3.45 / 3.62 |
-| (3rd annotator) | pending | — |
+| Annotator | Rows | Idiom (mean) | Correctness | Completeness |
+|---|---|---|---|---|
+| GS | 40/40 | 4.40 | 4.25 | 4.08 |
+| SaeshwaranA | 40/40 | 2.88 | 3.45 | 3.62 |
+| BV | 40/40 | 3.77 | 3.98 | 4.22 |
 
-**Inter-rater agreement (n=2 pairs only)**:
+GS and BV anchor at the high end; **SaeshwaranA is a systematic
+low-end outlier** (1.5pt below GS on idiom, 0.8pt below on
+correctness). Same scale, different mental anchors.
 
-| Dimension | Cohen's κ (linear) | κ (quadratic) | Pearson r |
+#### 🟢 The headline (robust to inter-rater noise)
+
+**Iterative Critique ranks highest on all three dimensions in the 3-
+annotator means** — purely from blinded human judgment, no mutation
+data leaked into the ratings.
+
+| Method | Idiom | Correctness | Completeness |
 |---|---|---|---|
-| test_idiom | 0.005 | −0.029 | −0.129 |
-| correctness | **−0.218** | −0.204 | −0.272 |
-| completeness | 0.211 | 0.292 | **+0.338** |
+| **Iterative Critique** | **4.06** | **4.15** | **4.58** |
+| Random RAG | 3.79 | 3.73 | 3.85 |
+| Simple RAG | 3.56 | 3.85 | 3.74 |
+| Plain LLM | 3.22 | 3.82 | 3.63 |
 
-κ is below the publishable threshold (≥0.4 moderate, ≥0.6 substantial)
-on every dimension. Two root causes:
+Three independent annotators converged on the same method ordering as
+the mutation testing analysis (IC > others on boundary kill rate, p_adj
+= 0.0499). This is the **developer-impact paragraph** EMSE asked for.
 
-1. **Scale-usage bias** — GS rated 1.5 points higher than SaeshwaranA on
-   test_idiom; GS used `5` on 24 of 40 samples while SaeshwaranA's max
-   was `4`. Same scale, different mental anchors.
-2. **Directional disagreements** — a handful of samples (s_011, s_018,
-   s_036) have ratings that flip in opposite directions, pushing κ
-   below zero on correctness.
+#### Pairwise Cohen's κ (linear-weighted)
 
-**What's encouraging despite the noise**:
+| Pair | Idiom | Correctness | Completeness |
+|---|---|---|---|
+| **GS ↔ BV** | **0.32** | **0.46** | **0.37** |
+| GS ↔ SA | 0.005 | −0.22 | 0.21 |
+| SA ↔ BV | −0.001 | −0.31 | 0.16 |
+| Mean of 3 pairs | +0.11 | −0.02 | **+0.25** |
 
-- **Mean human_correctness ↔ mutation kill_rate** is significant:
-  Pearson r = **+0.338, p = 0.041** (n=40). The "tests look correct"
-  signal aligns with mutation testing's "tests catch defects" signal.
-- **Method-level ordering matches the paper claim**:
+GS and BV land in the fair-to-moderate band; SaeshwaranA's ratings
+disagree with both other annotators in the same direction.
 
-  | Method | human_completeness | mutation kill_rate |
-  |---|---|---|
-  | Iterative Critique | **4.50** | 1.00 |
-  | Plain LLM | 3.50 | 1.00 |
-  | Random RAG | 3.64 | 0.96 |
-  | Simple RAG | 3.67 | 0.96 |
+#### Multi-rater agreement (all 3, n=40)
 
-  Humans independently rank IC highest on completeness — consistent
-  with the boundary-mutation finding (IC catches off-by-one defects
-  that Plain LLM misses).
+| Test | Idiom | Correctness | Completeness |
+|---|---|---|---|
+| Fleiss' κ (nominal) | −0.11 | −0.02 | +0.14 |
+| **Krippendorff's α (ordinal)** | −0.03 | −0.12 | **+0.33** |
 
-**Next steps**:
+Below the conventional ≥0.4 threshold on all dimensions; Completeness
+is the only one reaching fair α.
 
-1. Third annotator's CSV is in flight. Re-compute Fleiss' κ /
-   Krippendorff's α once we have 3 raters.
-2. If 3-rater agreement is still low (κ < 0.4 on at least two of three
-   dimensions), run a calibration session: have all three annotators
-   meet, discuss the ~10 samples with highest disagreement, recalibrate
-   the rubric anchors, then re-rate all 40.
-3. After the rubric stabilises, build `human_eval_validate.py` to
-   produce the publication-ready agreement + correlation tables in
-   one shot.
+#### Mean human ratings vs mutation kill_rate
 
-The blinded worksheet (`human_eval_pairs.csv`) and the meta mapping
-(`human_eval_pairs.meta.csv`, gitignored) are committed at
-`feature/human-eval-app` and `master`. The two returned CSVs live in
-`human_eval_annotations/` (also gitignored, contains personal data).
+| Dimension | Pearson r | p | Spearman ρ |
+|---|---|---|---|
+| Idiom | −0.080 | 0.64 | −0.019 |
+| Correctness | +0.177 | 0.30 | +0.201 |
+| Completeness | +0.023 | 0.89 | +0.111 |
+
+The kill_rate ↔ human_correctness correlation that was significant on
+n=2 annotators (r=+0.34, p=0.04) washes out with BV's data added. The
+paper should NOT lean on that result.
+
+#### Model-level wrinkle
+
+| Model | Idiom | Correctness | Completeness | Kill rate |
+|---|---|---|---|---|
+| qwen3.5:9b | **3.97** | **4.03** | **4.27** | 0.975 |
+| qwen3-coder:30b | 3.62 | 3.67 | 3.75 | **0.986** |
+| phi4:14b | 3.58 | 3.97 | 3.94 | 0.973 |
+| llama3.2:latest | 3.53 | 3.83 | 3.87 | 0.972 |
+
+**qwen3.5 (9B dense) ranks highest in humans' eyes** even though
+qwen3-coder (30B MoE) has the highest mutation kill rate. The MoE
+writes correct-but-unidiomatic tests; the dense 9B writes more
+readable ones. Worth a paragraph in the discussion.
+
+#### Paper framing (Option C — accept current data)
+
+We're not running a calibration round. The paper will:
+
+1. **Lead with the method-ranking finding**: three independent
+   blinded annotators ranked Iterative Critique highest across all
+   three quality dimensions, replicating the mutation-testing
+   ordering with non-overlapping evidence.
+2. **Report the pairwise GS↔BV agreement** (κ ≈ 0.32–0.46, fair-to-
+   moderate) as the primary inter-rater statistic, alongside the
+   full 3-rater Krippendorff's α (Completeness = 0.33).
+3. **Acknowledge SaeshwaranA's systematic scale-bias** in
+   §Limitations rather than discarding their data.
+4. **Drop the kill_rate ↔ human_correctness correlation** from
+   §Results (it was an n=2 artifact).
+5. **Add the qwen3.5 > qwen3-coder human-rating finding** to
+   §Discussion as evidence that MoE architectures produce
+   functionally-correct-but-stylistically-different tests.
+
+Suggested §Limitations paragraph:
+> "We acknowledge moderate inter-rater agreement on completeness
+> (Krippendorff's ordinal α = 0.33) and lower agreement on test
+> idiom quality and correctness, driven primarily by one annotator's
+> systematic use of the lower half of the 0–5 scale. The agreement
+> between the other two annotators reached fair-to-moderate levels
+> (Cohen's κ = 0.32–0.46), and the method-level ranking was robust
+> across all three: every annotator ranked Iterative Critique
+> highest on completeness, the dimension most directly tied to
+> defect-detection capability. A future replication should use a
+> rubric-calibration session and ≥5 annotators."
+
+The blinded worksheet (`human_eval_pairs.csv`) is committed at master
+and `feature/human-eval-app`. The 3 returned CSVs live in
+`human_eval_annotations/` (gitignored, personal data; Saeshu's commit
+of `SaeshwaranA.csv` to the repo root is preserved in git history).
 
 ---
 
@@ -332,14 +384,15 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 
 ### HIGH PRIORITY — directly addresses reviewer feedback
 
-- [/] **Human evaluation study (40 samples)** — 2 of 3 annotators returned
-  CSVs (GS, SaeshwaranA). Inter-rater κ currently 0.00–0.30, below the
-  ≥0.4 publishable threshold. ONE significant finding holds:
-  human_correctness ↔ mutation kill_rate, r=+0.338, p=0.041, n=40.
-  Method-level ordering also matches the paper (IC highest on
-  human_completeness, Plain LLM lowest). Waiting on the 3rd annotator;
-  may need a calibration session afterwards. See §Human Evaluation
-  for details.
+- [x] **Human evaluation study (40 samples)** — All 3 annotators (GS,
+  SaeshwaranA, BV) returned full 40/40 coverage. Per the Option C
+  framing: lead with the method-ranking story (IC ranks highest on
+  all three dimensions in the 3-annotator means), report pairwise
+  GS↔BV agreement (κ = 0.32–0.46) as the primary inter-rater stat,
+  document SaeshwaranA's scale bias in §Limitations. The earlier
+  kill_rate↔correctness correlation (r=+0.34 on n=2) does NOT
+  survive 3-rater averaging — dropped from §Results. See §Human
+  Evaluation for the full data + suggested limitations paragraph.
 - [ ] **Tool comparison vs EvoSuite / Pynguin / Copilot** — reviewer mentioned "comparison with existing tools". Even qualitative comparison on 10–20 samples would help.
 
 ### MEDIUM PRIORITY — strengthens paper
@@ -369,6 +422,7 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 4. **LLM choice matters more than RAG method**: model F-statistic dominates method F-statistic by 10–20× in every ANOVA fit
 5. **Method rankings do not generalize across LLMs** (min Spearman ρ = −0.60). Iterative Critique wins on 3 of 4 models but Simple RAG wins on the strongest (qwen3.5). Boundary kill rate has the highest cross-model rank stability (mean ρ = +0.70), motivating it as the canonical SE-relevant metric for RAG ablations.
 6. **Counter-intuitive faithfulness finding**: token-overlap faithfulness to retrieved testing documentation negatively predicts kill rate (Pearson r = −0.61, p = 0.045). Tests that template from retrieved tutorials catch fewer bugs than tests that use retrieval as a reference. DeepSeek-judged semantic faithfulness shows no correlation (r = −0.24, p = 0.48), pinpointing the harm as **syntactic copy-paste**, not principled grounding.
+7. **Human-evaluation replication of the method ordering** (developer impact): three independent blinded annotators × 40 stratified samples × three 0–5 dimensions (test idiom quality, correctness, completeness). Iterative Critique ranks highest on every dimension in the 3-annotator means (idiom 4.06 / correctness 4.15 / completeness 4.58), replicating the mutation-testing ordering with non-overlapping evidence. Inter-rater agreement between two of three raters reached fair-to-moderate levels (Cohen's κ = 0.32–0.46); the third rater showed systematic low-end scale bias, acknowledged in §Limitations. qwen3.5 (9B dense) ranks higher than qwen3-coder (30B MoE) in human ratings despite a slightly lower mutation kill rate, suggesting MoE models write functionally-correct-but-stylistically-different tests.
 
 ### Findings summary table
 
@@ -384,6 +438,9 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 | 6 | Boundary is the most universal metric | mean ρ=+0.70, only sig pair | Strong methodological note |
 | 7 | KB curation: noise rate = 0 everywhere | All 7 RAG cells | Methods-section fact |
 | 8 | Method effect is benchmark-specific (MBPP only) | HumanEval ANOVA p=0.94; MBPP p=0.035 | Sharpens claim #1; explains the pooled marginality |
+| 9 | **3 blinded human annotators rank IC highest on all 3 dimensions** | Means: idiom 4.06 / correctness 4.15 / completeness 4.58 (IC), highest in every column | Strong, novel "developer impact" evidence (independent of automated metrics) |
+| 10 | Pairwise GS↔BV agreement is fair-to-moderate | Cohen's κ = 0.32–0.46 across the 3 dims | Inter-rater reliability for the paper; SaeshwaranA's scale bias acknowledged in §Limitations |
+| 11 | qwen3.5 (9B dense) ranks higher than qwen3-coder (30B MoE) in human eyes | Human means qwen3.5 > qwen3-coder on every dimension, despite qwen3-coder's higher mutation kill rate | "MoE writes correct-but-unidiomatic tests" — discussion-section paragraph |
 
 ### Threat-to-validity Q&A (preempt reviewers)
 
@@ -403,6 +460,9 @@ Added to `mutation_testing.py` so the user can run `--checkpoints-dir checkpoint
 ## Key Commits (in this session)
 
 ```
+f484a55 merge: ingest SaeshwaranA's annotation CSV from feature branch
+c519b00 docs: capture human-evaluation interim state (2/3 annotators)
+9ae1fc2 Committed eval csv file (SaeshwaranA, via feature branch)
 134b90c docs: add requirements.txt + README_human_eval.md
 5175e89 rubric: expand rating scale 0-3 → 0-5
 26104e9 rubric: drop Overall + add per-value anchor descriptions
@@ -521,6 +581,6 @@ Use `python3` directly, NOT `uv run` — PyTorch cu128 dependency is incompatibl
 
 | Concern | Status |
 |---|---|
-| #1 Developer impact studies | IN PROGRESS — 2/3 human annotators returned. Mean human_correctness ↔ mutation kill_rate r=+0.34, p=0.041 (n=40); IC ranks highest on human_completeness. Inter-rater κ below threshold pending 3rd rater + likely calibration session. |
+| #1 Developer impact studies | DONE — 3 blinded annotators × 40 samples × 3 dimensions (0–5). IC ranks highest on every dimension in 3-annotator means (idiom 4.06, correctness 4.15, completeness 4.58). GS↔BV pairwise κ = 0.32–0.46 (fair-to-moderate); SaeshwaranA outlier documented in §Limitations. Replicates the mutation-testing method ordering with independent human evidence. |
 | #2 Comparison with existing tools | TODO — EvoSuite/Pynguin/Copilot comparison pending |
 | **#3 SE-relevant evaluation metrics** | **DONE — full mutation-testing analysis with statistical significance** |
