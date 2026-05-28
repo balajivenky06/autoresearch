@@ -554,6 +554,19 @@ the search-based test-generation baseline. Every analysis script
 referenced here is in the project repository and is reproducible from
 the persisted result TSV and annotation CSVs.
 
+Figure 1 (`methodology_overview.png`) summarises the end-to-end
+experimental pipeline: a 100-function input dataset feeds a 4 × 4
+generation matrix (4 methods × 4 LLMs, 480 cells in total), whose
+outputs are then evaluated through three parallel tracks — mutation
+testing (§3.3, the primary defect-detection metric), human
+annotation (§3.5, the developer-perceived-quality signal), and a
+Pynguin search-based-test-generation baseline (§3.6, the
+prior-paradigm reference). All three tracks feed into the same
+statistical analysis pipeline (§3.4), which spans per-sample
+mixed-effects regression, per-operator decomposition, per-benchmark
+splitting, and cross-LLM rank correlation. The remainder of this
+section describes each component of the pipeline in turn.
+
 ### 3.1 Experimental factors
 
 We compare **four unit-test generation methods** drawn from the
@@ -816,7 +829,7 @@ test-generation tool (§4.7).
 
 Table 2 reports the mean mutation kill rate for each of the 16 method ×
 model cells in our 4 × 4 design (n = 4 – 30 valid samples per cell
-after the filter described in §3.3). Figure 1 visualises the same data
+after the filter described in §3.3). Figure 2 visualises the same data
 as a heatmap (`kill_rate_heatmap.png`).
 
 **Table 2.** Mean mutation kill rate by method × LLM (with n_samples_valid
@@ -896,16 +909,16 @@ dataset is 122 observations from HumanEval and 287 from MBPP. We refit
 the ANOVA + Tukey HSD pipeline separately on each split.
 
 **The method effect on boundary kill rate is significant on MBPP
-but null on HumanEval** (Table 4, Figure 2). On MBPP, the ANOVA reports
+but null on HumanEval** (Table 4, Figure 3). On MBPP, the ANOVA reports
 F = 2.96, p = 0.035; Tukey HSD identifies a single significant pair —
 Iterative Critique versus Plain LLM, ∆ = −0.311 percentage points,
 p_adj = 0.025 — and the mixed-effects model corroborates with Plain LLM
 β = −0.211, p = 0.005 (Wald test, controlling for model and
 sample_idx). On HumanEval the same analysis is unremarkable: ANOVA
-F = 0.13, p = 0.94; no Tukey pair survives. Figure 2
+F = 0.13, p = 0.94; no Tukey pair survives. Figure 3
 (`kill_rate_boundary_heatmap.png`) visualises the 4 × 4 boundary
 kill-rate matrix: the within-row colour spread on boundary mutators
-is substantially wider than on the overall kill rate (Figure 1),
+is substantially wider than on the overall kill rate (Figure 2),
 reflecting that boundary is the operator family with the most
 between-method discriminative power on our suite.
 
@@ -938,8 +951,8 @@ rank correlation ρ between method-rankings for every pair of the four
 models, using the threshold ρ ≥ 0.8 to indicate "the ranking
 generalises" (Jureczko and Madeyski 2015). Table 5 reports the minimum
 and mean off-diagonal ρ for the overall kill rate and for each
-per-operator kill rate; Figure 3 shows the pairwise heatmap
-(`mutation_rank_correlation.png`); Figure 4 shows the underlying rank
+per-operator kill rate; Figure 4 shows the pairwise heatmap
+(`mutation_rank_correlation.png`); Figure 5 shows the underlying rank
 trajectories across models (`mutation_rank_stability.png`).
 
 **Table 5.** Cross-model generalisability of method rankings (Spearman ρ
@@ -1034,7 +1047,7 @@ semantic groundedness, validated against human ratings on a companion
 docstring task). Table 8 reports the pooled Pearson correlation of
 each metric against mean kill rate across the 11 RAG cells (random_rag,
 simple_rag, iterative_critique × 4 models, minus one missing cell);
-Figure 5 visualises the relationships (`noise_vs_kill_scatter.png`).
+Figure 6 visualises the relationships (`noise_vs_kill_scatter.png`).
 
 **Table 8.** RAG-quality metrics vs mean mutation kill rate (pooled
 across 11 RAG cells, n = 11).
@@ -1081,7 +1094,7 @@ As an independent quality signal alongside the automated kill-rate
 metric, three annotators rated 40 stratified `(function,
 generated_tests)` pairs blinded to method and model (cf. §3.5).
 Annotators scored each pair on three 0–5 behaviourally-anchored
-dimensions: test idiom quality, correctness, and completeness. Figure 6
+dimensions: test idiom quality, correctness, and completeness. Figure 7
 visualises the per-method means across the three annotators
 (`human_eval_method_ranking.png`).
 
@@ -1110,7 +1123,7 @@ annotator (SA) used systematically lower scale values** — mean ratings
 of 2.88 / 3.45 / 3.62 versus GS's 4.40 / 4.25 / 4.08 and BV's 3.77 /
 3.98 / 4.22. The κ deflation is driven by scale-usage bias rather than
 by directional disagreement on which test suite is better than which;
-Figure 7 visualises this (`human_eval_annotator_bias.png`). We address
+Figure 8 visualises this (`human_eval_annotator_bias.png`). We address
 this in §8.
 
 **Table 10.** Pairwise Cohen's κ (linear-weighted) between annotators.
@@ -1121,7 +1134,7 @@ this in §8.
 | GS ↔ SA | +0.005 | −0.218 | +0.211 |
 | SA ↔ BV | −0.001 | −0.308 | +0.155 |
 
-Figure 8 (`human_eval_correlations.png`) shows the per-sample
+Figure 9 (`human_eval_correlations.png`) shows the per-sample
 mean human rating against mutation kill rate for each of the three
 rubric dimensions. Pearson correlations are weak overall (idiom
 r = −0.08, correctness r = +0.18, completeness r = +0.02; none
@@ -1154,8 +1167,8 @@ automated-test-generation paradigm, we ran Pynguin 0.45.0
 (Lukasczyk and Fraser, 2022) on the same 40 functions used in the
 human evaluation, with a 60-second per-function search
 budget (cf. §3.6). The same mutation-testing pipeline that evaluated
-the LLM-generated tests was applied to Pynguin's output. Figure 9 shows
-the overall comparison (`pynguin_vs_llm_kill_rate.png`); Figure 10 shows
+the LLM-generated tests was applied to Pynguin's output. Figure 10 shows
+the overall comparison (`pynguin_vs_llm_kill_rate.png`); Figure 11 shows
 the per-operator breakdown (`pynguin_vs_llm_per_operator.png`).
 
 **Table 12.** Pynguin vs LLM methods on the same 40 functions.
