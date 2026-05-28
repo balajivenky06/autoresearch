@@ -894,13 +894,18 @@ dataset is 122 observations from HumanEval and 287 from MBPP. We refit
 the ANOVA + Tukey HSD pipeline separately on each split.
 
 **The method effect on boundary kill rate is significant on MBPP
-but null on HumanEval** (Table 3). On MBPP, the ANOVA reports
+but null on HumanEval** (Table 3, Figure 2). On MBPP, the ANOVA reports
 F = 2.96, p = 0.035; Tukey HSD identifies a single significant pair —
 Iterative Critique versus Plain LLM, ∆ = −0.311 percentage points,
 p_adj = 0.025 — and the mixed-effects model corroborates with Plain LLM
 β = −0.211, p = 0.005 (Wald test, controlling for model and
 sample_idx). On HumanEval the same analysis is unremarkable: ANOVA
-F = 0.13, p = 0.94; no Tukey pair survives.
+F = 0.13, p = 0.94; no Tukey pair survives. Figure 2
+(`kill_rate_boundary_heatmap.png`) visualises the 4 × 4 boundary
+kill-rate matrix: the within-row colour spread on boundary mutators
+is substantially wider than on the overall kill rate (Figure 1),
+reflecting that boundary is the operator family with the most
+between-method discriminative power on our suite.
 
 **Table 3.** Method effect on boundary kill rate by source benchmark.
 
@@ -931,8 +936,8 @@ rank correlation ρ between method-rankings for every pair of the four
 models, using the threshold ρ ≥ 0.8 to indicate "the ranking
 generalises" (Jureczko and Madeyski 2015). Table 4 reports the minimum
 and mean off-diagonal ρ for the overall kill rate and for each
-per-operator kill rate; Figure 2 shows the pairwise heatmap
-(`mutation_rank_correlation.png`); Figure 3 shows the underlying rank
+per-operator kill rate; Figure 3 shows the pairwise heatmap
+(`mutation_rank_correlation.png`); Figure 4 shows the underlying rank
 trajectories across models (`mutation_rank_stability.png`).
 
 **Table 4.** Cross-model generalisability of method rankings (Spearman ρ
@@ -1027,7 +1032,7 @@ semantic groundedness, validated against human ratings on a companion
 docstring task). Table 7 reports the pooled Pearson correlation of
 each metric against mean kill rate across the 11 RAG cells (random_rag,
 simple_rag, iterative_critique × 4 models, minus one missing cell);
-Figure 4 visualises the relationships (`noise_vs_kill_scatter.png`).
+Figure 5 visualises the relationships (`noise_vs_kill_scatter.png`).
 
 **Table 7.** RAG-quality metrics vs mean mutation kill rate (pooled
 across 11 RAG cells, n = 11).
@@ -1074,7 +1079,7 @@ As an independent quality signal alongside the automated kill-rate
 metric, three annotators rated 40 stratified `(function,
 generated_tests)` pairs blinded to method and model (cf. §3.5).
 Annotators scored each pair on three 0–5 behaviourally-anchored
-dimensions: test idiom quality, correctness, and completeness. Figure 5
+dimensions: test idiom quality, correctness, and completeness. Figure 6
 visualises the per-method means across the three annotators
 (`human_eval_method_ranking.png`).
 
@@ -1103,7 +1108,7 @@ annotator (SA) used systematically lower scale values** — mean ratings
 of 2.88 / 3.45 / 3.62 versus GS's 4.40 / 4.25 / 4.08 and BV's 3.77 /
 3.98 / 4.22. The κ deflation is driven by scale-usage bias rather than
 by directional disagreement on which test suite is better than which;
-Figure 6 visualises this (`human_eval_annotator_bias.png`). We address
+Figure 7 visualises this (`human_eval_annotator_bias.png`). We address
 this in §8.
 
 **Table 9.** Pairwise Cohen's κ (linear-weighted) between annotators.
@@ -1113,6 +1118,15 @@ this in §8.
 | **GS ↔ BV** | **+0.32** | **+0.46** | **+0.37** |
 | GS ↔ SA | +0.005 | −0.218 | +0.211 |
 | SA ↔ BV | −0.001 | −0.308 | +0.155 |
+
+Figure 8 (`human_eval_correlations.png`) shows the per-sample
+mean human rating against mutation kill rate for each of the three
+rubric dimensions. Pearson correlations are weak overall (idiom
+r = −0.08, correctness r = +0.18, completeness r = +0.02; none
+significant at α = 0.05 with n = 40 after pooling all three
+annotators); we discuss in §8.4 why the kill-rate ↔ human-correctness
+relationship that was significant on n = 2 annotators did not survive
+3-annotator pooling.
 
 **A side finding worth noting**: on per-model means (Table 10), qwen3.5
 (9B dense) ranks higher than qwen3-coder (30B MoE) on all three human
@@ -1138,8 +1152,8 @@ automated-test-generation paradigm, we ran Pynguin 0.45.0
 (Lukasczyk and Fraser, 2022) on the same 40 functions used in the
 human evaluation, with a 60-second per-function search
 budget (cf. §3.6). The same mutation-testing pipeline that evaluated
-the LLM-generated tests was applied to Pynguin's output. Figure 7 shows
-the overall comparison (`pynguin_vs_llm_kill_rate.png`); Figure 8 shows
+the LLM-generated tests was applied to Pynguin's output. Figure 9 shows
+the overall comparison (`pynguin_vs_llm_kill_rate.png`); Figure 10 shows
 the per-operator breakdown (`pynguin_vs_llm_per_operator.png`).
 
 **Table 11.** Pynguin vs LLM methods on the same 40 functions.
