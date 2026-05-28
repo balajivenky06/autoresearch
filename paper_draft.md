@@ -1,6 +1,6 @@
-# Paper Draft — Mutation-Testing Validation of RAG-based Unit-Test Generation
+# Paper Draft — Mutation-Testing Quality of LLM- and RAG-based Unit-Test Generators
 
-**Working title (TBD)**: *When Retrieval Helps Tests Find Bugs: A Mutation-Testing Study of LLM and RAG-based Unit-Test Generators*
+**Title**: *Mutation-Testing Quality of LLM- and RAG-based Unit-Test Generators: A Cross-Model Empirical Study*
 
 **Authors**: Balaji Venktesh, [advisor], …
 **Target venue**: Software Quality Journal (Springer) — fresh submission

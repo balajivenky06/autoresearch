@@ -2,15 +2,15 @@
 
 **To:** The Editors, *Software Quality Journal*
 **From:** Balaji Venktesh, [advisor], …
-**Re:** Submission of *When Retrieval Helps Tests Find Bugs: A Mutation-Testing Study of LLM and RAG-based Unit-Test Generators*
+**Re:** Submission of *Mutation-Testing Quality of LLM- and RAG-based Unit-Test Generators: A Cross-Model Empirical Study*
 
 ---
 
 Dear Editors,
 
-We submit for your consideration the enclosed manuscript, *When
-Retrieval Helps Tests Find Bugs: A Mutation-Testing Study of LLM
-and RAG-based Unit-Test Generators*. The paper reports a
+We submit for your consideration the enclosed manuscript, *Mutation-
+Testing Quality of LLM- and RAG-based Unit-Test Generators: A
+Cross-Model Empirical Study*. The paper reports a
 cross-method, cross-LLM, cross-benchmark empirical evaluation of
 LLM-based unit-test generation, evaluated through the lens of
 **mutation kill rate** — a behavioural defect-detection metric that
