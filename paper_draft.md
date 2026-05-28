@@ -3,8 +3,8 @@
 **Working title (TBD)**: *When Retrieval Helps Tests Find Bugs: A Mutation-Testing Study of LLM and RAG-based Unit-Test Generators*
 
 **Authors**: Balaji Venktesh, [advisor], …
-**Target venue**: EMSE (resubmission)
-**Tag**: `emse-resubmission-v1` (commit `c9c125e`)
+**Target venue**: Software Quality Journal (Springer) — fresh submission
+**Replication tag**: `submission-v1` (TBD on submission)
 
 > This file holds the paper draft. §Abstract, §1 Introduction,
 > §3 Methods, §4 Results, §5 Discussion, §6 Conclusion, and
@@ -17,14 +17,19 @@
 
 ## Abstract
 
-**Context.** Large language models can generate readable unit-test
-suites from natural-language specifications, and retrieval-augmented
-generation (RAG) is widely used to ground LLM outputs in
-documentation. Prior empirical evaluations of LLM-based test
-generation have relied on surface-level metrics (BLEU, ROUGE, syntactic
+**Context.** The quality of automatically-generated unit tests is
+typically measured through multiple lenses: defect-detection
+capability, human-perceived readability, and behaviour relative to
+established baselines such as search-based test generation. Large
+language models (LLMs) can now produce readable test suites from
+natural-language specifications, and retrieval-augmented generation
+(RAG) is widely used to ground LLM outputs in documentation.
+However, prior empirical evaluations of LLM-based test generation
+have largely relied on surface-level metrics (BLEU, ROUGE, syntactic
 validity) that do not measure whether the generated tests catch real
 software defects, and have typically benchmarked a single LLM at a
-time.
+time without considering how RAG-method effectiveness varies with
+underlying-model capability.
 
 **Objective.** We evaluate four unit-test generation methods —
 Plain LLM, Random RAG, Simple RAG, and Iterative Critique RAG —
@@ -158,17 +163,21 @@ that evaluated only on qwen3.5 would draw the opposite conclusion from
 a study that evaluated only on phi4, and neither study would surface
 the underlying interaction effect.
 
-**Gap 3: Limited connection to developer outcomes.** The first round
-of peer review on our prior work, conducted by *Empirical Software
-Engineering*, flagged precisely this gap: "The study is primarily an
-ML engineering evaluation; it lacks developer-impact studies,
-comparison with existing tools, and SE-relevant evaluation metrics."
-The reviewer identified three concrete deficits — human evaluation,
-tool comparison, and a behavioural metric — that we address directly
-in the present paper. **All three components are independent
-methodological additions**; together they shift the evaluation from
-"does the pipeline produce tests?" to "do the tests do what
-developers and bug-detection tools say they should?"
+**Gap 3: Limited connection to developer outcomes.** Even where
+mutation-based metrics are reported, two further evaluation
+components are typically absent. First, **human ratings of the
+generated tests** — does a developer reading the generated suite
+see tests they would actually use? Without this signal, automated
+quality metrics may diverge silently from developer-perceived
+quality (we observe exactly this in §4.6, where one LLM scores high
+on mutation kill rate but low on human ratings). Second, **a
+head-to-head comparison against an established baseline tool** —
+typically search-based test generation, the prior dominant
+paradigm. Without such a baseline, claims about LLM-method ranking
+are difficult to interpret. The present paper closes all three
+gaps: it uses mutation-kill rate as the primary metric, conducts a
+three-annotator human evaluation, and benchmarks against the
+Pynguin search-based test generator on matched functions.
 
 ### 1.3 Research questions
 
@@ -275,8 +284,8 @@ in §9 and hosted at the URL given in §1.6.
 ### 1.6 Replication
 
 All empirical results in this paper are reproducible from the
-artefacts at `https://github.com/balajivenky06/autoresearch` (tag
-`emse-resubmission-v1`). The repository contains the experimental
+artefacts at `https://github.com/balajivenky06/autoresearch` (release
+tag listed in §9). The repository contains the experimental
 sweep results, the analysis scripts, the human-evaluation Streamlit
 application, the per-pair annotation worksheet, the three annotators'
 returned CSVs, the Pynguin runner script, and the figure-generation
@@ -593,8 +602,8 @@ exploit in §4.5 to compare per-benchmark significance.
 
 ### 3.3 Mutation testing
 
-We adopt **mutation testing** as our SE-relevant evaluation metric
-following the recommendation of EMSE's first-round review. A mutation
+We adopt **mutation testing** as our SE-relevant evaluation metric.
+A mutation
 operator introduces a small syntactic change to the function under
 test, producing a *mutant*. A test suite *kills* a mutant when at least
 one of its tests fails on the mutated function but passes on the
@@ -707,10 +716,10 @@ research questions.
 
 ### 3.5 Human evaluation
 
-To address EMSE's request for "developer impact studies", we
-complement the automated mutation-testing analysis with a human-
-evaluation study modelled on Khan et al. (2024) and Sallam et al.
-(2025) for code-quality annotation.
+To complement the automated mutation-testing analysis with a
+developer-perceived-quality signal, we conducted a human-evaluation
+study modelled on Khan et al. (2024) and Sallam et al. (2025) for
+code-quality annotation.
 
 **Sample selection.** We drew 40 stratified `(function,
 generated_tests)` pairs from the mutation-testing checkpoints, balanced
@@ -765,8 +774,9 @@ ordered scales). Agreement targets follow Landis and Koch (1977):
 
 ### 3.6 Tool comparison — Pynguin baseline
 
-To address EMSE's request for "comparison with existing tools", we
-benchmarked our LLM-based methods against **Pynguin 0.45.0** (Lukasczyk
+To ground our LLM-method results against the prior dominant
+paradigm in automated unit-test generation, we benchmarked our
+LLM-based methods against **Pynguin 0.45.0** (Lukasczyk
 and Fraser, 2022), a search-based and dynamic symbolic execution
 test-generation tool for Python. We selected Pynguin because: (i) it is
 Python-native, like our generators (in contrast to EvoSuite, which
@@ -1060,8 +1070,8 @@ template language toward behaviour-specific assertions.
 
 ### 4.6 Human evaluation
 
-To address EMSE's request for "developer impact studies", three
-independent annotators rated 40 stratified `(function,
+As an independent quality signal alongside the automated kill-rate
+metric, three annotators rated 40 stratified `(function,
 generated_tests)` pairs blinded to method and model (cf. §3.5).
 Annotators scored each pair on three 0–5 behaviourally-anchored
 dimensions: test idiom quality, correctness, and completeness. Figure 5
@@ -1123,9 +1133,10 @@ discuss this in §5.
 
 ### 4.7 Comparison against a search-based baseline
 
-To address EMSE's request for "comparison with existing tools", we
-ran Pynguin 0.45.0 (Lukasczyk and Fraser, 2022) on the same 40 functions
-used in the human evaluation, with a 60-second per-function search
+To ground our LLM-method results against the prior dominant
+automated-test-generation paradigm, we ran Pynguin 0.45.0
+(Lukasczyk and Fraser, 2022) on the same 40 functions used in the
+human evaluation, with a 60-second per-function search
 budget (cf. §3.6). The same mutation-testing pipeline that evaluated
 the LLM-generated tests was applied to Pynguin's output. Figure 7 shows
 the overall comparison (`pynguin_vs_llm_kill_rate.png`); Figure 8 shows
@@ -1683,8 +1694,8 @@ construction.
 The empirical machinery developed in this paper — the experimental
 sweep, the analysis scripts, the human-evaluation Streamlit
 application, the Pynguin runner — is released as a replication
-package (`https://github.com/balajivenky06/autoresearch`, tag
-`emse-resubmission-v1`) so that all four future-work directions can
+package (`https://github.com/balajivenky06/autoresearch`, release
+tag listed in §9) so that all four future-work directions can
 be pursued with the same evaluation framework we used here.
 
 ---
