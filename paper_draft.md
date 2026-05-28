@@ -561,6 +561,8 @@ RAG-for-code-generation literature, evaluated across **four open-weight
 language models** that span 3B to 30B parameters and dense vs
 mixture-of-experts architectures (Table 1).
 
+**Table 1.** Experimental factors.
+
 | Factor | Levels |
 |---|---|
 | **Method** | Plain LLM, Random RAG, Simple RAG, Iterative Critique RAG |
@@ -812,12 +814,12 @@ test-generation tool (§4.7).
 
 ### 4.1 Mutation kill rates across methods and models
 
-Table 1 reports the mean mutation kill rate for each of the 16 method ×
+Table 2 reports the mean mutation kill rate for each of the 16 method ×
 model cells in our 4 × 4 design (n = 4 – 30 valid samples per cell
 after the filter described in §3.3). Figure 1 visualises the same data
 as a heatmap (`kill_rate_heatmap.png`).
 
-**Table 1.** Mean mutation kill rate by method × LLM (with n_samples_valid
+**Table 2.** Mean mutation kill rate by method × LLM (with n_samples_valid
 in parentheses).
 
 | Method | llama3.2 (3B) | phi4 (14B) | qwen3.5 (9B) | qwen3-coder (30B MoE) | Mean (capable models) |
@@ -853,11 +855,11 @@ significance tests in §4.2 must contend.
 
 #### 4.2.1 Overall kill rate
 
-Despite the descriptive ordering in Table 1, **the method effect on
+Despite the descriptive ordering in Table 2, **the method effect on
 overall kill rate is not statistically significant after controlling
 for model and source sample**. A Type-III ANOVA on
 `kill_rate ~ C(method) + C(model) + C(sample_idx)` (n = 409 valid
-observations) reports method F = 0.794, p = 0.498 (Table 2). The Tukey
+observations) reports method F = 0.794, p = 0.498 (Table 3). The Tukey
 HSD post-hoc identifies zero significant method pairs at α = 0.05; the
 closest pair (Iterative Critique vs Plain LLM, ∆ = +0.046) is
 nowhere near threshold (p_adj = 0.144). The mixed-effects model — using
@@ -865,7 +867,7 @@ nowhere near threshold (p_adj = 0.144). The mixed-effects model — using
 factors — yields the same conclusion: Plain LLM's contrast against IC
 is β = −0.046, p = 0.144.
 
-**Table 2.** Type-III ANOVA on overall kill rate.
+**Table 3.** Type-III ANOVA on overall kill rate.
 
 | Factor | F | p |
 |---|---|---|
@@ -894,7 +896,7 @@ dataset is 122 observations from HumanEval and 287 from MBPP. We refit
 the ANOVA + Tukey HSD pipeline separately on each split.
 
 **The method effect on boundary kill rate is significant on MBPP
-but null on HumanEval** (Table 3, Figure 2). On MBPP, the ANOVA reports
+but null on HumanEval** (Table 4, Figure 2). On MBPP, the ANOVA reports
 F = 2.96, p = 0.035; Tukey HSD identifies a single significant pair —
 Iterative Critique versus Plain LLM, ∆ = −0.311 percentage points,
 p_adj = 0.025 — and the mixed-effects model corroborates with Plain LLM
@@ -907,7 +909,7 @@ is substantially wider than on the overall kill rate (Figure 1),
 reflecting that boundary is the operator family with the most
 between-method discriminative power on our suite.
 
-**Table 3.** Method effect on boundary kill rate by source benchmark.
+**Table 4.** Method effect on boundary kill rate by source benchmark.
 
 | Scope | n | ANOVA method F (p) | Tukey IC vs Plain LLM | Mixed-LM IC vs PLain LLM |
 |---|---|---|---|---|
@@ -934,13 +936,13 @@ A central question for the paper is whether the method ordering observed
 on any one LLM transfers to others. We test this by computing Spearman
 rank correlation ρ between method-rankings for every pair of the four
 models, using the threshold ρ ≥ 0.8 to indicate "the ranking
-generalises" (Jureczko and Madeyski 2015). Table 4 reports the minimum
+generalises" (Jureczko and Madeyski 2015). Table 5 reports the minimum
 and mean off-diagonal ρ for the overall kill rate and for each
 per-operator kill rate; Figure 3 shows the pairwise heatmap
 (`mutation_rank_correlation.png`); Figure 4 shows the underlying rank
 trajectories across models (`mutation_rank_stability.png`).
 
-**Table 4.** Cross-model generalisability of method rankings (Spearman ρ
+**Table 5.** Cross-model generalisability of method rankings (Spearman ρ
 between models on each metric).
 
 | Metric | min ρ | mean ρ | Verdict |
@@ -962,15 +964,15 @@ The metric with the worst generalisation is `kill_return_none`,
 where llama3.2's ranking is essentially inverted relative to qwen3.5's
 (ρ = −0.95).
 
-The underlying rank table (Table 5) makes the source of the
+The underlying rank table (Table 6) makes the source of the
 non-generalisation legible: **Iterative Critique is rank 1 on three of
 four models** but drops to rank 3 on qwen3.5, where Simple RAG takes
 the top spot. Plain LLM, in contrast, is the worst method on three of
 four models but rises to rank 2 on llama3.2 — the smallest model in
 our pool, where IC's critique loop produces tests that fail the original-
-code filter at a much higher rate (cf. footnote in Table 1).
+code filter at a much higher rate (cf. footnote in Table 2).
 
-**Table 5.** Method rankings per model on overall mean kill rate
+**Table 6.** Method rankings per model on overall mean kill rate
 (1 = best).
 
 | Method | llama3.2 | phi4 | qwen3.5 | qwen3-coder |
@@ -990,11 +992,11 @@ RAG is the best choice; for the strongest dense model in our pool
 ### 4.4 Per-operator analysis: where the action is
 
 Because the overall kill rate hits a 1.0 ceiling on capable models,
-we examine kill rate per mutation operator. Table 6 reports per-operator
+we examine kill rate per mutation operator. Table 7 reports per-operator
 kill rates averaged across the four LLMs (full per-operator × per-cell
 data is in `kill_rate_combined_heatmap.png`).
 
-**Table 6.** Per-operator kill rate by method (averaged across 4 LLMs).
+**Table 7.** Per-operator kill rate by method (averaged across 4 LLMs).
 
 | Operator | Plain LLM | Random RAG | Simple RAG | **Iterative Critique** |
 |---|---|---|---|---|
@@ -1029,12 +1031,12 @@ similarity < 0.3), `avg_faithfulness` (token overlap between the
 generated tests and the retrieved chunks), and
 `avg_llm_judge_faithfulness` (a DeepSeek-Coder 6.7B judgement of
 semantic groundedness, validated against human ratings on a companion
-docstring task). Table 7 reports the pooled Pearson correlation of
+docstring task). Table 8 reports the pooled Pearson correlation of
 each metric against mean kill rate across the 11 RAG cells (random_rag,
 simple_rag, iterative_critique × 4 models, minus one missing cell);
 Figure 5 visualises the relationships (`noise_vs_kill_scatter.png`).
 
-**Table 7.** RAG-quality metrics vs mean mutation kill rate (pooled
+**Table 8.** RAG-quality metrics vs mean mutation kill rate (pooled
 across 11 RAG cells, n = 11).
 
 | Predictor | Pearson r | p | Spearman ρ |
@@ -1083,7 +1085,7 @@ dimensions: test idiom quality, correctness, and completeness. Figure 6
 visualises the per-method means across the three annotators
 (`human_eval_method_ranking.png`).
 
-**Table 8.** Mean human rating by method (averaged across 3 annotators
+**Table 9.** Mean human rating by method (averaged across 3 annotators
 and 40 samples).
 
 | Method | Test idiom | Correctness | Completeness |
@@ -1102,7 +1104,7 @@ on a 0–5 scale).
 **Inter-rater agreement was below the conventional ≥ 0.4 threshold
 on all three dimensions** (Krippendorff's α = −0.03 / −0.12 / +0.33 for
 test idiom / correctness / completeness). Pairwise Cohen's κ analysis
-(Table 9) reveals the cause: **two of the three annotators (GS and BV)
+(Table 10) reveals the cause: **two of the three annotators (GS and BV)
 agreed at fair-to-moderate levels (κ = 0.32–0.46), but the third
 annotator (SA) used systematically lower scale values** — mean ratings
 of 2.88 / 3.45 / 3.62 versus GS's 4.40 / 4.25 / 4.08 and BV's 3.77 /
@@ -1111,7 +1113,7 @@ by directional disagreement on which test suite is better than which;
 Figure 7 visualises this (`human_eval_annotator_bias.png`). We address
 this in §8.
 
-**Table 9.** Pairwise Cohen's κ (linear-weighted) between annotators.
+**Table 10.** Pairwise Cohen's κ (linear-weighted) between annotators.
 
 | Pair | Test idiom | Correctness | Completeness |
 |---|---|---|---|
@@ -1128,7 +1130,7 @@ annotators); we discuss in §8.4 why the kill-rate ↔ human-correctness
 relationship that was significant on n = 2 annotators did not survive
 3-annotator pooling.
 
-**A side finding worth noting**: on per-model means (Table 10), qwen3.5
+**A side finding worth noting**: on per-model means (Table 11), qwen3.5
 (9B dense) ranks higher than qwen3-coder (30B MoE) on all three human
 dimensions, *despite* qwen3-coder having the higher mutation kill rate
 (0.986 vs 0.975). The qwen3-coder MoE writes tests that the mutation
@@ -1136,7 +1138,7 @@ harness scores as more defect-detecting, but that human annotators
 judge as less idiomatic, less correct-looking, and less complete. We
 discuss this in §5.
 
-**Table 10.** Per-model means (human ratings + mutation kill rate).
+**Table 11.** Per-model means (human ratings + mutation kill rate).
 
 | Model | Idiom | Correctness | Completeness | Kill rate |
 |---|---|---|---|---|
@@ -1156,7 +1158,7 @@ the LLM-generated tests was applied to Pynguin's output. Figure 9 shows
 the overall comparison (`pynguin_vs_llm_kill_rate.png`); Figure 10 shows
 the per-operator breakdown (`pynguin_vs_llm_per_operator.png`).
 
-**Table 11.** Pynguin vs LLM methods on the same 40 functions.
+**Table 12.** Pynguin vs LLM methods on the same 40 functions.
 
 | Generator | Mean kill rate | n_samples_valid | Killed / Total mutants |
 |---|---|---|---|
@@ -1181,7 +1183,7 @@ reliably executable, even if each test is individually less
 defect-detecting**.
 
 Second, **the LLM-vs-Pynguin gap is concentrated on comparison
-mutators** (Table 12). On the `== ↔ !=`, `< ↔ >=`, `> ↔ <=` family,
+mutators** (Table 13). On the `== ↔ !=`, `< ↔ >=`, `> ↔ <=` family,
 Pynguin kills only 33 % while Iterative Critique kills 96 % — a
 63-point gap. Pynguin's behavioural oracles correctly assert *what* the
 function returns but rarely encode *which comparison operator* it uses
@@ -1191,7 +1193,7 @@ and negate-boolean operators, Pynguin matches Iterative Critique
 (0.88 vs 0.87 on arithmetic; 1.00 vs 0.98 on negate-boolean): where
 behavioural oracles suffice, search-based testing is fully competitive.
 
-**Table 12.** Per-operator kill rates: LLMs (averaged across 4 models)
+**Table 13.** Per-operator kill rates: LLMs (averaged across 4 models)
 vs Pynguin.
 
 | Operator | Plain LLM | Random RAG | Simple RAG | **IC** | **Pynguin** | IC − Pynguin gap |
@@ -1309,7 +1311,7 @@ suffices.
 
 The Spearman rank correlation analysis (§4.3) shows that **no metric
 exhibits cross-model rank stability above the ρ ≥ 0.8 threshold**, and
-the underlying rank table (Table 5) makes the picture concrete:
+the underlying rank table (Table 6) makes the picture concrete:
 **Iterative Critique is rank 1 on three of four LLMs but rank 3 on
 qwen3.5**, while Simple RAG (which is the rank-3 method on three LLMs)
 takes the rank-1 spot on qwen3.5.
@@ -1439,7 +1441,7 @@ faithfulness judge.
 
 The Pynguin comparison (§4.7) shows a clear overall ordering — every
 LLM method outperforms Pynguin's 60-second SBST run — but the
-per-operator decomposition (Table 12) reveals a more nuanced picture.
+per-operator decomposition (Table 13) reveals a more nuanced picture.
 **On arithmetic and negate-boolean operators, Pynguin matches
 Iterative Critique** (0.88 vs 0.87 and 1.00 vs 0.98 respectively).
 The LLM-versus-Pynguin gap concentrates on the comparison operator
