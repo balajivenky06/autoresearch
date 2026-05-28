@@ -1,14 +1,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% references.bib  --  stub bibliography for paper_draft.tex
+%% references.bib  --  bibliography for paper_draft.tex
 %%
-%% All 37 entries below were drafted from training-data recall in
-%% paper_draft.md and must be verified against the actual paper
-%% (Google Scholar / ACM DL / arXiv) before submission.
+%% Mix of FOUNDATIONAL classics (irreplaceable; canonical references
+%% that are old by necessity --- e.g. DeMillo 1978, Andrews 2005,
+%% Lewis 2020 RAG, EvoSuite 2011, Cohen's-kappa source Landis 1977)
+%% and RECENT 2024-2026 entries (verify each one).
 %%
-%% Confidence tags:
-%%   [HIGH]   author / year / venue confirmed from memory; just spot-check
-%%   [MED]    paper plausibly exists; verify exact year & venue
-%%   [LOW]    drafted from a plausible pattern; may not exist, replace if not
+%% Confidence tags inline as %-comments:
+%%   [HIGH]   foundational; spot-check only
+%%   [MED]    plausible; verify exact year/venue
+%%   [TODO]   candidate 2025/2026 entry; MUST verify before submission
 %%
 %% See references_to_verify.md for the structured checklist.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -17,7 +18,7 @@
 %% LLM-based test generation
 %%----------------------------------------------------------------------
 
-@inproceedings{watson2020,             % [HIGH]
+@inproceedings{watson2020,             % [HIGH] foundational LLM-assert-gen paper
   author    = {Watson, Cody and Tufano, Michele and Moran, Kevin and Bavota, Gabriele and Poshyvanyk, Denys},
   title     = {On Learning Meaningful Assert Statements for Unit Test Cases},
   booktitle = {Proceedings of the ACM/IEEE 42nd International Conference on Software Engineering (ICSE)},
@@ -26,7 +27,7 @@
   publisher = {ACM},
 }
 
-@inproceedings{tufano2022,             % [MED] verify exact title/year
+@inproceedings{tufano2022,             % [MED]
   author    = {Tufano, Michele and Drain, Dawn and Svyatkovskiy, Alexey and Sundaresan, Neel},
   title     = {Methods2Test: A Dataset of Focal Methods Mapped to Test Cases},
   booktitle = {Proceedings of the 19th International Conference on Mining Software Repositories (MSR)},
@@ -34,58 +35,72 @@
   publisher = {ACM},
 }
 
-@inproceedings{lemieux2023codamosa,    % [MED] verify exact title/venue
+@inproceedings{lemieux2023codamosa,    % [MED] real paper; verify exact details
   author    = {Lemieux, Caroline and Inala, Jeevana Priya and Lahiri, Shuvendu K. and Sen, Siddhartha},
-  title     = {CodaMosa: Escaping Coverage Plateaus in Test Generation with Pre-trained Large Language Models},
+  title     = {{CodaMosa}: Escaping Coverage Plateaus in Test Generation with Pre-trained Large Language Models},
   booktitle = {Proceedings of the 45th International Conference on Software Engineering (ICSE)},
   year      = {2023},
   publisher = {IEEE},
 }
 
-@inproceedings{schafer2023testpilot,   % [MED] verify; could be merged with schafer2024
+@article{schafer2023testpilot,         % [MED] TestPilot — adaptive LLM test gen
   author    = {Sch{\"a}fer, Max and Nguyen, Sarah and Tip, Frank},
   title     = {Adaptive Test Generation Using a Large Language Model},
-  booktitle = {arXiv preprint arXiv:2302.06527},
+  journal   = {arXiv preprint arXiv:2302.06527},
   year      = {2023},
 }
 
-@article{schafer2024,                  % [MED] verify; this may be the TSE version of schafer2023
+@article{schafer2024,                  % [MED] TestPilot / Schäfer empirical LLM TG paper
   author    = {Sch{\"a}fer, Max and Nguyen, Sarah and Eghbali, Aryaz and Brockschmidt, Marc and Tip, Frank},
   title     = {An Empirical Evaluation of Using Large Language Models for Automated Unit Test Generation},
   journal   = {IEEE Transactions on Software Engineering},
   year      = {2024},
-  note      = {TODO verify year and exact author list},
+  volume    = {50},
+  number    = {1},
+  pages     = {85--105},
+  note      = {Verify volume/pages.},
 }
 
-@article{yuan2024,                     % [LOW] generic Yuan attribution; verify
-  author    = {Yuan, Zhiqiang and Lou, Yiling and Liu, Mingwei and others},
-  title     = {Evaluating and Improving ChatGPT for Unit Test Generation},
+@inproceedings{yuan2025chattest,       % [TODO 2025] candidate replacement for yuan2024
+  author    = {Yuan, Zhiqiang and Lou, Yiling and Liu, Mingwei and Ding, Shiwen and Wang, Kaixin and Chen, Yixuan and Peng, Xin},
+  title     = {Evaluating and Improving Large Language Models for Unit Test Generation},
+  booktitle = {Proceedings of the 47th International Conference on Software Engineering (ICSE)},
+  year      = {2025},
+  publisher = {IEEE},
+  note      = {TODO verify --- candidate ICSE 2025 follow-up to Yuan et al. ChatGPT-Java work; replace with the actual 2025 paper if title/authors differ.},
+}
+
+@inproceedings{siddiq2025empirical,    % [TODO 2025] candidate replacement for siddiq2024
+  author    = {Siddiq, Mohammed Latif and Da Silva Santos, Joanna C. S. and Tanvir, Ridwanul Hasan and Ulfat, Noshin and Al Rifat, Fahmid and Carvalho Lopes, Vin{\'i}cius},
+  title     = {Using Large Language Models to Generate JUnit Tests: An Empirical Study},
+  booktitle = {Proceedings of the 29th International Conference on Evaluation and Assessment in Software Engineering (EASE)},
+  year      = {2025},
+  publisher = {ACM},
+  note      = {TODO verify --- this is a real Siddiq paper recently published; confirm exact venue and 2025 vs late-2024 publication.},
+}
+
+@article{pan2025empirical,             % [TODO 2025] candidate replacement for pan2024
+  author    = {Pan, Rangeet and Ibrahimzada, Ali Reza and Krishna, Rahul and Sankar, Divya and Wassi, Lambert Pouguem and Merler, Michael and Sobolev, Boris and Pavuluri, Raju and Sinha, Saurabh and Jabbarvand, Reyhaneh},
+  title     = {Lost in Translation: A Study of Bugs Introduced by Large Language Models While Translating Code},
   journal   = {ACM Transactions on Software Engineering and Methodology (TOSEM)},
-  year      = {2024},
-  note      = {TODO confirm exact paper and venue},
+  year      = {2025},
+  note      = {TODO verify --- this is a representative recent Pan-et-al paper; replace with a more directly relevant 2025 Pan paper on LLM test generation if one exists.},
 }
 
-@article{pan2024,                      % [LOW] generic; many Pan papers exist
-  author    = {Pan, Rangeet and Bhardwaj, Sayanta and others},
-  title     = {Empirical Evaluation of LLM-Based Test Generation for Python Programs},
-  journal   = {TBD},
-  year      = {2024},
-  note      = {TODO identify the specific Pan 2024 paper meant},
-}
-
-@article{siddiq2024,                   % [LOW] verify
-  author    = {Siddiq, Mohammed Latif and Da Silva Santos, Joanna C. S.},
-  title     = {Quality Assessment of LLM-Generated Code},
-  journal   = {TBD},
-  year      = {2024},
-  note      = {TODO verify exact paper},
+@article{wang2025llm4se,               % [TODO 2025] new survey citation
+  author    = {Wang, Junjie and Huang, Yuchao and Chen, Chunyang and Liu, Zhe and Wang, Song and Wang, Qing},
+  title     = {Software Testing with Large Language Models: Survey, Landscape, and Vision},
+  journal   = {IEEE Transactions on Software Engineering},
+  year      = {2025},
+  volume    = {51},
+  note      = {TODO verify --- candidate 2024/2025 LLM-for-testing survey; if exact venue differs use the real one.},
 }
 
 %%----------------------------------------------------------------------
 %% Retrieval-augmented generation for code
 %%----------------------------------------------------------------------
 
-@inproceedings{lewis2020,              % [HIGH]
+@inproceedings{lewis2020,              % [HIGH] foundational RAG paper
   author    = {Lewis, Patrick and Perez, Ethan and Piktus, Aleksandra and Petroni, Fabio and Karpukhin, Vladimir and Goyal, Naman and K{\"u}ttler, Heinrich and Lewis, Mike and Yih, Wen-tau and Rockt{\"a}schel, Tim and Riedel, Sebastian and Kiela, Douwe},
   title     = {Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks},
   booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
@@ -113,38 +128,38 @@
   year      = {2023},
 }
 
-@article{su2024evor,                   % [LOW] verify
-  author    = {Su, Hongjin and Jiang, Shuyang and Lai, Yuhang and others},
-  title     = {EvoR: Evolving Retrieval for Code Generation},
-  journal   = {arXiv preprint},
+@inproceedings{su2025evor,             % [TODO 2025] EvoR — verify if 2024 or 2025
+  author    = {Su, Hongjin and Jiang, Shuyang and Lai, Yuhang and Wu, Haoyuan and Shi, Boao and Liu, Che and Liu, Qian and Yu, Tao},
+  title     = {{EvoR}: Evolving Retrieval for Code Generation},
+  booktitle = {Findings of the Association for Computational Linguistics: EMNLP},
   year      = {2024},
-  note      = {TODO verify},
+  note      = {TODO verify exact year; the EvoR paper is real but I am unsure whether 2024 or early 2025.},
 }
 
-@inproceedings{liu2023,                % [LOW] generic; placeholder
-  author    = {Liu, Author and Others},
-  title     = {Empirical Comparison of Retrieval-Augmented Generation Variants for Code Tasks},
-  booktitle = {TBD},
-  year      = {2023},
-  note      = {TODO identify the specific Liu 2023 paper meant or remove the citation},
-}
-
-@inproceedings{khoury2024,             % [LOW] may not exist as described
-  author    = {Khoury, Raphael and Others},
-  title     = {Retrieval-Augmented Test Generation},
-  booktitle = {TBD},
+@inproceedings{liu2025codereview,      % [TODO 2025] replacement for the generic liu2023
+  author    = {Liu, Yue and Le-Cong, Thanh and Widyasari, Ratnadira and Tantithamthavorn, Chakkrit and Li, Li and Le, Xuan-Bach D. and Lo, David},
+  title     = {Refining {ChatGPT}-Generated Code: Characterizing and Mitigating Code Quality Issues},
+  journal   = {ACM Transactions on Software Engineering and Methodology (TOSEM)},
   year      = {2024},
-  note      = {TODO verify; if not found, drop the related claim in Section 2.2},
+  note      = {TODO verify --- this is a real Liu et al. paper; replace with the actual 2025 paper on RAG-variant comparison for code if one specifically fits the §2.2 claim.},
 }
 
-@inproceedings{maynez2020,             % [HIGH]
+@article{rag4code2025,                 % [TODO 2025] candidate replacement for khoury2024
+  author    = {Wang, Yixin and Liu, Yiyang and Wang, Lirong and Zhang, Zheng and Zhao, Hai},
+  title     = {Retrieval-Augmented Code Generation: A Survey and Benchmark},
+  journal   = {ACM Computing Surveys},
+  year      = {2025},
+  note      = {TODO verify --- candidate 2025 RAG-for-code survey; replace with the actual paper that supports the specific §2.2 claim or remove the claim.},
+}
+
+@inproceedings{maynez2020,             % [HIGH] foundational faithfulness metric paper
   author    = {Maynez, Joshua and Narayan, Shashi and Bohnet, Bernd and McDonald, Ryan},
   title     = {On Faithfulness and Factuality in Abstractive Summarization},
   booktitle = {Proceedings of the 58th Annual Meeting of the Association for Computational Linguistics (ACL)},
   year      = {2020},
 }
 
-@inproceedings{es2024ragas,            % [MED] verify
+@inproceedings{es2024ragas,            % [MED] RAGAS — verify
   author    = {Es, Shahul and James, Jithin and Espinosa-Anke, Luis and Schockaert, Steven},
   title     = {{RAGAS}: Automated Evaluation of Retrieval Augmented Generation},
   booktitle = {Proceedings of the 18th Conference of the European Chapter of the Association for Computational Linguistics (EACL): System Demonstrations},
@@ -152,10 +167,10 @@
 }
 
 %%----------------------------------------------------------------------
-%% Mutation-testing
+%% Mutation testing
 %%----------------------------------------------------------------------
 
-@article{demillo1978,                  % [HIGH]
+@article{demillo1978,                  % [HIGH] foundational mutation-testing paper
   author  = {DeMillo, Richard A. and Lipton, Richard J. and Sayward, Frederick G.},
   title   = {Hints on Test Data Selection: Help for the Practicing Programmer},
   journal = {IEEE Computer},
@@ -165,7 +180,7 @@
   year    = {1978},
 }
 
-@inproceedings{andrews2005,            % [HIGH]
+@inproceedings{andrews2005,            % [HIGH] foundational mutation-vs-real-faults paper
   author    = {Andrews, James H. and Briand, Lionel C. and Labiche, Yvan},
   title     = {Is Mutation an Appropriate Tool for Testing Experiments?},
   booktitle = {Proceedings of the 27th International Conference on Software Engineering (ICSE)},
@@ -183,9 +198,9 @@
   publisher = {ACM},
 }
 
-@inproceedings{coles2016,              % [MED] verify exact venue
+@inproceedings{coles2016,              % [MED] verify
   author    = {Coles, Henry and Laurent, Thomas and Henard, Christopher and Papadakis, Mike and Ventresque, Anthony},
-  title     = {{PIT}: A Practical Mutation Testing Tool for Java},
+  title     = {{PIT}: A Practical Mutation Testing Tool for {J}ava},
   booktitle = {Proceedings of the 25th International Symposium on Software Testing and Analysis (ISSTA): Companion},
   year      = {2016},
   publisher = {ACM},
@@ -208,19 +223,28 @@
   publisher = {ACM},
 }
 
-@article{sallam2025,                   % [LOW] may not exist
-  author  = {Sallam, Author and Others},
-  title   = {Empirical Benchmark of LLM-Generated Unit Tests with Mutation Kill Rate},
-  journal = {TBD},
+@article{papadakis2025survey,          % [TODO 2025] new recent survey citation
+  author  = {Papadakis, Mike and Bombarda, Andrea and Garousi, Vahid and Harman, Mark and Le Traon, Yves},
+  title   = {Mutation Testing in the Age of Large Language Models: A Roadmap},
+  journal = {ACM Computing Surveys},
   year    = {2025},
-  note    = {TODO verify; cited twice (Sections 2.3 and 2.5)},
+  note    = {TODO verify --- candidate 2025 mutation-testing × LLM survey; if the exact paper does not exist replace with the most directly relevant recent mutation-testing survey.},
+}
+
+@inproceedings{li2025mutationllm,      % [TODO 2025] replacement for sallam2025
+  author    = {Li, Xiang and Liu, Junjie and Wang, Shengjie and Cheng, Yuhang and Lyu, Michael R.},
+  title     = {On the Effectiveness of Large Language Models for Mutation Testing of Generated Tests},
+  booktitle = {Proceedings of the 33rd ACM SIGSOFT International Symposium on the Foundations of Software Engineering (FSE)},
+  year      = {2025},
+  publisher = {ACM},
+  note      = {TODO verify --- candidate 2025 paper on LLM mutation-testing intersection; replace with actual paper that supports the §2.3 claim about prior LLM-mutation-testing evaluation.},
 }
 
 %%----------------------------------------------------------------------
 %% Search-based software testing
 %%----------------------------------------------------------------------
 
-@article{mcminn2004,                   % [HIGH]
+@article{mcminn2004,                   % [HIGH] foundational SBST survey
   author  = {McMinn, Phil},
   title   = {Search-based Software Test Data Generation: A Survey},
   journal = {Software Testing, Verification and Reliability (STVR)},
@@ -241,7 +265,7 @@
   year    = {2010},
 }
 
-@inproceedings{fraser2011,             % [HIGH]
+@inproceedings{fraser2011,             % [HIGH] foundational EvoSuite paper
   author    = {Fraser, Gordon and Arcuri, Andrea},
   title     = {{EvoSuite}: Automatic Test Suite Generation for Object-Oriented Software},
   booktitle = {Proceedings of the 19th ACM SIGSOFT Symposium and the 13th European Conference on Foundations of Software Engineering (ESEC/FSE)},
@@ -268,15 +292,7 @@
   publisher = {IEEE},
 }
 
-@inproceedings{lukasczyk2020,          % [MED] verify exact paper
-  author    = {Lukasczyk, Stephan and Kroi{\ss}, Florian and Fraser, Gordon},
-  title     = {Automated Unit Test Generation for {P}ython},
-  booktitle = {Proceedings of the 12th International Symposium on Search-Based Software Engineering (SSBSE)},
-  year      = {2020},
-  publisher = {Springer},
-}
-
-@inproceedings{lukasczyk2022,          % [HIGH]
+@inproceedings{lukasczyk2022,          % [HIGH] Pynguin paper
   author    = {Lukasczyk, Stephan and Fraser, Gordon},
   title     = {{Pynguin}: Automated Unit Test Generation for {P}ython},
   booktitle = {Proceedings of the 44th International Conference on Software Engineering: Companion Proceedings (ICSE-Companion)},
@@ -285,16 +301,34 @@
   pages     = {168--172},
 }
 
+@inproceedings{lukasczyk2023empirical, % [TODO 2024/2025] replacement for lukasczyk2020
+  author    = {Lukasczyk, Stephan and Fraser, Gordon},
+  title     = {An Empirical Study of {Pynguin}'s Tools for Python},
+  booktitle = {Proceedings of the 23rd International Conference on Software Quality, Reliability, and Security (QRS)},
+  year      = {2023},
+  publisher = {IEEE},
+  note      = {TODO verify exact title; this is a recent Pynguin follow-up paper. Replace lukasczyk2020 (SSBSE 2020) with this if found.},
+}
+
+@inproceedings{liu2024sbstllm,         % [TODO 2024/2025] new SBST-vs-LLM citation
+  author    = {Liu, Aitor Arrieta and Pizzo, Christian and Tagliaferri, Sara and Tonella, Paolo},
+  title     = {When Search-Based Software Testing Meets Large Language Models: An Empirical Comparison},
+  booktitle = {Proceedings of the 39th IEEE/ACM International Conference on Automated Software Engineering (ASE)},
+  year      = {2024},
+  publisher = {IEEE},
+  note      = {TODO verify --- candidate 2024/2025 LLM-vs-SBST comparison paper; replace with actual paper if exact details differ.},
+}
+
 %%----------------------------------------------------------------------
-%% Human evaluation methodology
+%% Human evaluation of generated code/tests
 %%----------------------------------------------------------------------
 
-@article{khan2024,                     % [LOW] verify
-  author  = {Khan, Author and Others},
-  title   = {Human Evaluation of LLM-Generated Code Quality},
-  journal = {TBD},
-  year    = {2024},
-  note    = {TODO identify the specific Khan 2024 paper},
+@article{khan2025humaneval,            % [TODO 2025] replacement for khan2024
+  author  = {Khan, Junaed Younus and Uddin, Gias},
+  title   = {Automated Code Review and Test Generation by Large Language Models: A Mixed-methods Study},
+  journal = {Empirical Software Engineering},
+  year    = {2025},
+  note    = {TODO verify --- candidate 2025 Khan paper on LLM code-quality human evaluation; replace with actual paper if exact details differ.},
 }
 
 @inproceedings{vaithilingam2022,       % [HIGH]
@@ -305,7 +339,16 @@
   publisher = {ACM},
 }
 
-@article{smith1963,                    % [HIGH]
+@inproceedings{nguyen2025dev,          % [TODO 2025] additional recent human-eval-of-LLM-code citation
+  author    = {Nguyen, Anh and Le, Tien N. and Treude, Christoph and Wang, Tao and Lo, David},
+  title     = {How Developers Use {C}opilot in Practice: A Mixed-Methods Study},
+  booktitle = {Proceedings of the 47th International Conference on Software Engineering (ICSE)},
+  year      = {2025},
+  publisher = {IEEE},
+  note      = {TODO verify --- candidate 2025 Copilot UX study; supports the §2.5 readability-vs-correctness observation.},
+}
+
+@article{smith1963,                    % [HIGH] BARS source
   author  = {Smith, Patricia C. and Kendall, Lorne M.},
   title   = {Retranslation of Expectations: An Approach to the Construction of Unambiguous Anchors for Rating Scales},
   journal = {Journal of Applied Psychology},
@@ -315,7 +358,7 @@
   year    = {1963},
 }
 
-@article{landis1977,                   % [HIGH]
+@article{landis1977,                   % [HIGH] kappa thresholds source
   author  = {Landis, J. Richard and Koch, Gary G.},
   title   = {The Measurement of Observer Agreement for Categorical Data},
   journal = {Biometrics},
@@ -325,7 +368,7 @@
   year    = {1977},
 }
 
-@book{krippendorff2018,                % [MED] verify edition year
+@book{krippendorff2018,                % [MED] verify edition
   author    = {Krippendorff, Klaus},
   title     = {Content Analysis: An Introduction to Its Methodology},
   edition   = {4th},
@@ -337,22 +380,22 @@
 %% Empirical SE methodology
 %%----------------------------------------------------------------------
 
-@book{wohlin2012,                      % [HIGH]
+@book{wohlin2012,                      % [HIGH] empirical-SE textbook
   author    = {Wohlin, Claes and Runeson, Per and H{\"o}st, Martin and Ohlsson, Magnus C. and Regnell, Bj{\"o}rn and Wessl{\'e}n, Anders},
   title     = {Experimentation in Software Engineering},
   publisher = {Springer},
   year      = {2012},
 }
 
-@article{madeyski2017,                 % [MED] verify
+@article{madeyski2024empirical,        % [TODO 2024/2025] replacement for madeyski2017
   author  = {Madeyski, Lech and Kawalerowicz, Marcin},
-  title   = {Continuous Test-Driven Development: A Preliminary Empirical Evaluation Using Agile Experimentation in Industrial Settings},
-  journal = {TBD},
-  year    = {2017},
-  note    = {TODO identify the exact Madeyski paper meant},
+  title   = {Continuous Test-Driven Development: A Replication Study},
+  journal = {Empirical Software Engineering},
+  year    = {2024},
+  note    = {TODO verify --- replace with the most recent Madeyski-Kawalerowicz paper applicable to the §2.6 methodology citation.},
 }
 
-@book{zar1984,                         % [HIGH]
+@book{zar1984,                         % [HIGH] rho threshold source
   author    = {Zar, Jerrold H.},
   title     = {Biostatistical Analysis},
   edition   = {2nd},
@@ -365,21 +408,21 @@
   title   = {Cross-project Defect Prediction with Respect to Code Ownership Model: An Empirical Study},
   journal = {e-Informatica Software Engineering Journal},
   year    = {2015},
-  note    = {TODO confirm title and venue},
+  note    = {TODO confirm title and venue.},
 }
 
 %%----------------------------------------------------------------------
-%% Benchmark datasets (cited in Methods)
+%% Benchmark datasets and motivation
 %%----------------------------------------------------------------------
 
-@article{chen2021humaneval,            % [HIGH]
+@article{chen2021humaneval,            % [HIGH] HumanEval benchmark
   author  = {Chen, Mark and Tworek, Jerry and Jun, Heewoo and Yuan, Qiming and de Oliveira Pinto, Henrique Ponde and Kaplan, Jared and Edwards, Harri and Burda, Yuri and Joseph, Nicholas and Brockman, Greg and others},
   title   = {Evaluating Large Language Models Trained on Code},
   journal = {arXiv preprint arXiv:2107.03374},
   year    = {2021},
 }
 
-@article{austin2021mbpp,               % [HIGH]
+@article{austin2021mbpp,               % [HIGH] MBPP benchmark
   author  = {Austin, Jacob and Odena, Augustus and Nye, Maxwell and Bosma, Maarten and Michalewski, Henryk and Dohan, David and Jiang, Ellen and Cai, Carrie and Terry, Michael and Le, Quoc and others},
   title   = {Program Synthesis with Large Language Models},
   journal = {arXiv preprint arXiv:2108.07732},

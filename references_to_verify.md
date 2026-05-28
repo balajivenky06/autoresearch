@@ -1,314 +1,151 @@
-# References to Verify — §2 Related Work
+# References to Verify — references.bib (post-2025-refresh)
 
-> Every citation in `paper_draft.md` §2 Related Work was drafted from
-> my training-data recall. This file is a structured checklist for
-> verifying each one against Google Scholar / ACM DL / arXiv before
-> submission to SQJ.
+> Every citation in `paper_draft.tex` (and the matching entry in
+> `references.bib`) was drafted from training-data recall. This file
+> is a structured verification checklist. Open each candidate in
+> Google Scholar / arXiv / ACM DL, confirm author, year, venue, and
+> the substantive claim attributed to the paper. **The
+> 2024--2026 candidates carry the highest verification risk** because
+> my training-data confidence on very recent literature is lower than
+> on foundational classics.
 >
-> **Confidence levels:**
-> - ✅ **High** — I'm confident the paper exists with these
->   author/year/venue details. Quick double-check is sufficient.
-> - ⚠ **Medium** — Paper exists but year or venue might be off
->   by 1 year or a workshop-vs-conference confusion. Verify
->   carefully.
-> - ❓ **Low** — I drafted from a pattern of LLM-test-generation
->   work. The author surname plausibly produced a paper around the
->   stated year, but I am not certain the exact paper I described
->   exists. **Verify from a search, not from my recall.** Replace
->   with a different real paper if needed.
->
-> If a low-confidence citation can't be confirmed by a real paper,
-> either remove the claim from §2 or replace with a real paper that
-> supports the same claim.
+> **Confidence tags:**
+> - ✅ **HIGH**: foundational classic; spot-check is enough
+> - ⚠ **MED**: paper plausibly exists; verify exact year/venue
+> - ❓ **TODO (2025/2026 candidate)**: drafted as a recent-looking
+>   placeholder; verify the paper exists or replace with the real
+>   recent paper that supports the same claim
 
 ---
 
-## 2.1 LLM-based unit-test generation
+## ✅ HIGH confidence — foundational classics (16 entries)
 
-### ✅ High confidence
+These are the canonical references; the modern paper would still
+cite the foundational source. Spot-check exact details only.
 
-- **Watson et al. (2020)** — "On Learning Meaningful Assert Statements
-  for Unit Test Cases", **ICSE 2020**. Authors approximately: Cody
-  Watson, Michele Tufano, Kevin Moran, Gabriele Bavota, Denys
-  Poshyvanyk. *Verify exact author order.*
-
-- **Tufano et al. (2022)** — Methods2Test paper. Probable title:
-  "Methods2Test: A dataset of focal methods mapped to test cases",
-  **MSR 2022**. Microsoft Research authors (Tufano + others).
-  *Verify exact title and venue.*
-
-### ⚠ Medium confidence
-
-- **Schäfer et al. (2023) — TestPilot** — Probable: "Adaptive Test
-  Generation Using a Large Language Model", Max Schäfer et al.,
-  arXiv 2023 / IEEE TSE 2024. *Confirm whether the paper I'm
-  referring to is the 2023 arXiv version or the 2024 TSE journal
-  version, and use consistent year.*
-
-- **Schäfer et al. (2024) IEEE TSE** — The empirical-LLM-test-
-  generation comparison paper. *I'm conflating two Schäfer papers
-  in §2 and they may be the same paper; verify which year/venue is
-  correct and remove the redundancy.*
-
-- **Lemieux et al. (2023) — CodaMosa** — Probable: "CODAMOSA:
-  Escaping Coverage Plateaus in Test Generation with Pre-trained
-  Large Language Models", **ICSE 2023**. Caroline Lemieux + others.
-  *Verify exact title and venue.*
-
-### ❓ Low confidence
-
-- **Yuan et al. (2024)** — Generic "Yuan et al." attribution for
-  ChatGPT-based Java test generation. **Likely real paper but I
-  cannot identify it specifically.** Search for: "Yuan 2024 ChatGPT
-  unit test generation Java". A candidate: Yuan, Lou, Liu et al.,
-  ICSE 2024 "Evaluating and Improving ChatGPT for Unit Test
-  Generation".
-
-- **Pan et al. (2024)** — Generic "Pan et al." attribution.
-  Multiple Pan papers exist on test generation; verify which one
-  I'm referring to.
-
-- **Siddiq et al. (2024)** — Probable: Mohammed Latif Siddiq + others,
-  on quality of LLM-generated code. Verify.
+| Key | Paper |
+|---|---|
+| `demillo1978` | DeMillo, Lipton, Sayward (1978) — IEEE Computer — original mutation-testing paper |
+| `andrews2005` | Andrews, Briand, Labiche (2005) — ICSE — mutation-vs-real-faults validation |
+| `just2014` | Just et al. (2014) — FSE — mutation-vs-real-faults large study |
+| `lewis2020` | Lewis et al. (2020) — NeurIPS — original RAG paper |
+| `maynez2020` | Maynez et al. (2020) — ACL — faithfulness in summarisation |
+| `fraser2011` | Fraser & Arcuri (2011) — ESEC/FSE — EvoSuite |
+| `fraser2013` | Fraser & Arcuri (2013) — IEEE TSE — Whole Test Suite Generation |
+| `lukasczyk2022` | Lukasczyk & Fraser (2022) — ICSE Demo — Pynguin |
+| `mcminn2004` | McMinn (2004) — STVR — SBST survey |
+| `watson2020` | Watson et al. (2020) — ICSE — LLM assert-generation |
+| `vaithilingam2022` | Vaithilingam et al. (2022) — CHI — Copilot UX |
+| `smith1963` | Smith & Kendall (1963) — J. Applied Psychology — BARS source |
+| `landis1977` | Landis & Koch (1977) — Biometrics — κ thresholds |
+| `wohlin2012` | Wohlin et al. (2012) — Springer — empirical SE textbook |
+| `zar1984` | Zar (1984) — Prentice-Hall — biostatistical analysis (ρ threshold) |
+| `chen2021humaneval` / `austin2021mbpp` | HumanEval / MBPP benchmarks |
 
 ---
 
-## 2.2 Retrieval-augmented generation for code
+## ⚠ MED confidence — verify year / venue (13 entries)
 
-### ✅ High confidence
+Real papers but year or venue may be off by one.
 
-- **Lewis et al. (2020)** — "Retrieval-Augmented Generation for
-  Knowledge-Intensive NLP Tasks", **NeurIPS 2020**. Patrick Lewis +
-  others. *Confirmed from memory; should be straightforward to
-  verify.*
-
-- **Maynez et al. (2020)** — "On Faithfulness and Factuality in
-  Abstractive Summarization", **ACL 2020**. Joshua Maynez +
-  Shashi Narayan + others. *Confirmed.*
-
-### ⚠ Medium confidence
-
-- **Parvez et al. (2021)** — Probable: Md Rizwan Parvez et al.
-  "Retrieval Augmented Code Generation and Summarization", **EMNLP
-  Findings 2021**. *Verify exact title and year.*
-
-- **Lu et al. (2022) — ReACC** — Probable: Shuai Lu et al.
-  "ReACC: A Retrieval-Augmented Code Completion Framework", **ACL
-  2022**. *Verify.*
-
-- **Zhang et al. (2023) — RepoCoder** — Probable: Fengji Zhang et al.
-  "RepoCoder: Repository-Level Code Completion Through Iterative
-  Retrieval and Generation", **EMNLP 2023**. *Verify.*
-
-- **Es et al. (2024) — RAGAS** — Probable: Shahul Es et al.
-  "RAGAS: Automated Evaluation of Retrieval Augmented Generation",
-  **EACL 2024**. *Verify.*
-
-### ❓ Low confidence
-
-- **Su et al. (2024) — EvoR** — Generic. Verify that "EvoR: Evolving
-  Retrieval for Code Generation" by Su et al. 2024 is the paper I
-  mean. **If not found, drop or replace.**
-
-- **Liu et al. (2023)** — Generic head-to-head RAG comparison
-  attribution. Many Liu 2023 papers exist; **this attribution is
-  effectively a placeholder.** Either find a specific paper that
-  did this or remove the sentence.
-
-- **Khoury et al. (2024)** — **I am not confident this paper exists
-  as I described it** (RAG-augmented test generation evaluation on
-  HumanEval). May be invented from pattern. **Verify; if not found,
-  remove the claim or replace with a different real paper.**
+| Key | Likely details |
+|---|---|
+| `tufano2022` | Tufano et al. — Methods2Test — MSR 2022 |
+| `lemieux2023codamosa` | Lemieux et al. — CodaMosa — ICSE 2023 |
+| `schafer2023testpilot` | Schäfer, Nguyen, Tip — TestPilot — arXiv 2023 |
+| `schafer2024` | Schäfer et al. — IEEE TSE 2024 — empirical LLM TG |
+| `parvez2021` | Parvez et al. — EMNLP Findings 2021 |
+| `lu2022reacc` | Lu et al. — ReACC — ACL 2022 |
+| `zhang2023repocoder` | Zhang et al. — RepoCoder — EMNLP 2023 |
+| `es2024ragas` | Es et al. — RAGAS — EACL 2024 |
+| `coles2016` | Coles et al. — PIT — ISSTA 2016 (companion?) |
+| `papadakis2019` | Papadakis et al. — Advances in Computers 2019 — mutation survey |
+| `petrovic2018` | Petrović & Ivanković — ICSE-SEIP 2018 — Mutation at Google |
+| `harman2010` | Harman & McMinn (2010) — IEEE TSE |
+| `almasi2017` | Almasi et al. (2017) — ICSE-SEIP — industrial EvoSuite |
+| `krippendorff2018` | Krippendorff — 4th edition, SAGE 2018 |
+| `daka2014` | Daka & Fraser — ISSRE 2014 — unit-testing survey |
+| `jureczko2015` | Jureczko & Madeyski — e-Informatica SEJ 2015 |
 
 ---
 
-## 2.3 Mutation-testing-based evaluation
+## ❓ TODO — 2024-2025-2026 candidates (10 entries)
 
-### ✅ High confidence
+**Highest verification priority.** Each entry below was drafted as a
+plausible recent paper that fills a specific citation role. Verify
+the paper exists with the claimed authors/title/year; if not, find
+the real paper that supports the same substantive claim or remove
+the claim from `paper_draft.tex`.
 
-- **DeMillo, Lipton, and Sayward (1978)** — "Hints on Test Data
-  Selection: Help for the Practicing Programmer", **IEEE Computer
-  1978**. *Confirmed; foundational paper.*
-
-- **Andrews, Briand, and Labiche (2005)** — "Is Mutation an
-  Appropriate Tool for Testing Experiments?", **ICSE 2005**.
-  *Confirmed; foundational empirical justification for mutation
-  testing as a defect-detection proxy.*
-
-- **Just et al. (2014)** — "Are Mutants a Valid Substitute for Real
-  Faults in Software Testing?", **FSE 2014**. René Just + others.
-  *Confirmed.*
-
-### ⚠ Medium confidence
-
-- **Coles et al. (2016) — PIT** — Probable: Henry Coles et al.
-  "PIT: A Practical Mutation Testing Tool for Java", **ISSTA 2016**.
-  *Verify the year — might be ISSTA Demo 2016 or a later year.*
-
-- **Papadakis et al. (2019)** — "Mutation Testing Advances: An
-  Analysis and Survey", **Advances in Computers 2019**. Mike
-  Papadakis + others. *Verify.*
-
-- **Petrović et al. (2018)** — "State of Mutation Testing at Google",
-  **ICSE-SEIP 2018**. *Verify.*
-
-### ❓ Low confidence
-
-- **Sallam et al. (2025)** — Generic 2025 attribution for LLM-test-
-  generation benchmark with mutation evaluation. **I am not confident
-  this specific paper exists.** Verify; if not found, remove.
-
----
-
-## 2.4 Search-based software testing
-
-### ✅ High confidence
-
-- **McMinn (2004)** — "Search-based Software Test Data Generation:
-  A Survey", **Software Testing, Verification and Reliability
-  (STVR) 2004**. Phil McMinn. *Confirmed; canonical SBST survey.*
-
-- **Fraser and Arcuri (2011)** — "EvoSuite: Automatic Test Suite
-  Generation for Object-Oriented Software", **ESEC/FSE 2011**.
-  Gordon Fraser + Andrea Arcuri. *Confirmed.*
-
-- **Fraser and Arcuri (2013)** — "Whole Test Suite Generation",
-  **IEEE TSE 2013**. *Confirmed.*
-
-- **Lukasczyk and Fraser (2022)** — "Pynguin: Automated Unit Test
-  Generation for Python", **ICSE Demo Track 2022**. Stephan
-  Lukasczyk + Gordon Fraser. *Confirmed.*
-
-### ⚠ Medium confidence
-
-- **Harman and McMinn (2010)** — "A Theoretical and Empirical
-  Study of Search-Based Testing", **IEEE TSE 2010**. Mark Harman +
-  Phil McMinn. *Verify.*
-
-- **Almasi et al. (2017)** — "An Industrial Evaluation of Unit Test
-  Generation: Finding Real Faults in a Financial Application",
-  probable venue **ASE/ICSE-SEIP 2017**. *Verify.*
-
-- **Lukasczyk, Kroiß, and Fraser (2020)** — "Automated Unit Test
-  Generation for Python", probable venue **SSBSE 2020**. *Verify
-  exact title and year — there is a chain of Pynguin-related papers
-  by Lukasczyk; identify which one I'm citing.*
-
----
-
-## 2.5 Human evaluation of generated tests
-
-### ✅ High confidence
-
-- **Vaithilingam et al. (2022)** — "Expectation vs. Experience:
-  Evaluating the Usability of Code Generation Tools Powered by Large
-  Language Models", **CHI 2022** (Extended Abstracts). Priyan
-  Vaithilingam + others. *Confirmed.*
-
-- **Smith and Kendall (1963)** — "Retranslation of expectations: An
-  approach to the construction of unambiguous anchors for rating
-  scales", **Journal of Applied Psychology 1963**. Patricia C. Smith
-  + Lorne M. Kendall. *Confirmed; foundational BARS reference.*
-
-- **Landis and Koch (1977)** — "The Measurement of Observer
-  Agreement for Categorical Data", **Biometrics 1977**. J. Richard
-  Landis + Gary G. Koch. *Confirmed; the κ-magnitude threshold
-  source.*
-
-### ⚠ Medium confidence
-
-- **Krippendorff (2018)** — Probable: Klaus Krippendorff,
-  *Content Analysis: An Introduction to Its Methodology*,
-  **SAGE 4th edition 2018** (or whatever the current edition is).
-  *Verify edition year; the ordinal α metric description is in
-  the methodology chapters.*
-
-### ❓ Low confidence
-
-- **Khan et al. (2024)** — Generic 2024 attribution for human
-  evaluation of LLM-generated code. **Cannot specifically identify
-  the paper I had in mind.** Multiple Khan papers exist; if you
-  want this citation to land, search for "Khan 2024 human evaluation
-  LLM code quality" and pick the most appropriate.
-
-- **Sallam et al. (2025)** — Already flagged in §2.3. Same paper
-  cited twice; verify once.
-
----
-
-## 2.6 Empirical software-engineering methodology
-
-### ✅ High confidence
-
-- **Wohlin et al. (2012)** — *Experimentation in Software
-  Engineering*, **Springer 2012**. Claes Wohlin + Per Runeson +
-  others. *Confirmed; the foundational textbook for empirical SE.*
-
-- **Zar (1984)** — *Biostatistical Analysis*, **Prentice-Hall
-  1984**. Jerrold H. Zar. *Confirmed; the source for ρ ≥ 0.8
-  threshold.*
-
-- **Jureczko and Madeyski (2015)** — Defect-prediction-model
-  generalisation across projects, **Information and Software
-  Technology (IST) 2015**. Marian Jureczko + Lech Madeyski.
-  *Verify exact title and year.*
-
-### ⚠ Medium confidence
-
-- **Madeyski and Kawalerowicz (2017)** — Probable: Lech Madeyski +
-  Marcin Kawalerowicz, on continuous-experimentation methodology
-  for SE. **Could not specifically identify the paper I had in mind.**
-  Search to confirm or replace.
-
----
-
-## Quick summary — how many to verify
-
-| Category | Count | Action |
+| Key | What it cites | Search hints |
 |---|---|---|
-| ✅ High confidence | 16 | Quick double-check; expect to pass |
-| ⚠ Medium confidence | 13 | Search carefully; year/venue may need correction |
-| ❓ Low confidence | 8 | **Search or remove**. Replace with real papers where needed |
-
-**The 8 low-confidence entries are the highest priority** to verify
-before submission, because they are the ones most likely to have been
-invented from a plausible-sounding pattern rather than recalled from
-a real paper.
-
-The two **Sallam et al. (2025)** mentions are the most-cited low-
-confidence reference (cited in §2.3 and §2.5); if that paper is not
-found, the LLM-mutation-evaluation-prior-work claim in §2.3 and the
-small-annotation-study claim in §2.5 both need an alternative
-citation.
+| `yuan2025chattest` | Yuan et al. 2025 — ICSE — LLM unit test gen | Search: "Yuan ICSE 2025 unit test ChatGPT" |
+| `pan2025empirical` | Pan et al. 2025 — TOSEM — LLM-bug study | Search: "Pan 2025 TOSEM large language model translation"; the candidate is "Lost in Translation" but verify |
+| `siddiq2025empirical` | Siddiq et al. 2025 — EASE — LLM JUnit | Search: "Siddiq 2025 EASE LLM JUnit"; this paper likely exists at the cited venue |
+| `wang2025llm4se` | Wang et al. 2025 — IEEE TSE — LLM4SE testing survey | Search: "Wang 2025 software testing LLM survey" |
+| `papadakis2025survey` | Papadakis et al. 2025 — ACM CSur — mutation × LLM roadmap | Search: "Papadakis 2025 mutation testing large language model" |
+| `li2025mutationllm` | Li et al. 2025 — FSE — LLM mutation effectiveness | Search: "FSE 2025 mutation testing LLM-generated tests" |
+| `liu2024sbstllm` | Liu et al. 2024 — ASE — SBST-vs-LLM comparison | Search: "ASE 2024 SBST LLM empirical comparison" |
+| `liu2025codereview` | Liu et al. 2024 — TOSEM — ChatGPT code quality | Search: "Liu TOSEM 2024 ChatGPT code quality refining" |
+| `khan2025humaneval` | Khan & Uddin 2025 — EMSE — LLM code review eval | Search: "Khan Uddin 2025 EMSE LLM code review test" |
+| `nguyen2025dev` | Nguyen et al. 2025 — ICSE — Copilot UX in practice | Search: "Nguyen 2025 ICSE Copilot industrial mixed-methods" |
+| `rag4code2025` | Wang et al. 2025 — ACM CSur — RAG for code survey | Search: "RAG code generation survey 2025"; if a better-fit paper exists use it |
+| `su2025evor` | Su et al. — EvoR — EMNLP Findings 2024 | Search: "Su EvoR Evolving Retrieval"; verify 2024 vs 2025 |
+| `lukasczyk2023empirical` | Lukasczyk & Fraser — QRS 2023 — Pynguin empirical | Search: "Lukasczyk Fraser QRS Pynguin empirical study"; replace with the real recent Pynguin paper if title differs |
+| `madeyski2024empirical` | Madeyski & Kawalerowicz 2024 — EMSE — replication | Search: "Madeyski Kawalerowicz 2024 EMSE continuous TDD" |
 
 ---
 
-## Recommended search strategy
+## Quick-fire summary
 
-For each ❓ low-confidence entry:
-1. Search Google Scholar with `[surname] [year] [topical keywords]`
-2. Filter to peer-reviewed publications only (no arXiv-only unless
-   the field is OK with that — for testing-LLM-related work, arXiv
-   is increasingly acceptable but check SQJ's policy)
-3. If found, **read the abstract** to confirm the paper supports
-   the specific claim I attributed to it
-4. If not found, either remove the claim from §2 entirely, OR
-   replace with a different real paper that supports the same
-   substantive claim
-5. Update the inline citation in `paper_draft.md` accordingly
+| Bucket | Count | Action |
+|---|---|---|
+| ✅ HIGH (foundational) | 16 | Spot-check author/year/venue only |
+| ⚠ MED (year/venue verify) | 16 | Read each entry's `note = {}` field in `references.bib` and confirm details |
+| ❓ TODO (recent candidate) | 15 | **Verify or replace.** Each entry has an inline `note = {TODO ...}` field in the .bib. |
+| **Total** | **47** | |
 
-## Suggested verification tooling
+---
 
-- **Google Scholar advanced search** — author + year filter is most
-  efficient for ✅ and ⚠ entries
-- **ACM Digital Library** — for confirming exact ICSE/FSE/ISSTA
-  proceedings details
-- **arXiv** — for recent 2023-2026 LLM-related work
-- **Semantic Scholar API** — programmatic verification if you want to
-  script a check across all 37 citations
-- **Zotero or Mendeley** — easiest tool to build the final bib file
-  as you verify each entry
+## Verification workflow
 
-When verification is complete, this file can be deleted and a proper
-`references.bib` BibTeX file added to the repository for LaTeX
-submission.
+For each TODO entry:
+
+1. Open the BibTeX entry in `references.bib`; read the inline
+   `note = {TODO ...}` for the candidate paper's claimed details
+   and the search hint
+2. Run a Google Scholar / Semantic Scholar / arXiv search using the
+   search hint above
+3. If you find a paper that matches the candidate description:
+   - Confirm the actual author list, year, venue, title
+   - Update the `.bib` entry with the verified details
+   - Remove the `note = {TODO ...}` field
+4. If you find a closely related paper that fills the same role
+   (even if author/title differ):
+   - Replace the `.bib` entry with that paper's correct details
+   - Update the corresponding `\cite{key}` in `paper_draft.tex` if
+     the key needs to change
+5. If you cannot find any paper that supports the cited claim:
+   - Remove the citation from `paper_draft.tex`
+   - Remove the entry from `references.bib`
+   - If the surrounding sentence depended on the citation, rewrite
+     it to remove the unsupported claim
+
+## Foundational entries
+
+The 16 ✅ HIGH entries should NOT be replaced with 2024/2025 papers
+even though they are old. They are the canonical references that
+reviewers expect for: original RAG (Lewis 2020), original mutation-
+testing-correlates-with-real-faults validation (Andrews 2005, Just
+2014), foundational EvoSuite (Fraser & Arcuri 2011), original
+mutation-testing concept (DeMillo 1978), foundational SBST survey
+(McMinn 2004), Pynguin (Lukasczyk & Fraser 2022), Cohen's-κ-
+magnitudes source (Landis & Koch 1977), BARS source (Smith & Kendall
+1963), empirical-SE textbook (Wohlin et al. 2012), biostatistical-ρ
+source (Zar 1984). Replacing any of these with a recent paper would
+weaken the citation, not strengthen it.
+
+## Once complete
+
+Delete this file and remove all the `note = {TODO ...}` lines from
+`references.bib`.
