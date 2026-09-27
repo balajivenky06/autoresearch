@@ -52,6 +52,12 @@ def _resolve_analysis_dir() -> Path:
     return ANALYSIS_CKPT_CANDIDATES[0]   # for error message
 
 METHODS = ["plain_llm", "random_rag", "simple_rag", "iterative_critique"]
+
+# Search-based baseline tools. These share the mutation pipeline so their
+# checkpoints live alongside the RAG techniques', but they are a separate
+# comparison (paper section "Tool comparison") and must be excluded from the
+# method main effect. Keep this list in sync with any new baseline added.
+BASELINE_TOOLS = ["pynguin"]
 METHOD_LABELS = {
     "plain_llm":          "Plain LLM",
     "random_rag":         "Random RAG",
@@ -113,6 +119,17 @@ def parse_key(key: str) -> tuple:
     Parse a checkpoint filename stem like 'iterative_critique_base_qwen3.5_9b'
     into (method, reasoning, model). The method may contain underscores, so we
     match against the known method list.
+
+    Baseline tools (Pynguin) are named separately in BASELINE_TOOLS: they are
+    NOT RAG techniques and must never enter the method factor of the ANOVA.
+    They are returned with a real model label so they can be filtered
+    explicitly rather than surfacing as an empty-string group.
+
+    An unrecognised filename raises rather than silently degrading. The previous
+    fallback returned (key, "base", "") for any unmatched stem, which meant the
+    Pynguin checkpoint entered the analysis as a fifth level of `method` with
+    `model == ""` — inflating the method main effect from F=0.794 to F=1.454 and
+    producing a spurious significant Tukey pair.
     """
     for m in sorted(METHODS, key=len, reverse=True):  # longest first
         if key.startswith(m + "_"):
@@ -124,21 +141,50 @@ def parse_key(key: str) -> tuple:
             # The model key was written with ':' → '_'. We can't perfectly invert
             # without a model list, but we don't need the exact form for stats —
             # we just need stable group labels.
+            if not model:
+                raise ValueError(
+                    f"checkpoint stem {key!r} yielded an empty model label; "
+                    f"expected '<method>_<reasoning>_<model>'"
+                )
             return m, reasoning, model
-    return key, "base", ""
+
+    for tool in BASELINE_TOOLS:
+        if key.startswith(tool):
+            return tool, "base", tool
+
+    raise ValueError(
+        f"unrecognised checkpoint stem {key!r}: not a known method "
+        f"({METHODS}) nor a known baseline tool ({BASELINE_TOOLS}). "
+        f"Add it explicitly rather than letting it default."
+    )
 
 
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
 
-def load_per_sample_kill_rates() -> pd.DataFrame:
+def load_per_sample_kill_rates(include_baselines: bool = False) -> pd.DataFrame:
     """
     Load every analysis checkpoint and return a long-format DataFrame:
         columns = [method, reasoning, model, sample_idx, kill_rate,
                    total_mutants, killed, equivalent]
     Skips .tmp files and rows with NaN kill_rate (those samples had all tests
     fail on the original function and got filtered out).
+
+    include_baselines
+        False (default) — return only the four RAG techniques. This is what
+        every method-comparison analysis wants: Kruskal-Wallis, Friedman,
+        Type-III ANOVA, Tukey HSD and the per-benchmark decomposition all treat
+        `method` as a factor, and a search-based tool is not a level of it.
+        True — also return BASELINE_TOOLS rows, for the tool-comparison
+        analysis that deliberately pits the RAG techniques against Pynguin on a
+        matched subset.
+
+    Defaulting to False is deliberate. Pynguin's checkpoints live in the same
+    directory as the RAG techniques', so every caller silently picked them up:
+    that inflated the ANOVA method main effect from F=0.794 to F=1.454, added a
+    spurious significant Tukey pair (Iterative Critique vs Pynguin), and ran
+    Kruskal-Wallis over five groups instead of four.
     """
     analysis_dir = _resolve_analysis_dir()
     if not analysis_dir.is_dir():
@@ -197,6 +243,21 @@ def load_per_sample_kill_rates() -> pd.DataFrame:
         sys.exit(1)
 
     df = pd.DataFrame(rows)
+
+    if not include_baselines:
+        n_before = len(df)
+        df = df[df["method"].isin(METHODS)].copy()
+        if dropped := n_before - len(df):
+            print(f"  excluded {dropped} baseline-tool rows "
+                  f"({', '.join(BASELINE_TOOLS)}) — not levels of `method`; "
+                  f"pass include_baselines=True for the tool comparison")
+
+    blanks = int((df["model"].astype(str).str.strip() == "").sum())
+    if blanks:
+        raise ValueError(
+            f"{blanks} rows have an empty model label — a checkpoint filename "
+            f"parsed incorrectly. Fix parse_key rather than filtering here."
+        )
     return df
 
 

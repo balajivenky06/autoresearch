@@ -48,6 +48,7 @@ from statsmodels.stats.multicomp import pairwise_tukeyhsd
 
 from mutation_statistical_tests import (
     METHODS,
+    BASELINE_TOOLS,
     METHOD_LABELS,
     OPERATORS,
     load_per_sample_kill_rates,
@@ -85,8 +86,20 @@ def fmt_f(x: float, w: int = 8, prec: int = 4) -> str:
 # ---------------------------------------------------------------------------
 
 def prepare_dataframe(metric: str) -> pd.DataFrame:
-    """Load per-sample data and project onto the requested metric column."""
+    """Load per-sample data and project onto the requested metric column.
+
+    Restricts the frame to the four RAG techniques. Baseline tools (Pynguin)
+    share the mutation pipeline and therefore the checkpoint directory, but they
+    are not levels of the `method` factor — including them inflates the method
+    main effect and manufactures a significant Tukey pair against an SBST tool.
+    The tool comparison is a separate analysis on a matched subset.
+    """
+    # Baseline tools and empty-model rows are screened out by the loader.
     df = load_per_sample_kill_rates()
+
+    if missing := sorted(set(METHODS) - set(df["method"])):
+        print(f"  WARNING: no data for method(s): {', '.join(missing)}")
+
     if metric != "kill_rate":
         if metric not in df.columns:
             raise SystemExit(

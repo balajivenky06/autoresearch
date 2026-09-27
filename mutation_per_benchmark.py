@@ -44,6 +44,7 @@ from mutation_statistical_tests import (
     METHOD_LABELS,
     OPERATORS,
     parse_key,
+    BASELINE_TOOLS,
 )
 
 GEN_DIR_CANDIDATES = [Path("checkpoints_mutation"),
@@ -88,8 +89,18 @@ def load_source_map(gen_dir: Path) -> dict:
     return out
 
 
-def load_per_sample(analysis_dir: Path, source_map: dict) -> pd.DataFrame:
+def load_per_sample(analysis_dir: Path, source_map: dict,
+                    include_baselines: bool = False) -> pd.DataFrame:
+    """Per-sample rows tagged with their source benchmark.
+
+    Baseline tools (Pynguin) are excluded by default: this analysis treats
+    `method` as a factor in a per-benchmark ANOVA and Tukey HSD, and a
+    search-based tool is not a level of it. Including them also injected
+    `source = "unknown"` rows, because Pynguin's generation pkls are not in the
+    RAG source map.
+    """
     rows = []
+    skipped_baseline = 0
     for f in sorted(analysis_dir.glob("*.pkl")):
         if f.name.endswith(".tmp"):
             continue
@@ -98,6 +109,9 @@ def load_per_sample(analysis_dir: Path, source_map: dict) -> pd.DataFrame:
         if not isinstance(data, dict):
             continue
         method, reasoning, model = parse_key(f.stem)
+        if not include_baselines and method in BASELINE_TOOLS:
+            skipped_baseline += len(data)
+            continue
         # The model field on each generation pkl is the colon form; the
         # analysis pkl filename uses underscores. Build the lookup key in
         # the same underscore form.
@@ -122,6 +136,8 @@ def load_per_sample(analysis_dir: Path, source_map: dict) -> pd.DataFrame:
                 k = stats_op.get("killed", 0)
                 row[f"kill_rate_{op}"] = (k / t) if t > 0 else float("nan")
             rows.append(row)
+    if skipped_baseline:
+        print(f"  excluded {skipped_baseline} baseline-tool rows ({', '.join(BASELINE_TOOLS)}) — not levels of `method`")
     df = pd.DataFrame(rows)
     df["method"]    = df["method"].astype(str)
     df["model"]     = df["model"].astype(str)

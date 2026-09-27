@@ -1,0 +1,404 @@
+# Citation audit
+
+- Entries: **48**
+- Blockers: **2** · Warnings: **26** · Clean: **20**
+- Entries never \cite'd in `paper_draft.tex`: **0**
+- Mode: OFFLINE (placeholder scan only)
+
+## Blockers
+
+### `liu2024sbstllm` — PLACEHOLDER, NO_DOI, DESCRIPTION_SUSPECT
+- bib title: An Empirical Comparison of Pre-Trained Language Models and Traditional Approaches for Test Generation
+- doi: `(none)`  · cited 1x
+- placeholder text in: note=TODO verify --- candidate 2024 SBST-vs-LLM comparison; search ``Liu 2024 ASE LLM SBST empirical comparison''.
+- prose near \cite claims 'sbst' but real title is 'An Empirical Comparison of Pre-Trained Language Models and Traditional Approaches for Test Gene'
+  - > …s against test-suite generation baselines. \paragraph{Empirical SBST-vs-LLM comparisons} are recent and limited. \citet{lemieux2023codamosa} is the closest analog: it combines SBST with LLM prompts and reports improvements over each approach alone, demonstrating complementarity in coverage metrics. \citet{liu2024sbstllm} extends this comparison to non-hybrid head-to-head benchmarks on a small set of Java functions, finding LLM-method outputs and SBST outputs to be com…
+
+### `khan2025humaneval` — PLACEHOLDER, NO_DOI
+- bib title: Automated Code Review and Test Generation by Large Language Models: A Mixed-methods Study
+- doi: `(none)`  · cited 1x
+- placeholder text in: note=TODO verify --- candidate 2025 Khan/Uddin paper; if exact title/year differ, replace with the actual matching paper.
+  - > …r-operator kill rate. A finding ``generalizes'' if min $\rho \geq 0.8$ across all model pairs. \subsection{Human evaluation}\label{sec:methods-humaneval} To complement the automated mutation-testing analysis with a developer-perceived quality signal, we conducted a human-evaluation study modeled on \citet{khan2025humaneval} and \citet{li2025mutationllm} for code-quality annotation. \paragraph{Sample selection.} We drew 40 stratified \texttt{(function, generated\_tests)}…
+
+## Warnings
+
+### `watson2020` — NO_DOI
+- bib title: On Learning Meaningful Assert Statements for Unit Test Cases
+- doi: `(none)`  · cited 1x
+  - > …ng-based evaluation, and search-based software testing. We summarize each in turn and position our contribution at the intersection. \subsection{LLM-based unit-test generation}\label{sec:related-llmtg} The use of large language models for unit-test synthesis predates the modern transformer-LLM era. \citet{watson2020} showed that sequence-to-sequence models could learn to generate assert statements from method bodies, evaluated against Java open-source projects. \c…
+
+### `tufano2022` — NO_DOI
+- bib title: Methods2Test: A dataset of focal methods mapped to test cases
+- doi: `(none)`  · cited 2x
+  - > …readable test code has shifted this landscape. LLMs trained on public source code can produce pytest- or JUnit-formatted test suites that read like hand-written tests, encode specifications drawn from docstrings or function signatures, and require no per-function search budget beyond inference time \citep{schafer2023testpilot,tufano2022, pan2025empirical}. Multiple recent studies have benchmarked LLM-generated tests against SBST baselines and reported competitive or superior coverage on standard benchm…
+  - > …eneration}\label{sec:related-llmtg} The use of large language models for unit-test synthesis predates the modern transformer-LLM era. \citet{watson2020} showed that sequence-to-sequence models could learn to generate assert statements from method bodies, evaluated against Java open-source projects. \citet{tufano2022} scaled this approach with a BART-based encoder-decoder trained on millions of test pairs and reported improved syntactic correctness and reference si…
+
+### `lemieux2023codamosa` — DESCRIPTION_SUSPECT
+- bib title: CodaMosa: Escaping Coverage Plateaus in Test Generation with Pre-Trained Large Language Models
+- doi: `10.1109/ICSE48619.2023.00085`  · cited 3x
+- prose near \cite claims 'sbst', 'search-based' but real title is 'CodaMosa: Escaping Coverage Plateaus in Test Generation with Pre-Trained Large Language Models'
+  - > …is approach with a BART-based encoder-decoder trained on millions of test pairs and reported improved syntactic correctness and reference similarity on the Methods2Test benchmark. The arrival of decoder-only frontier LLMs (Codex, GPT-3.5, GPT-4) shifted research toward prompt-based test generation. \citet{lemieux2023codamosa} combined LLM prompting with search-based fallbacks, using the LLM to escape coverage plateaus where pure SBST runs got stuck. \citet{schafer2023testp…
+  - > …typing and runtime introspection capabilities. The Pynguin authors and others have benchmarked it on standard Python benchmarks (HumanEval, MBPP) and reported competitive coverage results against test-suite generation baselines. \paragraph{Empirical SBST-vs-LLM comparisons} are recent and limited. \citet{lemieux2023codamosa} is the closest analog: it combines SBST with LLM prompts and reports improvements over each approach alone, demonstrating complementarity in coverage…
+  - > …4copilot}, not the specific question of whether RAG augmentation produces tests that developers judge as higher-quality than plain LLM outputs. \item \textbf{No head-to-head LLM-vs-SBST mutation-kill-rate comparison on matched Python functions.} Although LLM-vs-SBST hybrid systems have been studied \citep{lemieux2023codamosa}, the direct head-to-head comparison —running identical mutation-testing pipelines on tests generated by Pynguin and by LLM methods on the same functi…
+
+### `schafer2023testpilot` — NO_DOI
+- bib title: Adaptive Test Generation Using a Large Language Model
+- doi: `(none)`  · cited 2x
+  - > …readable test code has shifted this landscape. LLMs trained on public source code can produce pytest- or JUnit-formatted test suites that read like hand-written tests, encode specifications drawn from docstrings or function signatures, and require no per-function search budget beyond inference time \citep{schafer2023testpilot,tufano2022, pan2025empirical}. Multiple recent studies have benchmarked LLM-generated tests against SBST baselines and reported competitive or superior coverage on standard benchm…
+  - > …e Methods2Test benchmark. The arrival of decoder-only frontier LLMs (Codex, GPT-3.5, GPT-4) shifted research toward prompt-based test generation. \citet{lemieux2023codamosa} combined LLM prompting with search-based fallbacks, using the LLM to escape coverage plateaus where pure SBST runs got stuck. \citet{schafer2023testpilot} introduced an adaptive generation loop where the LLM iteratively refines its tests based on runtime feedback. \citet{schafer2024} provides the larges…
+
+### `siddiq2025empirical` — NO_DOI
+- bib title: Using Large Language Models to Generate JUnit Tests: An Empirical Study
+- doi: `(none)`  · cited 2x
+  - > …ces. \citet{yuan2025chattest} evaluates ChatGPT-based Java test generation and finds that prompt engineering substantially affects output quality. \citet{pan2025empirical} reports an empirical comparison of multiple LLMs on Python test generation and analyzes error patterns in generated assertions. \citet{siddiq2025empirical} evaluates the quality of code (including tests) generated by open-source code LLMs across multiple metrics. \citet{wang2025llm4se} provides a recent…
+  - > …ort in \S\ref{sec:discussion-moe}, where qwen3-coder achieves a higher mutation kill rate than qwen3, but our annotators rate qwen3.5 higher on all three rubric dimensions. \paragraph{Human evaluation specifically for LLM-generated unit tests} is sparser than the broader code-generation literature. \citet{siddiq2025empirical} reports an empirical evaluation of LLM-generated JUnit tests on multiple dimensions (compilability, correctness, coverage) but does not include a mul…
+
+### `pan2025empirical` — NO_DOI, DESCRIPTION_SUSPECT
+- bib title: Lost in Translation: A Study of Bugs Introduced by Large Language Models while Translating Code
+- doi: `(none)`  · cited 2x
+- prose near \cite claims 'test generation' but real title is 'Lost in Translation: A Study of Bugs Introduced by Large Language Models while Translating Code'
+  - > …readable test code has shifted this landscape. LLMs trained on public source code can produce pytest- or JUnit-formatted test suites that read like hand-written tests, encode specifications drawn from docstrings or function signatures, and require no per-function search budget beyond inference time \citep{schafer2023testpilot,tufano2022, pan2025empirical}. Multiple recent studies have benchmarked LLM-generated tests against SBST baselines and reported competitive or superior coverage on standard benchm…
+  - > …t detection, and runnable-test percentages across multiple LLMs and benchmarks. Several recent papers focus on specific LLM-test generation pipeline choices. \citet{yuan2025chattest} evaluates ChatGPT-based Java test generation and finds that prompt engineering substantially affects output quality. \citet{pan2025empirical} reports an empirical comparison of multiple LLMs on Python test generation and analyzes error patterns in generated assertions. \citet{siddiq2025empi…
+
+### `lewis2020` — NO_DOI, DESCRIPTION_SUSPECT
+- bib title: Retrieval-augmented generation for knowledge-intensive NLP tasks
+- doi: `(none)`  · cited 2x
+- prose near \cite claims 'test-generation' but real title is 'Retrieval-augmented generation for knowledge-intensive NLP tasks'
+  - > …which augmentation methodology produces the best tests, on which kinds of code, with which underlying LLM?} \subsection{The retrieval-augmentation question}\label{sec:intro-rag} A natural augmentation for LLM test generators is \emph{retrieval-augmented generation} (RAG). The original RAG framework \citep{lewis2020} augments an LLM's prompt with passages retrieved from a knowledge base; in the test-generation context, the knowledge base is typically a curated set…
+  - > …interaction effects, and few include a human-evaluation component that operationalizes ``developer-perceived quality'' alongside the automated metrics. The present paper addresses all three gaps. \subsection{Retrieval-augmented generation for code}\label{sec:related-rag} The original RAG framework \citep{lewis2020} demonstrated that augmenting a sequence-generation LLM with a passage-retrieval step produces better outputs on knowledge-intensive NLP tasks. The fr…
+
+### `zhang2023repocoder` — DESCRIPTION_SUSPECT
+- bib title: {R}epo{C}oder: Repository-Level Code Completion Through Iterative Retrieval and Generation
+- doi: `10.18653/v1/2023.emnlp-main.151`  · cited 2x
+- prose near \cite claims 'test generation' but real title is '{R}epo{C}oder: Repository-Level Code Completion Through Iterative Retrieval and Generation'
+  - > …te-and-refine loop that injects the retrieved context across multiple iterations), and Random RAG (an ablation baseline where retrieval is unrelated to the task) — and there is now a small empirical literature comparing their effectiveness on docstring generation, code-completion, and related tasks \citep{liu2025codereview,rag4code2025,zhang2023repocoder}. Comparable work on \emph{unit test generation specifically} is sparser, and the work that does exist has three methodological gaps that we address i…
+  - > …ion contexts. \citet{parvez2021} showed that retrieval-augmented code summarization and generation could improve both code-completion and natural-language-to-code translation. \citet{lu2022reacc} demonstrated a retrieval-augmented code-completion framework using both lexical and semantic retrieval. \citet{zhang2023repocoder} introduced iterative retrieval at the repository level, where retrieval is re-run after each draft refinement —conceptually similar to our Iterative…
+
+### `rag4code2025` — DESCRIPTION_SUSPECT
+- bib title: A Survey on Retrieval-Augmented Text Generation for Large Language Models
+- doi: `10.1145/3805774`  · cited 2x
+- prose near \cite claims 'coverage', 'humaneval', 'test generation' but real title is 'A Survey on Retrieval-Augmented Text Generation for Large Language Models'
+  - > …te-and-refine loop that injects the retrieved context across multiple iterations), and Random RAG (an ablation baseline where retrieval is unrelated to the task) — and there is now a small empirical literature comparing their effectiveness on docstring generation, code-completion, and related tasks \citep{liu2025codereview,rag4code2025,zhang2023repocoder}. Comparable work on \emph{unit test generation specifically} is sparser, and the work that does exist has three methodological gaps that we address i…
+  - > …ons' decisions. \citet{liu2025codereview} reports a head-to-head comparison of multiple RAG variants on code-completion benchmarks, finding that the best variant depends on the type of code-completion task. \paragraph{For RAG specifically applied to test generation,} the literature is much thinner. \citet{rag4code2025} evaluates retrieval-augmented test generation against plain-LLM baselines on a small subset of HumanEval, reporting modest improvements in coverage m…
+
+### `demillo1978` — DESCRIPTION_SUSPECT
+- bib title: Hints on Test Data Selection: Help for the Practicing Programmer
+- doi: `10.1109/C-M.1978.218136`  · cited 1x
+- prose near \cite claims 'mutation testing' but real title is 'Hints on Test Data Selection: Help for the Practicing Programmer'
+  - > …d context is not equivalent to beneficial retrieval use; we make this concrete in a specific code-generation domain where defect-detection capability provides a ground-truth quality signal. \subsection{Mutation-testing-based evaluation}\label{sec:related-mutation} Mutation testing was introduced by \citet{demillo1978} as a thought experiment about test-adequacy and was operationalized over the next 30 years into a workable empirical methodology. The foundational em…
+
+### `coles2016` — NO_DOI
+- bib title: Demo: PIT a Practical Mutation Testing Tool for Java
+- doi: `(none)`  · cited 1x
+  - > …tection rates of injected mutants are statistically correlated with detection rates of real faults from project bug-tracker history. \citet{just2014} provided a follow-up large-scale study on Java projects that confirmed the result. The mutation-testing tool ecosystem includes \textit{PIT} for Java \citep{coles2016} and \textit{mutmut} for Python. Our mutation operators (arithmetic, comparison, boundary, return-replacement, boolean-negation) are the canonical sub…
+
+### `papadakis2019` — NO_DOI
+- bib title: Chapter Six - Mutation Testing Advances: An Analysis and Survey
+- doi: `(none)`  · cited 2x
+  - > …rojects that confirmed the result. The mutation-testing tool ecosystem includes \textit{PIT} for Java \citep{coles2016} and \textit{mutmut} for Python. Our mutation operators (arithmetic, comparison, boundary, return-replacement, boolean-negation) are the canonical subset implemented by both tools. \citet{papadakis2019} provides the canonical recent survey of mutation testing, including the equivalent-mutant detection challenge that we address via ground-truth tests…
+  - > …edright \scriptsize $^{\dagger}$ Cells where $n < 30$ after the test-filter are excluded from method-mean computations. \end{table} \section{Mutation operator definitions}\label{app:operators} We use a five-family AST-based operator set chosen to align with the canonical mutation-testing literature \citep{just2014,andrews2005,papadakis2019}. Each operator is applied as an in-place transformation of the function's abstract syntax tree. \paragraph{Arithmetic Operator Replacement (AOR).} Re…
+
+### `petrovic2018` — NO_DOI
+- bib title: State of Mutation Testing at Google
+- doi: `(none)`  · cited 1x
+  - > …rovides the canonical recent survey of mutation testing, including the equivalent-mutant detection challenge that we address via ground-truth tests in \S\ref{sec:methods-mutation}, and the selective mutation strategies that motivate our per-operator decomposition in \S\ref{sec:results-peroperator}. \citet{petrovic2018} reports a large-scale industrial evaluation at Google showing that mutation testing remains a practically useful signal even at the scale of large pr…
+
+### `li2025mutationllm` — DESCRIPTION_SUSPECT
+- bib title: A Comprehensive Study on Large Language Models for Mutation Testing
+- doi: `10.1145/3805038`  · cited 3x
+- prose near \cite claims 'humaneval' but real title is 'A Comprehensive Study on Large Language Models for Mutation Testing'
+  - > …y useful signal even at the scale of large production codebases. \paragraph{Mutation testing for LLM test generation} It has been used occasionally in recent work, but no prior study reports the kind of cross-method cross-LLM mutation-kill-rate matrix that we provide here. The closest comparison is \citet{li2025mutationllm}, which reports the mutation kill rate as one of several evaluation metrics in a benchmark of LLMs-generated tests; their study covers fewer LLMs than…
+  - > …the broader code-generation literature. \citet{siddiq2025empirical} reports an empirical evaluation of LLM-generated JUnit tests on multiple dimensions (compilability, correctness, coverage) but does not include a multi-annotator human rating component with formal inter-rater agreement statistics. \citet{li2025mutationllm} includes a small annotation study alongside their automated mutation-testing benchmark but, similarly, does not report Cohen's $\kappa$ or Krippendor…
+  - > …g ``generalizes'' if min $\rho \geq 0.8$ across all model pairs. \subsection{Human evaluation}\label{sec:methods-humaneval} To complement the automated mutation-testing analysis with a developer-perceived quality signal, we conducted a human-evaluation study modeled on \citet{khan2025humaneval} and \citet{li2025mutationllm} for code-quality annotation. \paragraph{Sample selection.} We drew 40 stratified \texttt{(function, generated\_tests)} pairs from the mutation-testin…
+
+### `fraser2011` — NO_DOI, DESCRIPTION_SUSPECT
+- bib title: EvoSuite: automatic test suite generation for object-oriented software
+- doi: `(none)`  · cited 2x
+- prose near \cite claims 'sbst', 'search-based' but real title is 'EvoSuite: automatic test suite generation for object-oriented software'
+  - > …2017}. The dominant paradigm prior to 2022 was \emph{search-based software testing} (SBST): tools like EvoSuite for Java and Pynguin for Python treat test-suite synthesis as an optimization problem, evolving a population of candidate test cases against a coverage- or mutation-based fitness function \citep{fraser2011,lukasczyk2022}. These tools achieve high branch coverage on self-contained functions and have demonstrated practical value in industrial deployments, but they suffe…
+  - > …\subsection{Search-based software testing}\label{sec:related-sbst} Search-based software testing has been the dominant paradigm for automated test-suite generation since \citet{mcminn2004}'s survey and \citet{harman2010}'s empirical comparison of search-based versus random testing. \emph{EvoSuite} \citep{fraser2011,fraser2013} is the canonical SBST tool for Java, combining genetic-algorithm test-case search with dynamic symbolic execution. EvoSuite has been validated repeat…
+
+### `fraser2013` — DESCRIPTION_SUSPECT
+- bib title: Whole Test Suite Generation
+- doi: `10.1109/TSE.2012.14`  · cited 1x
+- prose near \cite claims 'sbst' but real title is 'Whole Test Suite Generation'
+  - > …\subsection{Search-based software testing}\label{sec:related-sbst} Search-based software testing has been the dominant paradigm for automated test-suite generation since \citet{mcminn2004}'s survey and \citet{harman2010}'s empirical comparison of search-based versus random testing. \emph{EvoSuite} \citep{fraser2011,fraser2013} is the canonical SBST tool for Java, combining genetic-algorithm test-case search with dynamic symbolic execution. EvoSuite has been validated repeat…
+
+### `almasi2017` — DESCRIPTION_SUSPECT
+- bib title: An Industrial Evaluation of Unit Test Generation: Finding Real Faults in a Financial Application
+- doi: `10.1109/ICSE-SEIP.2017.27`  · cited 2x
+- prose near \cite claims 'mutation testing', 'sbst', 'search-based' but real title is 'An Industrial Evaluation of Unit Test Generation: Finding Real Faults in a Financial Applicatio'
+  - > …sed software testing} \maketitle \section{Introduction}\label{sec:introduction} Automated unit-test generation has been a target of empirical software-engineering research for decades, motivated by the well-documented cost of manual test authoring and the high marginal value of each additional test \citep{daka2014,almasi2017}. The dominant paradigm prior to 2022 was \emph{search-based software testing} (SBST): tools like EvoSuite for Java and Pynguin for Python treat test-…
+  - > …t{harman2010}'s empirical comparison of search-based versus random testing. \emph{EvoSuite} \citep{fraser2011,fraser2013} is the canonical SBST tool for Java, combining genetic-algorithm test-case search with dynamic symbolic execution. EvoSuite has been validated repeatedly on industrial codebases \citep{almasi2017} and remains the reference baseline for Java-language SBST research. For Python, the corresponding tool is \emph{Pynguin} \citep{lukasczyk2023empirica…
+
+### `lukasczyk2022` — DESCRIPTION_SUSPECT
+- bib title: Pynguin: Automated Unit Test Generation for Python
+- doi: `10.48550/arXiv.2202.05218`  · cited 4x
+- prose near \cite claims 'humaneval', 'kill rate', 'sbst', 'search-based' but real title is 'Pynguin: Automated Unit Test Generation for Python'
+  - > …2017}. The dominant paradigm prior to 2022 was \emph{search-based software testing} (SBST): tools like EvoSuite for Java and Pynguin for Python treat test-suite synthesis as an optimization problem, evolving a population of candidate test cases against a coverage- or mutation-based fitness function \citep{fraser2011,lukasczyk2022}. These tools achieve high branch coverage on self-contained functions and have demonstrated practical value in industrial deployments, but they suffe…
+  - > …BST tool for Java, combining genetic-algorithm test-case search with dynamic symbolic execution. EvoSuite has been validated repeatedly on industrial codebases \citep{almasi2017} and remains the reference baseline for Java-language SBST research. For Python, the corresponding tool is \emph{Pynguin} \citep{lukasczyk2023empirical,lukasczyk2022}. Pynguin combines coverage-driven genetic search with dynamic symbolic execution, optimized for Python's dynamic typing and runtime introspection cap…
+  - > …is1977}: $\geq 0.4$ moderate, $\geq 0.6$ substantial. \subsection{Tool comparison---Pynguin baseline}\label{sec:methods-pynguin} To ground our LLM-method results against the prior dominant paradigm in automated unit-test generation, we benchmarked our LLM-based methods against \emph{Pynguin 0.45.0} \citep{lukasczyk2022}. We selected Pynguin because: (i) it is Python-native, like our generators (in contrast to EvoSuite, which targets Java); (ii) it is open-source and…
+
+### `chen2021humaneval` — NO_DOI
+- bib title: Evaluating Large Language Models Trained on Code
+- doi: `(none)`  · cited 1x
+  - > …d with a temperature of 0.2 and a 600-second per-run budget. We did not fine-tune any model; the goal is to characterize how each generation method \emph{uses} a given off-the-shelf LLM. \subsection{Dataset}\label{sec:methods-dataset} We sampled 300 functions (seed = 42) from the union of HumanEval \citep{chen2021humaneval} and MBPP \citep{austin2021mbpp}, shuffled into a deterministic order. For the mutation-testing study, we ran each (method $\times$ model) combination…
+
+### `austin2021mbpp` — NO_DOI
+- bib title: Program Synthesis with Large Language Models
+- doi: `(none)`  · cited 1x
+  - > …00-second per-run budget. We did not fine-tune any model; the goal is to characterize how each generation method \emph{uses} a given off-the-shelf LLM. \subsection{Dataset}\label{sec:methods-dataset} We sampled 300 functions (seed = 42) from the union of HumanEval \citep{chen2021humaneval} and MBPP \citep{austin2021mbpp}, shuffled into a deterministic order. For the mutation-testing study, we ran each (method $\times$ model) combination on all 300 samples, yielding 4{…
+
+### `daka2014` — NO_DOI, DESCRIPTION_SUSPECT
+- bib title: A Survey on Unit Testing Practices and Problems
+- doi: `(none)`  · cited 1x
+- prose near \cite claims 'mutation testing', 'sbst', 'search-based' but real title is 'A Survey on Unit Testing Practices and Problems'
+  - > …sed software testing} \maketitle \section{Introduction}\label{sec:introduction} Automated unit-test generation has been a target of empirical software-engineering research for decades, motivated by the well-documented cost of manual test authoring and the high marginal value of each additional test \citep{daka2014,almasi2017}. The dominant paradigm prior to 2022 was \emph{search-based software testing} (SBST): tools like EvoSuite for Java and Pynguin for Python treat test-…
+
+### `vaithilingam2022` — DESCRIPTION_SUSPECT
+- bib title: Expectation vs. Experience: Evaluating the Usability of Code Generation Tools Powered by Large Language Models
+- doi: `10.1145/3491101.3519665`  · cited 2x
+- prose near \cite claims 'test generation' but real title is 'Expectation vs. Experience: Evaluating the Usability of Code Generation Tools Powered by Large '
+  - > …ll-rate comparison on matched Python functions, which is what we provide in \S\ref{sec:results-pynguin}. \subsection{Human evaluation of generated code and tests}\label{sec:related-humaneval} Human evaluation of LLM-generated code (and tests) is less mature than the literature on automated metrics. \citet{vaithilingam2022} at CHI established the foundational observation that developers' \emph{expectations} of LLM code-generation tools diverge sharply from their lived \e…
+  - > …uantified empirically. \item \textbf{No human-evaluation study of RAG-based test generation under a behaviorally-anchored rubric with multiple annotators has been conducted.} Prior human-evaluation studies of LLM-generated code mostly evaluate single-LLM Copilot suggestions for general code quality \citep{vaithilingam2022,liang2024copilot}, not the specific question of whether RAG augmentation produces tests that developers judge as higher-quality than plain LLM outputs. \item \textbf{N…
+
+### `liang2024copilot` — DESCRIPTION_SUSPECT
+- bib title: A Large-Scale Survey on the Usability of AI Programming Assistants: Successes and Challenges
+- doi: `10.1145/3597503.3608128`  · cited 2x
+- prose near \cite claims 'test generation' but real title is 'A Large-Scale Survey on the Usability of AI Programming Assistants: Successes and Challenges'
+  - > …} at CHI established the foundational observation that developers' \emph{expectations} of LLM code-generation tools diverge sharply from their lived \emph{experience}, finding that perceived usefulness depends heavily on readability and naming conventions even when objective correctness is similar. \citet{liang2024copilot} extended this observation to a large scale with a 410-developer survey of Copilot users at ICSE 2024, identifying readability and integration into th…
+  - > …uantified empirically. \item \textbf{No human-evaluation study of RAG-based test generation under a behaviorally-anchored rubric with multiple annotators has been conducted.} Prior human-evaluation studies of LLM-generated code mostly evaluate single-LLM Copilot suggestions for general code quality \citep{vaithilingam2022,liang2024copilot}, not the specific question of whether RAG augmentation produces tests that developers judge as higher-quality than plain LLM outputs. \item \textbf{N…
+
+### `landis1977` — DESCRIPTION_SUSPECT
+- bib title: The Measurement of Observer Agreement for Categorical Data
+- doi: `10.2307/2529310`  · cited 2x
+- prose near \cite claims 'humaneval' but real title is 'The Measurement of Observer Agreement for Categorical Data'
+  - > …we present in \S\ref{sec:results-humaneval}. \paragraph{Rating-scale methodology.} The behaviorally-anchored rating scale (BARS) methodology we use in our rubric was introduced by \citet{smith1963} in industrial-psychology research and has been adapted for many software-engineering contexts since. \citet{landis1977} provides the canonical interpretation thresholds for Cohen's $\kappa$ that we use to assess inter-rater agreement in \S\ref{sec:results-humaneval}: $…
+  - > …ence background and had at least two years of Python development experience. \paragraph{Inter-rater agreement.} We report pairwise Cohen's $\kappa$ with linear weighting for ordinal data, plus three-rater Fleiss' $\kappa$ and Krippendorff's $\alpha$ with the ordinal metric. Agreement targets follow \citet{landis1977}: $\geq 0.4$ moderate, $\geq 0.6$ substantial. \subsection{Tool comparison---Pynguin baseline}\label{sec:methods-pynguin} To ground our LLM-method res…
+
+### `zar1984` — NO_DOI
+- bib title: Biostatistical Analysis
+- doi: `(none)`  · cited 1x
+  - > …erroni correction across the family of pairwise tests—follows the standard recommendations of \citet{wohlin2012} and \citet{madeyski2024empirical} for analyzing empirical software-engineering experiments. The Spearman $\rho$ threshold of $\geq 0.8$ for cross-condition generalization is sourced from \citet{zar1984} and is the threshold adopted by \citet{jureczko2015} for defect-prediction-model generalization across projects, which is the SE literature's nearest…
+
+### `krippendorff2018` — NO_DOI
+- bib title: Content Analysis: An Introduction to Its Methodology
+- doi: `(none)`  · cited 1x
+  - > …anonical interpretation thresholds for Cohen's $\kappa$ that we use to assess inter-rater agreement in \S\ref{sec:results-humaneval}: $\kappa < 0.20$ slight, $\kappa \in [0.21, 0.40]$ fair, $\kappa \in [0.41, 0.60]$ moderate, $\kappa \in [0.61, 0.80]$ substantial, $\kappa \geq 0.81$ almost perfect. \citet{krippendorff2018} defines the ordinal-$\alpha$ variant of inter-rater agreement we use as the primary three-rater statistic since Cohen's $\kappa$ is defined only pair…
+
+## Description check (manual)
+
+Metadata can match while the *prose* misdescribes the work — that is the
+Huang & Huang failure. Read each context below against the real title.
+
+### `watson2020`
+- real title: **On Learning Meaningful Assert Statements for Unit Test Cases**
+  - > …ng-based evaluation, and search-based software testing. We summarize each in turn and position our contribution at the intersection. \subsection{LLM-based unit-test generation}\label{sec:related-llmtg} The use of large language models for unit-test synthesis predates the modern transformer-LLM era. \citet{watson2020} showed that sequence-to-sequence models could learn to generate assert statements from method bodies, evaluated against Java open-source projects. \c…
+
+### `tufano2022`
+- real title: **Methods2Test: A dataset of focal methods mapped to test cases**
+  - > …readable test code has shifted this landscape. LLMs trained on public source code can produce pytest- or JUnit-formatted test suites that read like hand-written tests, encode specifications drawn from docstrings or function signatures, and require no per-function search budget beyond inference time \citep{schafer2023testpilot,tufano2022, pan2025empirical}. Multiple recent studies have benchmarked LLM-generated tests against SBST baselines and reported competitive or superior coverage on standard benchm…
+  - > …eneration}\label{sec:related-llmtg} The use of large language models for unit-test synthesis predates the modern transformer-LLM era. \citet{watson2020} showed that sequence-to-sequence models could learn to generate assert statements from method bodies, evaluated against Java open-source projects. \citet{tufano2022} scaled this approach with a BART-based encoder-decoder trained on millions of test pairs and reported improved syntactic correctness and reference si…
+
+### `lemieux2023codamosa`
+- real title: **CodaMosa: Escaping Coverage Plateaus in Test Generation with Pre-Trained Large Language Models**
+  - > …is approach with a BART-based encoder-decoder trained on millions of test pairs and reported improved syntactic correctness and reference similarity on the Methods2Test benchmark. The arrival of decoder-only frontier LLMs (Codex, GPT-3.5, GPT-4) shifted research toward prompt-based test generation. \citet{lemieux2023codamosa} combined LLM prompting with search-based fallbacks, using the LLM to escape coverage plateaus where pure SBST runs got stuck. \citet{schafer2023testp…
+  - > …typing and runtime introspection capabilities. The Pynguin authors and others have benchmarked it on standard Python benchmarks (HumanEval, MBPP) and reported competitive coverage results against test-suite generation baselines. \paragraph{Empirical SBST-vs-LLM comparisons} are recent and limited. \citet{lemieux2023codamosa} is the closest analog: it combines SBST with LLM prompts and reports improvements over each approach alone, demonstrating complementarity in coverage…
+
+### `schafer2023testpilot`
+- real title: **Adaptive Test Generation Using a Large Language Model**
+  - > …readable test code has shifted this landscape. LLMs trained on public source code can produce pytest- or JUnit-formatted test suites that read like hand-written tests, encode specifications drawn from docstrings or function signatures, and require no per-function search budget beyond inference time \citep{schafer2023testpilot,tufano2022, pan2025empirical}. Multiple recent studies have benchmarked LLM-generated tests against SBST baselines and reported competitive or superior coverage on standard benchm…
+  - > …e Methods2Test benchmark. The arrival of decoder-only frontier LLMs (Codex, GPT-3.5, GPT-4) shifted research toward prompt-based test generation. \citet{lemieux2023codamosa} combined LLM prompting with search-based fallbacks, using the LLM to escape coverage plateaus where pure SBST runs got stuck. \citet{schafer2023testpilot} introduced an adaptive generation loop where the LLM iteratively refines its tests based on runtime feedback. \citet{schafer2024} provides the larges…
+
+### `schafer2024`
+- real title: **An Empirical Evaluation of Using Large Language Models for Automated Unit Test Generation**
+  - > …ation. \citet{lemieux2023codamosa} combined LLM prompting with search-based fallbacks, using the LLM to escape coverage plateaus where pure SBST runs got stuck. \citet{schafer2023testpilot} introduced an adaptive generation loop where the LLM iteratively refines its tests based on runtime feedback. \citet{schafer2024} provides the largest empirical comparison of frontier-LLM test-generation pipelines to date, covering coverage, fault detection, and runnable-test pe…
+
+### `yuan2025chattest`
+- real title: **Evaluating and Improving ChatGPT for Unit Test Generation**
+  - > …back. \citet{schafer2024} provides the largest empirical comparison of frontier-LLM test-generation pipelines to date, covering coverage, fault detection, and runnable-test percentages across multiple LLMs and benchmarks. Several recent papers focus on specific LLM-test generation pipeline choices. \citet{yuan2025chattest} evaluates ChatGPT-based Java test generation and finds that prompt engineering substantially affects output quality. \citet{pan2025empirical} reports…
+
+### `siddiq2025empirical`
+- real title: **Using Large Language Models to Generate JUnit Tests: An Empirical Study**
+  - > …ces. \citet{yuan2025chattest} evaluates ChatGPT-based Java test generation and finds that prompt engineering substantially affects output quality. \citet{pan2025empirical} reports an empirical comparison of multiple LLMs on Python test generation and analyzes error patterns in generated assertions. \citet{siddiq2025empirical} evaluates the quality of code (including tests) generated by open-source code LLMs across multiple metrics. \citet{wang2025llm4se} provides a recent…
+  - > …ort in \S\ref{sec:discussion-moe}, where qwen3-coder achieves a higher mutation kill rate than qwen3, but our annotators rate qwen3.5 higher on all three rubric dimensions. \paragraph{Human evaluation specifically for LLM-generated unit tests} is sparser than the broader code-generation literature. \citet{siddiq2025empirical} reports an empirical evaluation of LLM-generated JUnit tests on multiple dimensions (compilability, correctness, coverage) but does not include a mul…
+
+### `pan2025empirical`
+- real title: **Lost in Translation: A Study of Bugs Introduced by Large Language Models while Translating Code**
+  - > …readable test code has shifted this landscape. LLMs trained on public source code can produce pytest- or JUnit-formatted test suites that read like hand-written tests, encode specifications drawn from docstrings or function signatures, and require no per-function search budget beyond inference time \citep{schafer2023testpilot,tufano2022, pan2025empirical}. Multiple recent studies have benchmarked LLM-generated tests against SBST baselines and reported competitive or superior coverage on standard benchm…
+  - > …t detection, and runnable-test percentages across multiple LLMs and benchmarks. Several recent papers focus on specific LLM-test generation pipeline choices. \citet{yuan2025chattest} evaluates ChatGPT-based Java test generation and finds that prompt engineering substantially affects output quality. \citet{pan2025empirical} reports an empirical comparison of multiple LLMs on Python test generation and analyzes error patterns in generated assertions. \citet{siddiq2025empi…
+
+### `wang2025llm4se`
+- real title: **Software Testing With Large Language Models: Survey, Landscape, and Vision**
+  - > …t quality. \citet{pan2025empirical} reports an empirical comparison of multiple LLMs on Python test generation and analyzes error patterns in generated assertions. \citet{siddiq2025empirical} evaluates the quality of code (including tests) generated by open-source code LLMs across multiple metrics. \citet{wang2025llm4se} provides a recent survey of LLM-for-software-testing work, mapping the rapid growth in this area from 2023 to 2025 and identifying open research dire…
+
+### `lewis2020`
+- real title: **Retrieval-augmented generation for knowledge-intensive NLP tasks**
+  - > …which augmentation methodology produces the best tests, on which kinds of code, with which underlying LLM?} \subsection{The retrieval-augmentation question}\label{sec:intro-rag} A natural augmentation for LLM test generators is \emph{retrieval-augmented generation} (RAG). The original RAG framework \citep{lewis2020} augments an LLM's prompt with passages retrieved from a knowledge base; in the test-generation context, the knowledge base is typically a curated set…
+  - > …interaction effects, and few include a human-evaluation component that operationalizes ``developer-perceived quality'' alongside the automated metrics. The present paper addresses all three gaps. \subsection{Retrieval-augmented generation for code}\label{sec:related-rag} The original RAG framework \citep{lewis2020} demonstrated that augmenting a sequence-generation LLM with a passage-retrieval step produces better outputs on knowledge-intensive NLP tasks. The fr…
+
+### `parvez2021`
+- real title: **Retrieval Augmented Code Generation and Summarization**
+  - > …eration for code}\label{sec:related-rag} The original RAG framework \citep{lewis2020} demonstrated that augmenting a sequence-generation LLM with a passage-retrieval step produces better outputs on knowledge-intensive NLP tasks. The framework has since been adapted to many code-generation contexts. \citet{parvez2021} showed that retrieval-augmented code summarization and generation could improve both code-completion and natural-language-to-code translation. \citet…
+
+### `lu2022reacc`
+- real title: **{R}e{ACC}: A Retrieval-Augmented Code Completion Framework**
+  - > …val step produces better outputs on knowledge-intensive NLP tasks. The framework has since been adapted to many code-generation contexts. \citet{parvez2021} showed that retrieval-augmented code summarization and generation could improve both code-completion and natural-language-to-code translation. \citet{lu2022reacc} demonstrated a retrieval-augmented code-completion framework using both lexical and semantic retrieval. \citet{zhang2023repocoder} introduced iterati…
+
+### `zhang2023repocoder`
+- real title: **{R}epo{C}oder: Repository-Level Code Completion Through Iterative Retrieval and Generation**
+  - > …te-and-refine loop that injects the retrieved context across multiple iterations), and Random RAG (an ablation baseline where retrieval is unrelated to the task) — and there is now a small empirical literature comparing their effectiveness on docstring generation, code-completion, and related tasks \citep{liu2025codereview,rag4code2025,zhang2023repocoder}. Comparable work on \emph{unit test generation specifically} is sparser, and the work that does exist has three methodological gaps that we address i…
+  - > …ion contexts. \citet{parvez2021} showed that retrieval-augmented code summarization and generation could improve both code-completion and natural-language-to-code translation. \citet{lu2022reacc} demonstrated a retrieval-augmented code-completion framework using both lexical and semantic retrieval. \citet{zhang2023repocoder} introduced iterative retrieval at the repository level, where retrieval is re-run after each draft refinement —conceptually similar to our Iterative…
+
+### `su2025evor`
+- real title: **{E}vo{R}: Evolving Retrieval for Code Generation**
+  - > …ced iterative retrieval at the repository level, where retrieval is re-run after each draft refinement —conceptually similar to our Iterative Critique baseline, though they evaluated on code completion rather than test generation. More recent work has explored variants of RAG specifically for code. \citet{su2025evor} introduces an evolving retrieval store that grows as code is generated, allowing later retrievals to benefit from earlier generations' decisions. \ci…
+
+### `liu2025codereview`
+- real title: **Refining ChatGPT-Generated Code: Characterizing and Mitigating Code Quality Issues**
+  - > …te-and-refine loop that injects the retrieved context across multiple iterations), and Random RAG (an ablation baseline where retrieval is unrelated to the task) — and there is now a small empirical literature comparing their effectiveness on docstring generation, code-completion, and related tasks \citep{liu2025codereview,rag4code2025,zhang2023repocoder}. Comparable work on \emph{unit test generation specifically} is sparser, and the work that does exist has three methodological gaps that we address i…
+  - > …gh they evaluated on code completion rather than test generation. More recent work has explored variants of RAG specifically for code. \citet{su2025evor} introduces an evolving retrieval store that grows as code is generated, allowing later retrievals to benefit from earlier generations' decisions. \citet{liu2025codereview} reports a head-to-head comparison of multiple RAG variants on code-completion benchmarks, finding that the best variant depends on the type of code-c…
+
+### `rag4code2025`
+- real title: **A Survey on Retrieval-Augmented Text Generation for Large Language Models**
+  - > …te-and-refine loop that injects the retrieved context across multiple iterations), and Random RAG (an ablation baseline where retrieval is unrelated to the task) — and there is now a small empirical literature comparing their effectiveness on docstring generation, code-completion, and related tasks \citep{liu2025codereview,rag4code2025,zhang2023repocoder}. Comparable work on \emph{unit test generation specifically} is sparser, and the work that does exist has three methodological gaps that we address i…
+  - > …ons' decisions. \citet{liu2025codereview} reports a head-to-head comparison of multiple RAG variants on code-completion benchmarks, finding that the best variant depends on the type of code-completion task. \paragraph{For RAG specifically applied to test generation,} the literature is much thinner. \citet{rag4code2025} evaluates retrieval-augmented test generation against plain-LLM baselines on a small subset of HumanEval, reporting modest improvements in coverage m…
+
+### `maynez2020`
+- real title: **On Faithfulness and Factuality in Abstractive Summarization**
+  - > …M mutation-testing matrix that the present paper presents. \paragraph{Where our negative-faithfulness finding sits.} Our finding (\S\ref{sec:results-faithfulness}) that token-overlap faithfulness negatively predicts kill rate connects to a broader literature on \emph{retrieval faithfulness} in NLP. \citet{maynez2020} and \citet{es2024ragas} propose faithfulness metrics for retrieval-augmented generation and discuss the gap between \emph{lexical} and \emph{semantic…
+
+### `es2024ragas`
+- real title: **{RAGA}s: Automated Evaluation of Retrieval Augmented Generation**
+  - > …ix that the present paper presents. \paragraph{Where our negative-faithfulness finding sits.} Our finding (\S\ref{sec:results-faithfulness}) that token-overlap faithfulness negatively predicts kill rate connects to a broader literature on \emph{retrieval faithfulness} in NLP. \citet{maynez2020} and \citet{es2024ragas} propose faithfulness metrics for retrieval-augmented generation and discuss the gap between \emph{lexical} and \emph{semantic} faithfulness. Our find…
+
+### `demillo1978`
+- real title: **Hints on Test Data Selection: Help for the Practicing Programmer**
+  - > …d context is not equivalent to beneficial retrieval use; we make this concrete in a specific code-generation domain where defect-detection capability provides a ground-truth quality signal. \subsection{Mutation-testing-based evaluation}\label{sec:related-mutation} Mutation testing was introduced by \citet{demillo1978} as a thought experiment about test-adequacy and was operationalized over the next 30 years into a workable empirical methodology. The foundational em…
+
+### `andrews2005`
+- real title: **Is Mutation an Appropriate Tool for Testing Experiments?**
+  - > …ion capability if it asserts only structural properties (return type, list length) rather than specific oracle values. The SE-relevant operationalization of ``do the tests catch bugs?'' is \emph{the mutation kill rate}—the fraction of systematically-injected code defects that the test suite detects \citep{andrews2005,just2014}. Mutation testing has been a gold-standard metric in the SBST literature for two decades but has been used only sporadically in LLM-test-generation e…
+  - > …tion testing was introduced by \citet{demillo1978} as a thought experiment about test-adequacy and was operationalized over the next 30 years into a workable empirical methodology. The foundational empirical justification—that mutation score correlates with real fault detection capability—came from \citet{andrews2005}, who showed that detection rates of injected mutants are statistically correlated with detection rates of real faults from project bug-tracker histor…
+
+### `just2014`
+- real title: **Are Mutants a Valid Substitute for Real Faults in Software Testing?**
+  - > …ion capability if it asserts only structural properties (return type, list length) rather than specific oracle values. The SE-relevant operationalization of ``do the tests catch bugs?'' is \emph{the mutation kill rate}—the fraction of systematically-injected code defects that the test suite detects \citep{andrews2005,just2014}. Mutation testing has been a gold-standard metric in the SBST literature for two decades but has been used only sporadically in LLM-test-generation e…
+  - > …odology. The foundational empirical justification—that mutation score correlates with real fault detection capability—came from \citet{andrews2005}, who showed that detection rates of injected mutants are statistically correlated with detection rates of real faults from project bug-tracker history. \citet{just2014} provided a follow-up large-scale study on Java projects that confirmed the result. The mutation-testing tool ecosystem includes \textit{PIT} for Java…
+
+### `coles2016`
+- real title: **Demo: PIT a Practical Mutation Testing Tool for Java**
+  - > …tection rates of injected mutants are statistically correlated with detection rates of real faults from project bug-tracker history. \citet{just2014} provided a follow-up large-scale study on Java projects that confirmed the result. The mutation-testing tool ecosystem includes \textit{PIT} for Java \citep{coles2016} and \textit{mutmut} for Python. Our mutation operators (arithmetic, comparison, boundary, return-replacement, boolean-negation) are the canonical sub…
+
+### `papadakis2019`
+- real title: **Chapter Six - Mutation Testing Advances: An Analysis and Survey**
+  - > …rojects that confirmed the result. The mutation-testing tool ecosystem includes \textit{PIT} for Java \citep{coles2016} and \textit{mutmut} for Python. Our mutation operators (arithmetic, comparison, boundary, return-replacement, boolean-negation) are the canonical subset implemented by both tools. \citet{papadakis2019} provides the canonical recent survey of mutation testing, including the equivalent-mutant detection challenge that we address via ground-truth tests…
+  - > …edright \scriptsize $^{\dagger}$ Cells where $n < 30$ after the test-filter are excluded from method-mean computations. \end{table} \section{Mutation operator definitions}\label{app:operators} We use a five-family AST-based operator set chosen to align with the canonical mutation-testing literature \citep{just2014,andrews2005,papadakis2019}. Each operator is applied as an in-place transformation of the function's abstract syntax tree. \paragraph{Arithmetic Operator Replacement (AOR).} Re…
+
+### `petrovic2018`
+- real title: **State of Mutation Testing at Google**
+  - > …rovides the canonical recent survey of mutation testing, including the equivalent-mutant detection challenge that we address via ground-truth tests in \S\ref{sec:methods-mutation}, and the selective mutation strategies that motivate our per-operator decomposition in \S\ref{sec:results-peroperator}. \citet{petrovic2018} reports a large-scale industrial evaluation at Google showing that mutation testing remains a practically useful signal even at the scale of large pr…
+
+### `papadakis2025survey`
+- real title: **Mutation Testing Advances: An Analysis and Survey**
+  - > …025mutationllm}, which reports the mutation kill rate as one of several evaluation metrics in a benchmark of LLMs-generated tests; their study covers fewer LLMs than ours and does not decompose the kill rate by operator or by source benchmark, missing the boundary-specific significance we identify. \citet{papadakis2025survey} provides a recent roadmap on how mutation testing should adapt to LLM-generated code, motivating the kind of operator-level analysis we conduct in \S…
+
+### `li2025mutationllm`
+- real title: **A Comprehensive Study on Large Language Models for Mutation Testing**
+  - > …y useful signal even at the scale of large production codebases. \paragraph{Mutation testing for LLM test generation} It has been used occasionally in recent work, but no prior study reports the kind of cross-method cross-LLM mutation-kill-rate matrix that we provide here. The closest comparison is \citet{li2025mutationllm}, which reports the mutation kill rate as one of several evaluation metrics in a benchmark of LLMs-generated tests; their study covers fewer LLMs than…
+  - > …the broader code-generation literature. \citet{siddiq2025empirical} reports an empirical evaluation of LLM-generated JUnit tests on multiple dimensions (compilability, correctness, coverage) but does not include a multi-annotator human rating component with formal inter-rater agreement statistics. \citet{li2025mutationllm} includes a small annotation study alongside their automated mutation-testing benchmark but, similarly, does not report Cohen's $\kappa$ or Krippendor…
+
+### `mcminn2004`
+- real title: **Search-based software test data generation: a survey: Research Articles**
+  - > …should adapt to LLM-generated code, motivating the kind of operator-level analysis we conduct in \S\ref{sec:results-peroperator}. \subsection{Search-based software testing}\label{sec:related-sbst} Search-based software testing has been the dominant paradigm for automated test-suite generation since \citet{mcminn2004}'s survey and \citet{harman2010}'s empirical comparison of search-based versus random testing. \emph{EvoSuite} \citep{fraser2011,fraser2013} is the ca…
+
+### `harman2010`
+- real title: **A Theoretical and Empirical Study of Search-Based Testing: Local, Global, and Hybrid Search**
+  - > …de, motivating the kind of operator-level analysis we conduct in \S\ref{sec:results-peroperator}. \subsection{Search-based software testing}\label{sec:related-sbst} Search-based software testing has been the dominant paradigm for automated test-suite generation since \citet{mcminn2004}'s survey and \citet{harman2010}'s empirical comparison of search-based versus random testing. \emph{EvoSuite} \citep{fraser2011,fraser2013} is the canonical SBST tool for Java, comb…
+
+### `fraser2011`
+- real title: **EvoSuite: automatic test suite generation for object-oriented software**
+  - > …2017}. The dominant paradigm prior to 2022 was \emph{search-based software testing} (SBST): tools like EvoSuite for Java and Pynguin for Python treat test-suite synthesis as an optimization problem, evolving a population of candidate test cases against a coverage- or mutation-based fitness function \citep{fraser2011,lukasczyk2022}. These tools achieve high branch coverage on self-contained functions and have demonstrated practical value in industrial deployments, but they suffe…
+  - > …\subsection{Search-based software testing}\label{sec:related-sbst} Search-based software testing has been the dominant paradigm for automated test-suite generation since \citet{mcminn2004}'s survey and \citet{harman2010}'s empirical comparison of search-based versus random testing. \emph{EvoSuite} \citep{fraser2011,fraser2013} is the canonical SBST tool for Java, combining genetic-algorithm test-case search with dynamic symbolic execution. EvoSuite has been validated repeat…
+
+### `fraser2013`
+- real title: **Whole Test Suite Generation**
+  - > …\subsection{Search-based software testing}\label{sec:related-sbst} Search-based software testing has been the dominant paradigm for automated test-suite generation since \citet{mcminn2004}'s survey and \citet{harman2010}'s empirical comparison of search-based versus random testing. \emph{EvoSuite} \citep{fraser2011,fraser2013} is the canonical SBST tool for Java, combining genetic-algorithm test-case search with dynamic symbolic execution. EvoSuite has been validated repeat…
+
+### `almasi2017`
+- real title: **An Industrial Evaluation of Unit Test Generation: Finding Real Faults in a Financial Application**
+  - > …sed software testing} \maketitle \section{Introduction}\label{sec:introduction} Automated unit-test generation has been a target of empirical software-engineering research for decades, motivated by the well-documented cost of manual test authoring and the high marginal value of each additional test \citep{daka2014,almasi2017}. The dominant paradigm prior to 2022 was \emph{search-based software testing} (SBST): tools like EvoSuite for Java and Pynguin for Python treat test-…
+  - > …t{harman2010}'s empirical comparison of search-based versus random testing. \emph{EvoSuite} \citep{fraser2011,fraser2013} is the canonical SBST tool for Java, combining genetic-algorithm test-case search with dynamic symbolic execution. EvoSuite has been validated repeatedly on industrial codebases \citep{almasi2017} and remains the reference baseline for Java-language SBST research. For Python, the corresponding tool is \emph{Pynguin} \citep{lukasczyk2023empirica…
+
+### `lukasczyk2022`
+- real title: **Pynguin: Automated Unit Test Generation for Python**
+  - > …2017}. The dominant paradigm prior to 2022 was \emph{search-based software testing} (SBST): tools like EvoSuite for Java and Pynguin for Python treat test-suite synthesis as an optimization problem, evolving a population of candidate test cases against a coverage- or mutation-based fitness function \citep{fraser2011,lukasczyk2022}. These tools achieve high branch coverage on self-contained functions and have demonstrated practical value in industrial deployments, but they suffe…
+  - > …BST tool for Java, combining genetic-algorithm test-case search with dynamic symbolic execution. EvoSuite has been validated repeatedly on industrial codebases \citep{almasi2017} and remains the reference baseline for Java-language SBST research. For Python, the corresponding tool is \emph{Pynguin} \citep{lukasczyk2023empirical,lukasczyk2022}. Pynguin combines coverage-driven genetic search with dynamic symbolic execution, optimized for Python's dynamic typing and runtime introspection cap…
+
+### `lukasczyk2023empirical`
+- real title: **An empirical study of automated unit test generation for Python**
+  - > …BST tool for Java, combining genetic-algorithm test-case search with dynamic symbolic execution. EvoSuite has been validated repeatedly on industrial codebases \citep{almasi2017} and remains the reference baseline for Java-language SBST research. For Python, the corresponding tool is \emph{Pynguin} \citep{lukasczyk2023empirical,lukasczyk2022}. Pynguin combines coverage-driven genetic search with dynamic symbolic execution, optimized for Python's dynamic typing and runtime introspection cap…
+
+### `smith1963`
+- real title: **Retranslation of expectations: An approach to the construction of unambiguous anchors for rating scales**
+  - > …y reports the kind of three-annotator behaviorally anchored 0–5 rubric evaluation of RAG-augmented test generation that we present in \S\ref{sec:results-humaneval}. \paragraph{Rating-scale methodology.} The behaviorally-anchored rating scale (BARS) methodology we use in our rubric was introduced by \citet{smith1963} in industrial-psychology research and has been adapted for many software-engineering contexts since. \citet{landis1977} provides the canonical interp…
+
+### `madeyski2024empirical`
+- real title: **Empirical evaluation of continuous test-driven development in industrial settings**
+  - > …lated-method} Our analytical methodology—mixed--effects regression with \texttt{sample\_idx} as a random intercept, Type-III ANOVA for unbalanced designs, Tukey HSD post-hoc, and Bonferroni correction across the family of pairwise tests—follows the standard recommendations of \citet{wohlin2012} and \citet{madeyski2024empirical} for analyzing empirical software-engineering experiments. The Spearman $\rho$ threshold of $\geq 0.8$ for cross-condition generalization is sourced f…
+
+### `chen2021humaneval`
+- real title: **Evaluating Large Language Models Trained on Code**
+  - > …d with a temperature of 0.2 and a 600-second per-run budget. We did not fine-tune any model; the goal is to characterize how each generation method \emph{uses} a given off-the-shelf LLM. \subsection{Dataset}\label{sec:methods-dataset} We sampled 300 functions (seed = 42) from the union of HumanEval \citep{chen2021humaneval} and MBPP \citep{austin2021mbpp}, shuffled into a deterministic order. For the mutation-testing study, we ran each (method $\times$ model) combination…
+
+### `austin2021mbpp`
+- real title: **Program Synthesis with Large Language Models**
+  - > …00-second per-run budget. We did not fine-tune any model; the goal is to characterize how each generation method \emph{uses} a given off-the-shelf LLM. \subsection{Dataset}\label{sec:methods-dataset} We sampled 300 functions (seed = 42) from the union of HumanEval \citep{chen2021humaneval} and MBPP \citep{austin2021mbpp}, shuffled into a deterministic order. For the mutation-testing study, we ran each (method $\times$ model) combination on all 300 samples, yielding 4{…
+
+### `daka2014`
+- real title: **A Survey on Unit Testing Practices and Problems**
+  - > …sed software testing} \maketitle \section{Introduction}\label{sec:introduction} Automated unit-test generation has been a target of empirical software-engineering research for decades, motivated by the well-documented cost of manual test authoring and the high marginal value of each additional test \citep{daka2014,almasi2017}. The dominant paradigm prior to 2022 was \emph{search-based software testing} (SBST): tools like EvoSuite for Java and Pynguin for Python treat test-…
+
+### `vaithilingam2022`
+- real title: **Expectation vs. Experience: Evaluating the Usability of Code Generation Tools Powered by Large Language Models**
+  - > …ll-rate comparison on matched Python functions, which is what we provide in \S\ref{sec:results-pynguin}. \subsection{Human evaluation of generated code and tests}\label{sec:related-humaneval} Human evaluation of LLM-generated code (and tests) is less mature than the literature on automated metrics. \citet{vaithilingam2022} at CHI established the foundational observation that developers' \emph{expectations} of LLM code-generation tools diverge sharply from their lived \e…
+  - > …uantified empirically. \item \textbf{No human-evaluation study of RAG-based test generation under a behaviorally-anchored rubric with multiple annotators has been conducted.} Prior human-evaluation studies of LLM-generated code mostly evaluate single-LLM Copilot suggestions for general code quality \citep{vaithilingam2022,liang2024copilot}, not the specific question of whether RAG augmentation produces tests that developers judge as higher-quality than plain LLM outputs. \item \textbf{N…
+
+### `liang2024copilot`
+- real title: **A Large-Scale Survey on the Usability of AI Programming Assistants: Successes and Challenges**
+  - > …} at CHI established the foundational observation that developers' \emph{expectations} of LLM code-generation tools diverge sharply from their lived \emph{experience}, finding that perceived usefulness depends heavily on readability and naming conventions even when objective correctness is similar. \citet{liang2024copilot} extended this observation to a large scale with a 410-developer survey of Copilot users at ICSE 2024, identifying readability and integration into th…
+  - > …uantified empirically. \item \textbf{No human-evaluation study of RAG-based test generation under a behaviorally-anchored rubric with multiple annotators has been conducted.} Prior human-evaluation studies of LLM-generated code mostly evaluate single-LLM Copilot suggestions for general code quality \citep{vaithilingam2022,liang2024copilot}, not the specific question of whether RAG augmentation produces tests that developers judge as higher-quality than plain LLM outputs. \item \textbf{N…
+
+### `mozannar2024chi`
+- real title: **Reading Between the Lines: Modeling User Behavior and Costs in AI-Assisted Programming**
+  - > …iang2024copilot} extended this observation to a large scale with a 410-developer survey of Copilot users at ICSE 2024, identifying readability and integration into the developer's existing workflow as the dominant quality dimensions—more important to participants than raw correctness in many cases. \citet{mozannar2024chi} at CHI 2024 complements these survey results with a behavioral-trace study of how developers actually invoke and edit Copilot's suggestions in practi…
+
+### `landis1977`
+- real title: **The Measurement of Observer Agreement for Categorical Data**
+  - > …we present in \S\ref{sec:results-humaneval}. \paragraph{Rating-scale methodology.} The behaviorally-anchored rating scale (BARS) methodology we use in our rubric was introduced by \citet{smith1963} in industrial-psychology research and has been adapted for many software-engineering contexts since. \citet{landis1977} provides the canonical interpretation thresholds for Cohen's $\kappa$ that we use to assess inter-rater agreement in \S\ref{sec:results-humaneval}: $…
+  - > …ence background and had at least two years of Python development experience. \paragraph{Inter-rater agreement.} We report pairwise Cohen's $\kappa$ with linear weighting for ordinal data, plus three-rater Fleiss' $\kappa$ and Krippendorff's $\alpha$ with the ordinal metric. Agreement targets follow \citet{landis1977}: $\geq 0.4$ moderate, $\geq 0.6$ substantial. \subsection{Tool comparison---Pynguin baseline}\label{sec:methods-pynguin} To ground our LLM-method res…
+
+### `wohlin2012`
+- real title: **Experimentation in Software Engineering**
+  - > …thodology}\label{sec:related-method} Our analytical methodology—mixed--effects regression with \texttt{sample\_idx} as a random intercept, Type-III ANOVA for unbalanced designs, Tukey HSD post-hoc, and Bonferroni correction across the family of pairwise tests—follows the standard recommendations of \citet{wohlin2012} and \citet{madeyski2024empirical} for analyzing empirical software-engineering experiments. The Spearman $\rho$ threshold of $\geq 0.8$ for cross-con…
+  - > …the RAG method to the LLM's capability tier.} \item \textbf{Reward semantic faithfulness, penalize lexical copy-paste.} \item \textbf{Optimize for the defect family that matters.} \end{enumerate} \section{Threats to Validity}\label{sec:limitations} We organize the limitations along Wohlin et al.'s \citep{wohlin2012} standard taxonomy. \subsection{Construct validity}\label{sec:limitations-construct} \paragraph{Mutation kill rate is a proxy.} The five-operator set…
+
+### `zar1984`
+- real title: **Biostatistical Analysis**
+  - > …erroni correction across the family of pairwise tests—follows the standard recommendations of \citet{wohlin2012} and \citet{madeyski2024empirical} for analyzing empirical software-engineering experiments. The Spearman $\rho$ threshold of $\geq 0.8$ for cross-condition generalization is sourced from \citet{zar1984} and is the threshold adopted by \citet{jureczko2015} for defect-prediction-model generalization across projects, which is the SE literature's nearest…
+
+### `krippendorff2018`
+- real title: **Content Analysis: An Introduction to Its Methodology**
+  - > …anonical interpretation thresholds for Cohen's $\kappa$ that we use to assess inter-rater agreement in \S\ref{sec:results-humaneval}: $\kappa < 0.20$ slight, $\kappa \in [0.21, 0.40]$ fair, $\kappa \in [0.41, 0.60]$ moderate, $\kappa \in [0.61, 0.80]$ substantial, $\kappa \geq 0.81$ almost perfect. \citet{krippendorff2018} defines the ordinal-$\alpha$ variant of inter-rater agreement we use as the primary three-rater statistic since Cohen's $\kappa$ is defined only pair…
+
+### `jureczko2015`
+- real title: **Cross-Project Defect Prediction with Respect to Code Ownership Model: An Empirical Study**
+  - > …tests—follows the standard recommendations of \citet{wohlin2012} and \citet{madeyski2024empirical} for analyzing empirical software-engineering experiments. The Spearman $\rho$ threshold of $\geq 0.8$ for cross-condition generalization is sourced from \citet{zar1984} and is the threshold adopted by \citet{jureczko2015} for defect-prediction-model generalization across projects, which is the SE literature's nearest analog to our cross-LLM-method-ranking question. \su…
+
+### `liu2024sbstllm`
+- real title: **An Empirical Comparison of Pre-Trained Language Models and Traditional Approaches for Test Generation**
+  - > …s against test-suite generation baselines. \paragraph{Empirical SBST-vs-LLM comparisons} are recent and limited. \citet{lemieux2023codamosa} is the closest analog: it combines SBST with LLM prompts and reports improvements over each approach alone, demonstrating complementarity in coverage metrics. \citet{liu2024sbstllm} extends this comparison to non-hybrid head-to-head benchmarks on a small set of Java functions, finding LLM-method outputs and SBST outputs to be com…
+
+### `khan2025humaneval`
+- real title: **Automated Code Review and Test Generation by Large Language Models: A Mixed-methods Study**
+  - > …r-operator kill rate. A finding ``generalizes'' if min $\rho \geq 0.8$ across all model pairs. \subsection{Human evaluation}\label{sec:methods-humaneval} To complement the automated mutation-testing analysis with a developer-perceived quality signal, we conducted a human-evaluation study modeled on \citet{khan2025humaneval} and \citet{li2025mutationllm} for code-quality annotation. \paragraph{Sample selection.} We drew 40 stratified \texttt{(function, generated\_tests)}…
