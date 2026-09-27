@@ -3,17 +3,32 @@ pynguin_runner.py — Generate Pynguin test suites for the same functions
 the LLM methods were evaluated on, so mutation_testing.py can give us a
 head-to-head Pynguin-vs-LLM comparison.
 
-Picks the first N samples from human_eval_pairs.csv (so the comparison
-is matched to the human-rated subset), writes each function as a temp
-Python module, runs Pynguin with a per-function time budget, and
-collects the generated test file. Output schema matches the existing
-checkpoints_mutation/*.pkl files so mutation_testing.py can analyse
-Pynguin's tests with no changes.
+Selects N distinct functions, writes each as a temp Python module, runs Pynguin
+with a per-function time budget, and collects the generated test file. Output
+schema matches the existing checkpoints_mutation/*.pkl files so
+mutation_testing.py can analyse Pynguin's tests with no changes.
+
+Subset selection
+----------------
+Two modes, and the default is not the recommended one:
+
+  --from-corpus  draws N distinct functions from the evaluation corpus under
+                 --seed. USE THIS.
+  (default)      draws from human_eval_pairs.csv.
+
+The worksheet is a list of (function, generated-tests) PAIRS: a function recurs
+once per method/model cell it was sampled in. Pynguin generates from the
+function alone, so one job per row yields near-duplicate entries. The 40-row
+checkpoint this replaces covered just 14 distinct functions, with HumanEval/51
+and MBPP/67 contributing 12 rows each -- 60% of the comparison resting on two
+problems, while the paper described it as "the same 40 functions". Worksheet mode
+now deduplicates by function, which caps it at those 14; --from-corpus lifts the
+ceiling to the whole corpus.
 
 Run:
-    pip install pynguin                                 # one-time
-    python3 pynguin_runner.py --n 5 --budget 60         # 5-sample smoke test
-    python3 pynguin_runner.py --n 40 --budget 60        # full comparison
+    pip install pynguin                                          # one-time
+    python3 pynguin_runner.py --from-corpus --n 5  --budget 60    # smoke test
+    python3 pynguin_runner.py --from-corpus --n 40 --budget 60    # full comparison
 
 Output:
     checkpoints_mutation/pynguin_base_pynguin.pkl       — generation pkl
@@ -27,6 +42,7 @@ import json
 import os
 import pickle
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -134,23 +150,92 @@ def main() -> int:
                         help="path to the meta CSV (for sample_idx / source)")
     parser.add_argument("--out", default=str(OUTPUT_PKL),
                         help="output pkl path")
+    parser.add_argument("--allow-duplicates", action="store_true",
+                        help="run one Pynguin job per worksheet ROW rather than "
+                             "per distinct function. Reproduces the original "
+                             "behaviour, which over-weighted a few functions; "
+                             "only useful for replicating the old numbers.")
+    parser.add_argument("--from-corpus", action="store_true",
+                        help="draw the subset from the evaluation corpus instead "
+                             "of the human-eval worksheet. RECOMMENDED: the "
+                             "worksheet holds only 14 distinct functions, which "
+                             "is too few for a tool comparison.")
+    parser.add_argument("--seed", type=int, default=42,
+                        help="seed for --from-corpus sampling (default 42)")
     args = parser.parse_args()
 
     LOG_FILE.parent.mkdir(exist_ok=True)
     OUTPUT_PKL.parent.mkdir(exist_ok=True)
 
-    # Load worksheet and metadata
-    worksheet = pd.read_csv(args.worksheet)
-    meta = pd.read_csv(args.meta) if Path(args.meta).exists() else \
-        pd.DataFrame(columns=["sample_id", "source", "sample_idx", "task_id"])
-    joined = worksheet.merge(
-        meta[["sample_id", "source", "sample_idx", "task_id"]],
-        on="sample_id", how="left",
-    )
-    joined = joined.head(args.n)
-    print(f"Running Pynguin on {len(joined)} samples "
+    if args.from_corpus:
+        # Draw distinct functions straight from the evaluation corpus. The tool
+        # comparison and the human evaluation are separate analyses and do not
+        # need a shared subset — coupling them was a convenience that capped
+        # Pynguin at the worksheet's 14 distinct functions.
+        import pickle as _pickle
+        import numpy as _np
+        from mutation_testing import DATASET_CACHE
+
+        if not DATASET_CACHE.exists():
+            print(f"ERROR: corpus not found at {DATASET_CACHE}", file=sys.stderr)
+            return 2
+        corpus = _pickle.load(DATASET_CACHE.open("rb"))
+        rng = _np.random.default_rng(args.seed)
+        take = min(args.n, len(corpus))
+        picked = sorted(rng.choice(len(corpus), size=take, replace=False).tolist())
+        joined = pd.DataFrame([{
+            "sample_id":          f"corpus_{i}",
+            "function_code":      corpus[i]["function_code"],
+            "ground_truth_tests": corpus[i].get("ground_truth_tests", ""),
+            "sample_idx":         i,
+            "task_id":            corpus[i].get("task_id", f"sample_{i}"),
+            "source":             corpus[i].get("source", "unknown"),
+        } for i in picked])
+        print(f"Subset drawn from {DATASET_CACHE.name} "
+              f"(n={len(corpus)}, seed={args.seed}): {len(joined)} distinct functions")
+    else:
+        # Load worksheet and metadata
+        worksheet = pd.read_csv(args.worksheet)
+        meta = pd.read_csv(args.meta) if Path(args.meta).exists() else \
+            pd.DataFrame(columns=["sample_id", "source", "sample_idx", "task_id"])
+        joined = worksheet.merge(
+            meta[["sample_id", "source", "sample_idx", "task_id"]],
+            on="sample_id", how="left",
+        )
+
+    # ── Deduplicate by function ─────────────────────────────────────────
+    # The worksheet holds (function, generated-tests) PAIRS: a function recurs
+    # once per method/model cell it was sampled in. Pynguin generates from the
+    # function alone, so running it per worksheet row produces near-identical
+    # entries for the same function and silently weights the comparison.
+    #
+    # The 40-row checkpoint this replaces covered only 14 distinct functions,
+    # with HumanEval/51 and MBPP/67 contributing 12 rows each — 60% of the
+    # comparison resting on two problems, while the paper described it as
+    # "the same 40 functions".
+    n_rows = len(joined)
+    if not args.allow_duplicates:
+        key = joined["task_id"].where(joined["task_id"].notna(),
+                                      joined["function_code"])
+        joined = joined.assign(_dedup_key=key) \
+                       .drop_duplicates(subset="_dedup_key", keep="first") \
+                       .drop(columns="_dedup_key") \
+                       .reset_index(drop=True)
+        if n_rows != len(joined):
+            print(f"Deduplicated worksheet: {n_rows} rows → "
+                  f"{len(joined)} distinct functions")
+
+    if args.n > len(joined):
+        print(f"NOTE: --n {args.n} exceeds the {len(joined)} distinct functions "
+              f"available; running all {len(joined)}.")
+    joined = joined.head(args.n).reset_index(drop=True)
+
+    print(f"Running Pynguin on {len(joined)} distinct functions "
           f"with {args.budget}s budget each "
           f"(estimated total: {len(joined) * args.budget / 60:.1f} min)")
+    if "source" in joined:
+        counts = joined["source"].fillna("unknown").value_counts().to_dict()
+        print(f"  benchmark split: {counts}")
 
     # Per-sample log
     log = open(LOG_FILE, "w")
@@ -243,14 +328,39 @@ def main() -> int:
     log.write(f"\n\n=== SUMMARY: {succeeded}/{len(joined)} samples produced tests ===\n")
     log.close()
 
-    with open(args.out, "wb") as f:
+    # Never replace a good checkpoint with a failed run. Without this, a missing
+    # `pynguin` install writes 40 rows of empty generated_tests over real data,
+    # and the analysis then reports a kill rate of zero for the tool rather than
+    # reporting that the tool never ran.
+    out_path = Path(args.out)
+    if succeeded == 0:
+        print(f"\nERROR: no sample produced tests — refusing to write {out_path}.")
+        if out_path.exists():
+            print(f"       the existing checkpoint is left untouched.")
+        print(f"       Check {LOG_FILE}. Most often: `pip install pynguin`.")
+        return 2
+
+    if out_path.exists():
+        try:
+            prev = pickle.load(out_path.open("rb"))
+            prev_ok = sum(1 for r in prev if str(r.get("generated_tests", "")).strip())
+            if prev_ok > succeeded:
+                print(f"\nWARNING: the existing {out_path.name} has {prev_ok} suites, "
+                      f"this run produced {succeeded}.")
+                backup = out_path.with_suffix(".pkl.bak")
+                shutil.copy2(out_path, backup)
+                print(f"         previous version backed up → {backup}")
+        except Exception:
+            pass
+
+    with open(out_path, "wb") as f:
         pickle.dump(results, f)
-    print(f"\nSaved {len(results)} entries → {args.out}")
+    print(f"\nSaved {len(results)} entries → {out_path}")
     print(f"Generated tests for {succeeded}/{len(results)} samples "
           f"({100*succeeded/len(results):.0f}%)")
     print(f"Full log: {LOG_FILE}")
 
-    return 0 if succeeded > 0 else 2
+    return 0
 
 
 if __name__ == "__main__":
