@@ -759,8 +759,24 @@ def regenerate_tests(dataset: list, max_samples: int = 10,
     ckpt_dir = Path(ckpt_dir)
     ckpt_dir.mkdir(parents=True, exist_ok=True)
 
-    # Record the corpus before generating anything, so the manifest always
-    # describes the run that produced the checkpoints.
+    # ── Pre-flight: validate every existing checkpoint's corpus BEFORE any
+    # side effect. Validating inside the generation loop meant a mismatch
+    # aborted only after the manifest had already been written, leaving a
+    # committed file describing a corpus that was never run.
+    for method, reasoning in methods:
+        key = f"{method}_{reasoning}_{model.replace(':', '_')}"
+        ckpt_file = ckpt_dir / f"{key}.pkl"
+        if not ckpt_file.exists():
+            continue
+        try:
+            with open(ckpt_file, "rb") as f:
+                cached = pickle.load(f)
+        except Exception:
+            continue          # unreadable checkpoints are handled in the loop
+        _assert_same_corpus(key, cached, samples)
+
+    # Only now record the corpus, so the manifest always describes a run that
+    # actually proceeded.
     write_corpus_manifest(samples, Path(manifest_path) if manifest_path
                           else CORPUS_MANIFEST)
 
