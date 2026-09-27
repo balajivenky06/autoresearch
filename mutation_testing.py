@@ -38,8 +38,11 @@ Output:
     plots_mutation/mutation_report.txt — detailed report for thesis
 """
 
+from __future__ import annotations
+
 import ast
 import copy
+import hashlib
 import os
 import re
 import sys
@@ -70,6 +73,10 @@ DATASET_CACHE = CACHE_DIR / "eval_dataset_v3.pkl"
 OUTPUT_DIR = Path("plots_mutation")
 RESULTS_FILE = Path("results_mutation.tsv")
 MAIN_RESULTS = Path("results_unitest.tsv")
+
+# Committed record of exactly which functions the sweep ran on, so the corpus
+# is auditable rather than asserted in prose.
+CORPUS_MANIFEST = Path("corpus_manifest.tsv")
 
 # Per-sample analysis-resume directory. mutation_testing.py writes here, but
 # Drive-synced copies of the same files often land under the no-dot variant.
@@ -632,8 +639,62 @@ def _wait_for_ollama(max_wait_secs: float = 120.0, poll_secs: float = 3.0) -> bo
     return False
 
 
+def sample_ids(samples: list) -> list:
+    """Ordered task ids for a sample list — the corpus's identity."""
+    return [str(s.get("task_id", f"sample_{i}")) for i, s in enumerate(samples)]
+
+
+def corpus_fingerprint(samples: list) -> str:
+    """Short stable digest of the ordered task ids."""
+    return hashlib.sha256("\n".join(sample_ids(samples)).encode()).hexdigest()[:16]
+
+
+def write_corpus_manifest(samples: list, path: Path = CORPUS_MANIFEST) -> str:
+    """Write sample_idx / task_id / source for every evaluated function.
+
+    Commit this file. It is the difference between "we sampled 100 functions
+    with seed 42" being checkable and being taken on trust.
+    """
+    fp = corpus_fingerprint(samples)
+    with open(path, "w") as f:
+        f.write(f"# corpus_fingerprint\t{fp}\n")
+        f.write(f"# n_samples\t{len(samples)}\n")
+        f.write("sample_idx\ttask_id\tsource\n")
+        for i, s in enumerate(samples):
+            f.write(f"{i}\t{s.get('task_id', f'sample_{i}')}\t"
+                    f"{s.get('source', 'unknown')}\n")
+    print(f"  Corpus manifest → {path}  (fingerprint {fp}, n={len(samples)})")
+    return fp
+
+
+def _assert_same_corpus(key: str, cached: list, samples: list) -> None:
+    """Refuse to resume a checkpoint that was built on different functions.
+
+    The resume path keys on sample COUNT. If the evaluation corpus is ever
+    redrawn — changing NUM_EVAL_SAMPLES alters rng.choice's draw, so even the
+    leading samples differ — a count-based resume would load the old records and
+    append new ones, silently producing a mixed corpus whose per-sample indices
+    point at two different function sets. This compares task ids position by
+    position and aborts on the first disagreement.
+    """
+    cached_ids, want_ids = sample_ids(cached), sample_ids(samples)
+    for i in range(min(len(cached_ids), len(want_ids))):
+        if cached_ids[i] != want_ids[i]:
+            raise SystemExit(
+                f"\nCORPUS MISMATCH in {key} at sample_idx {i}:\n"
+                f"  checkpoint holds : {cached_ids[i]}\n"
+                f"  dataset expects  : {want_ids[i]}\n"
+                f"The cached checkpoint was generated on a different set of\n"
+                f"functions. Resuming would merge two corpora into one result\n"
+                f"file. Either restore the original dataset, or delete the\n"
+                f"mutation checkpoints and regenerate from scratch."
+            )
+
+
 def regenerate_tests(dataset: list, max_samples: int = 10,
-                     model: str = None, methods: list = None) -> dict:
+                     model: str = None, methods: list = None,
+                     ckpt_dir: Path | str = ".checkpoints_mutation",
+                     manifest_path: Path | str = None) -> dict:
     """
     Re-generate tests for mutation testing — lightweight mode.
     Only generates test code, no full evaluation pipeline.
@@ -695,8 +756,13 @@ def regenerate_tests(dataset: list, max_samples: int = 10,
 
     results = {}
     samples = dataset[:max_samples]
-    ckpt_dir = Path(".checkpoints_mutation")
-    ckpt_dir.mkdir(exist_ok=True)
+    ckpt_dir = Path(ckpt_dir)
+    ckpt_dir.mkdir(parents=True, exist_ok=True)
+
+    # Record the corpus before generating anything, so the manifest always
+    # describes the run that produced the checkpoints.
+    write_corpus_manifest(samples, Path(manifest_path) if manifest_path
+                          else CORPUS_MANIFEST)
 
     for method, reasoning in methods:
         key = f"{method}_{reasoning}_{model.replace(':', '_')}"
@@ -707,15 +773,23 @@ def regenerate_tests(dataset: list, max_samples: int = 10,
             try:
                 with open(ckpt_file, "rb") as f:
                     cached = pickle.load(f)
+            except Exception as e:
+                print(f"\n  {key}: WARNING could not read checkpoint "
+                      f"({e}); regenerating from sample 0")
+                cached = None
+
+            if cached is not None:
+                # Identity check before any count comparison.
+                _assert_same_corpus(key, cached, samples)
                 if len(cached) >= len(samples):
                     print(f"\n  {key}: loaded {len(cached)} samples from cache")
                     results[key] = cached
                     continue
-                else:
-                    print(f"\n  {key}: resuming from sample {len(cached)}/{len(samples)}")
-                    sample_results = cached
-                    start_idx = len(cached)
-            except Exception:
+                print(f"\n  {key}: resuming from sample {len(cached)}/{len(samples)} "
+                      f"(corpus verified)")
+                sample_results = cached
+                start_idx = len(cached)
+            else:
                 sample_results = []
                 start_idx = 0
         else:
@@ -1101,6 +1175,18 @@ def main():
                         help="Re-generate tests locally for mutation testing")
     parser.add_argument("--max-samples", type=int, default=10,
                         help="Max samples for re-generation mode")
+    parser.add_argument("--regen-checkpoints-dir", type=str,
+                        default=".checkpoints_mutation",
+                        help="Where --regenerate writes its checkpoints. Give the "
+                             "decontaminated arm its own directory so its "
+                             "generations are never mixed with the main sweep's.")
+    parser.add_argument("--manifest", type=str, default=None,
+                        help="Where to write the corpus manifest "
+                             "(default: corpus_manifest.tsv)")
+    parser.add_argument("--dataset", type=str, default=None,
+                        help="Override the eval dataset pickle. Used to run the "
+                             "sweep against the decontaminated corpus built by "
+                             "decontaminate.py.")
     parser.add_argument("--model", type=str, default=None,
                         help="Ollama model for re-generation (default: auto-detect)")
     parser.add_argument("--methods", type=str, default=None,
@@ -1117,13 +1203,16 @@ def main():
     OUTPUT_DIR.mkdir(exist_ok=True)
 
     # Load dataset
-    if not DATASET_CACHE.exists():
-        print(f"ERROR: Dataset not found at {DATASET_CACHE}")
+    dataset_path = Path(args.dataset) if args.dataset else DATASET_CACHE
+    if not dataset_path.exists():
+        print(f"ERROR: Dataset not found at {dataset_path}")
         print("Run: python prepare_unitest.py")
         sys.exit(1)
 
-    with open(DATASET_CACHE, "rb") as f:
+    with open(dataset_path, "rb") as f:
         dataset = pickle.load(f)
+    if args.dataset:
+        print(f"  Dataset override: {dataset_path}")
 
     # Shuffle same as train_unitest.py
     random.Random(42).shuffle(dataset)
@@ -1170,7 +1259,9 @@ def main():
                 else:
                     print(f"WARNING: invalid method format '{pair}', expected 'method/reasoning'")
         checkpoint_data = regenerate_tests(dataset, args.max_samples,
-                                           model=args.model, methods=methods_list)
+                                           model=args.model, methods=methods_list,
+                                           ckpt_dir=args.regen_checkpoints_dir,
+                                           manifest_path=args.manifest)
     else:
         # Try default checkpoint locations
         for candidate in ["checkpoints", "checkpoints/"]:
