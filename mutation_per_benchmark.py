@@ -67,11 +67,42 @@ def _resolve(candidates: list[Path]) -> Path | None:
 # Data assembly
 # ---------------------------------------------------------------------------
 
+MANIFEST_CANDIDATES = [Path("corpus_manifest.tsv")]
+MANIFEST_SOURCES: dict = {}
+
+
+def load_manifest_sources(path: Path = None) -> dict:
+    """Build {sample_idx: source} from the committed corpus manifest.
+
+    Preferred over the generation checkpoints. The manifest is the canonical,
+    committed record of which function sits at each sample_idx, it is two orders
+    of magnitude smaller than the generation pkls, and it stays correct when the
+    pkls are unavailable or lag behind the sweep. Reading the source map from the
+    pkls silently tagged 1,034 of 1,443 rows as "unknown" whenever the local
+    generation checkpoints were older than the analysis checkpoints, which
+    quietly reverted the per-benchmark result to a smaller-sample answer.
+    """
+    for cand in ([path] if path else MANIFEST_CANDIDATES):
+        if cand and cand.exists():
+            out = {}
+            for line in cand.read_text().splitlines():
+                if line.startswith("#") or line.startswith("sample_idx"):
+                    continue
+                parts = line.split("\t")
+                if len(parts) >= 3:
+                    out[int(parts[0])] = parts[2].strip()
+            if out:
+                print(f"  source map from {cand} ({len(out)} samples)")
+                return out
+    return {}
+
+
 def load_source_map(gen_dir: Path) -> dict:
     """Build {(method, reasoning, model_normalised, sample_idx): source}.
 
-    The generation pkls are lists of dicts with method/reasoning/model/sample_idx/source
-    populated by regenerate_tests.
+    Fallback for when no manifest is present. The generation pkls are lists of
+    dicts with method/reasoning/model/sample_idx/source populated by
+    regenerate_tests.
     """
     out = {}
     for f in sorted(gen_dir.glob("*.pkl")):
@@ -99,6 +130,8 @@ def load_per_sample(analysis_dir: Path, source_map: dict,
     `source = "unknown"` rows, because Pynguin's generation pkls are not in the
     RAG source map.
     """
+    global MANIFEST_SOURCES
+    MANIFEST_SOURCES = load_manifest_sources()
     rows = []
     skipped_baseline = 0
     for f in sorted(analysis_dir.glob("*.pkl")):
@@ -119,8 +152,9 @@ def load_per_sample(analysis_dir: Path, source_map: dict,
             kr = result.get("kill_rate", float("nan"))
             if isinstance(kr, float) and math.isnan(kr):
                 continue
-            src_key = (method, reasoning, model, sample_idx)
-            source = source_map.get(src_key, "unknown")
+            source = (MANIFEST_SOURCES.get(int(sample_idx))
+                      or source_map.get((method, reasoning, model, sample_idx))
+                      or "unknown")
             row = {
                 "method":     method,
                 "reasoning":  reasoning,
