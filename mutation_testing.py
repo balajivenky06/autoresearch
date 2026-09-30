@@ -885,14 +885,24 @@ def regenerate_tests(dataset: list, max_samples: int = 10,
 # Main analysis
 # ---------------------------------------------------------------------------
 
-def run_mutation_analysis(checkpoint_data: dict, dataset: list) -> pd.DataFrame:
+def run_mutation_analysis(checkpoint_data: dict, dataset: list,
+                          analysis_dir: Path | str = None) -> pd.DataFrame:
     """
     Run mutation testing on all checkpoint data.
     Returns DataFrame with per-method/model mutation kill rates.
+
+    analysis_dir
+        Where per-sample analysis checkpoints live. Defaults to the module-level
+        ANALYSIS_CKPT_DIR. The decontamination arm MUST pass its own directory:
+        checkpoint keys are `<method>_<reasoning>_<model>`, identical across arms,
+        so sharing a directory would make the decontaminated run resume against
+        the main run's analysis, skip its own work, and emit main-run numbers
+        under a decontaminated label.
     """
+    analysis_dir = Path(analysis_dir) if analysis_dir else ANALYSIS_CKPT_DIR
     rows = []
 
-    ANALYSIS_CKPT_DIR.mkdir(exist_ok=True)
+    analysis_dir.mkdir(parents=True, exist_ok=True)
 
     for key, samples in checkpoint_data.items():
         print(f"\n  Analyzing: {key} ({len(samples)} samples)...")
@@ -901,7 +911,7 @@ def run_mutation_analysis(checkpoint_data: dict, dataset: list) -> pd.DataFrame:
         # sample_idx -> result dict from evaluate_mutants(). On disconnect,
         # the next run picks up from where it left off; we only re-do the
         # in-flight sample (which got partially mutated, never persisted).
-        analysis_ckpt = ANALYSIS_CKPT_DIR / f"{key}.pkl"
+        analysis_ckpt = analysis_dir / f"{key}.pkl"
         if analysis_ckpt.exists():
             try:
                 with open(analysis_ckpt, "rb") as f:
@@ -1191,6 +1201,16 @@ def main():
                         help="Re-generate tests locally for mutation testing")
     parser.add_argument("--max-samples", type=int, default=10,
                         help="Max samples for re-generation mode")
+    parser.add_argument("--analysis-checkpoints-dir", type=str, default=None,
+                        help="Where per-sample analysis checkpoints are read and "
+                             "written. The decontamination arm MUST set this to "
+                             "its own directory, otherwise it resumes against the "
+                             "main run's analysis and reports main-run numbers.")
+    parser.add_argument("--results-file", type=str, default=None,
+                        help="TSV to merge results into. Rows are keyed on "
+                             "(method, reasoning, model), which are identical "
+                             "across arms, so the decontamination arm MUST write "
+                             "its own file or it will overwrite the main rows.")
     parser.add_argument("--regen-checkpoints-dir", type=str,
                         default=".checkpoints_mutation",
                         help="Where --regenerate writes its checkpoints. Give the "
@@ -1235,7 +1255,7 @@ def main():
     print(f"Loaded dataset: {len(dataset)} samples")
 
     if args.results_only:
-        if RESULTS_FILE.exists():
+        if results_file.exists():
             df = pd.read_csv(RESULTS_FILE, sep="\t")
             plot_mutation_results(df)
             write_mutation_report(df)
@@ -1294,17 +1314,22 @@ def main():
         print("ERROR: No checkpoint data loaded.")
         sys.exit(1)
 
+    results_file = Path(args.results_file) if args.results_file else RESULTS_FILE
+    if args.results_file:
+        print(f"  Results file override: {results_file}")
+
     # Run mutation analysis
     print(f"\nRunning mutation analysis...")
-    df = run_mutation_analysis(checkpoint_data, dataset)
+    df = run_mutation_analysis(checkpoint_data, dataset,
+                               analysis_dir=args.analysis_checkpoints_dir)
 
     if not df.empty:
         # Merge with any existing TSV: rows with the same (method, reasoning, model)
         # are replaced by the new run; everything else is preserved. This lets you
         # accumulate per-model results across multiple invocations.
-        if RESULTS_FILE.exists():
+        if results_file.exists():
             try:
-                existing = pd.read_csv(RESULTS_FILE, sep="\t")
+                existing = pd.read_csv(results_file, sep="\t")
                 key_cols = [c for c in ("method", "reasoning", "model") if c in existing.columns and c in df.columns]
                 if key_cols:
                     keys_in_new = df[key_cols].apply(tuple, axis=1).tolist()
@@ -1314,13 +1339,13 @@ def main():
                 else:
                     merged = df
             except Exception as e:
-                print(f"  WARNING: could not merge with existing {RESULTS_FILE}: {e}; overwriting")
+                print(f"  WARNING: could not merge with existing {results_file}: {e}; overwriting")
                 merged = df
         else:
             merged = df
 
-        merged.to_csv(RESULTS_FILE, sep="\t", index=False, float_format="%.6f")
-        print(f"\nResults saved → {RESULTS_FILE} ({len(merged)} rows)")
+        merged.to_csv(results_file, sep="\t", index=False, float_format="%.6f")
+        print(f"\nResults saved → {results_file} ({len(merged)} rows)")
 
         plot_mutation_results(merged)
         write_mutation_report(merged)
