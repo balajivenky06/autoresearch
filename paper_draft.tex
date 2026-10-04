@@ -75,7 +75,8 @@ methods is 0.011 in mean kill rate against 0.232 across models
 beats a random-chunk placebo by 0.3 percentage points. An apparent
 faithfulness--kill-rate correlation ($r = -0.907$) vanishes once model
 is controlled ($r = +0.079$). Annotators ranked Iterative Critique
-highest on all three rubric dimensions, yet ratings do not predict
+highest on all three rubric dimensions, significantly so on two once
+model and annotator are controlled for, yet ratings do not predict
 kill rate ($r = +0.18$, $p = 0.30$). \textbf{Conclusion.} Model
 selection, not retrieval design, determines defect detection, and
 human-perceived quality is a separate construct from it.
@@ -291,8 +292,10 @@ LLM-based unit-test generation:
   (function, generated\_tests) pairs blinded to method and model.
     \emph{Iterative Critique RAG ranked highest on all three rubric
   dimensions} (test idiom quality, correctness, completeness),
-  significantly on two of them. This \emph{contradicts} the
-  mutation-testing result rather than replicating it, and the two
+  significantly on two of them under a mixed-effects model
+  controlling for model choice and annotator. This
+  \emph{contradicts} the mutation-testing result rather than
+  replicating it, and the two
   signals are uncorrelated at the suite level ($r = +0.18$,
   $p = 0.30$)---evidence that human-perceived test quality and
   defect-detection capability are separate constructs, and that
@@ -1830,9 +1833,39 @@ ranks highest on all three dimensions across the three annotators.}
 \end{figure}
 
 \emph{Iterative Critique ranks highest on every dimension} in the
-three-annotator means. The completeness dimension shows the largest
-IC-vs-Plain-LLM gap (4.58 vs 3.63).
+three-annotator means, with the largest IC-vs-Plain-LLM gap on
+completeness (4.58 vs 3.63). Three properties of the design and the
+analysis are worth establishing before that ranking is relied on.
 
+\paragraph{Method is not confounded with model.} The 40 pairs were
+stratified over the $4 \times 4$ matrix, giving 1--3 pairs per cell
+(mean 2.5) and 9--11 pairs per method. A rating advantage could
+therefore in principle reflect a method's pairs having been drawn
+from stronger models. They were not: the method-by-model allocation
+is balanced ($\chi^2 = 1.56$, $p = 0.997$).
+
+\paragraph{The effect is not an artifact of pseudo-replication.}
+Treating 120 ratings as independent observations would overstate
+significance, since they are 40 units rated three times. Repeating
+the Kruskal--Wallis test on per-unit means across annotators
+($n = 40$) preserves both conclusions: idiom $H = 9.64$,
+$p = 0.022$; completeness $H = 14.95$, $p = 0.002$; correctness
+remains non-significant ($H = 4.69$, $p = 0.196$).
+
+\paragraph{The effect survives controlling for model and annotator.}
+A mixed-effects model of rating on method and model, with annotator
+as a random intercept, is the appropriate test and gives the
+strongest version of the result. Against Plain LLM, Iterative
+Critique scores $\beta = +0.869$ ($p = 0.0001$) on idiom and
+$\beta = +0.987$ ($p < 0.0001$) on completeness; correctness is not
+significant ($\beta = +0.368$, $p = 0.176$). \emph{Random RAG also
+beats Plain LLM on idiom} ($\beta = +0.600$, $p = 0.006$), which is
+the human-judgement analogue of the mutation-side result that a
+random-chunk placebo performs as well as semantic retrieval: adding
+context improves the \emph{perceived} quality of a test suite
+whether or not the context is relevant to it.
+
+\paragraph{Agreement is poor in level but not in direction.}
 \emph{Inter-rater agreement was below the conventional $\geq 0.4$
 threshold} on all three dimensions (ordinal Krippendorff's
 $\alpha = -0.001 / -0.127 / +0.304$ for idiom, correctness, and
@@ -1846,6 +1879,24 @@ systematically lower scale values—mean ratings of
 $2.88 / 3.45 / 3.62$ versus GS's $4.40 / 4.25 / 4.08$ and BV's
 $3.77 / 3.98 / 4.22$. Figure~\ref{fig:annotator-bias} visualizes
 this scale-usage bias.
+
+This matters for how the ranking should be read. Krippendorff's
+$\alpha$ measures agreement on \emph{absolute} ratings; a rater who
+applies the same ordering a scale-point lower throughout will score
+near zero on it while still agreeing about which method is better.
+That is what happened here. On completeness, all three annotators
+independently rank Iterative Critique first. On idiom and
+correctness, the two annotators who agree with each other do so as
+well, while SA ranks Simple RAG and Plain LLM first respectively. We
+therefore do not claim unanimity, and the mixed-effects model above
+is the right basis for the ranking rather than the raw means: with
+annotator as a random intercept, a constant per-rater offset is
+absorbed rather than treated as disagreement about the methods. The
+honest summary is that \emph{the ordering is supported on idiom and
+completeness and unsupported on correctness}, and that a replication
+should calibrate annotators on shared anchor examples before
+rating---which we did not do, and which is the most likely source of
+the scale divergence.
 
 \begin{table}[t]
 \centering
@@ -2021,13 +2072,16 @@ Five findings appear robust to the limitations cataloged in
   faithfulness and kill rate ($r = -0.907$) is entirely confounded
   by model and vanishes under control ($r = +0.079$, $p = 0.818$).
 \item \emph{Three independent annotators ranked Iterative Critique
-  highest on all three quality dimensions}, significantly so on test
-  idiom (Kruskal--Wallis $H = 10.86$, $p = 0.013$) and completeness
-  ($H = 22.57$, $p < 0.001$); the correctness dimension shows the
-  same ordering but does not reach significance ($H = 3.06$,
-  $p = 0.383$). This \emph{contradicts} the mutation-testing result,
-  and the two signals are uncorrelated at the suite level
-  ($r = +0.18$, $p = 0.30$).
+  highest on all three quality dimensions.} Controlling for model
+  with annotator as a random intercept, the advantage over Plain LLM
+  is $\beta = +0.869$ ($p = 0.0001$) on idiom and $\beta = +0.987$
+  ($p < 0.0001$) on completeness; correctness shows the same ordering
+  but is not significant ($\beta = +0.368$, $p = 0.176$). This
+  \emph{contradicts} the mutation-testing result, and the two signals
+  are uncorrelated at the suite level ($r = +0.18$, $p = 0.30$).
+  Inter-rater agreement is poor in absolute level
+  (\S\ref{sec:results-humaneval}), so the ordering rests on the
+  model-controlled estimate rather than on raw means.
 \item \emph{LLM methods outperform Pynguin's SBST on mutation kill
   rate} under a 60-second budget, with the gap concentrated on
   comparison-operator mutators.
@@ -2316,6 +2370,20 @@ per-sample data, without requiring balanced cells, preserves the
 direction of the effect, but a future replication should compare
 \emph{pre-filter assertion semantics} between IC and Plain LLM to
 resolve which mechanism dominates.
+
+\paragraph{Annotators were not calibrated before rating.}
+The three annotators received the rubric and its behavioural anchors
+but did not rate shared practice examples before the study, and one
+of the three used the scale roughly a point lower than the other two
+throughout (\S\ref{sec:results-humaneval}). Krippendorff's $\alpha$
+is consequently near zero on two of the three dimensions even though
+the method ordering is largely shared. The mixed-effects model
+absorbs a constant per-rater offset, so the reported effects are not
+driven by this, but a replication should run a calibration round on
+shared anchors and report $\alpha$ after it. With 40 pairs over 16
+cells (1--3 per cell) the study is also small; it is adequate for the
+method contrast, which is what it was powered for, and not for
+per-model claims about perceived quality.
 
 \paragraph{Decontamination defeats signature recall, not
 description recall.}
