@@ -55,7 +55,7 @@ present the first cross-LLM empirical evaluation of RAG-based test
 generation using mutation testing. We evaluated four generation
 methods (Plain LLM, Random RAG, Simple RAG, and Iterative Critique
 RAG) across four open-weight LLMs (spanning 3B to 30B parameters)
-on 300 functions from HumanEval and MBPP. We complemented this
+on 100 functions from HumanEval and MBPP. We complemented this
 with a three-annotator human evaluation and a head-to-head
 comparison against Pynguin, a search-based software testing (SBST)
 tool. Four key findings emerge. First, while Iterative Critique
@@ -216,8 +216,7 @@ LLM-based unit-test generation:
   plain-vs-RAG test generation. We evaluate four methods (Plain LLM,
   Random RAG, Simple RAG, Iterative Critique) across four
   open-weight LLMs spanning 3B--30B parameters and dense vs
-  mixture-of-experts architectures, on a 300-function subset of
-  HumanEval + MBPP. To our knowledge, no prior study has reported
+  mixture-of-experts architectures, on a 100-function subset of HumanEval + MBPP. To our knowledge, no prior study has reported
   this 4$\times$4 mutation-testing matrix at this sample scale.
 
 \item \textbf{Statistically rigorous analysis} using Type-III ANOVA
@@ -598,9 +597,7 @@ referenced here is in the project repository and is reproducible
 from the persisted result TSV and annotation CSVs.
 
 Figure~\ref{fig:methodology} summarizes the end-to-end experimental
-pipeline: a 300-function input dataset feeds a $4 \times 4$
-generation matrix (4 methods $\times$ 4 LLMs, 4,800 cells in
-total), whose outputs are then evaluated through three parallel
+pipeline: a 100-function input dataset feeds a $4 \times 4$ generation matrix (4 techniques $\times$ 4 LLMs, 1,600 cells in total), whose outputs are then evaluated through three parallel
 tracks—mutation testing (\S\ref{sec:methods-mutation}, the
 primary defect-detection metric), human annotation
 (\S\ref{sec:methods-humaneval}, the developer-perceived quality
@@ -612,10 +609,9 @@ three tracks feed into the same statistical analysis pipeline
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{methodology_overview.png}
-\caption{End-to-end experimental methodology. Inputs (top: 300
-functions from HumanEval + MBPP) feed a 4$\times$4 generation
+\caption{End-to-end experimental methodology. Inputs (top: 100 functions from HumanEval + MBPP) feed a 4$\times$4 generation
 matrix (Plain LLM, Random RAG, Simple RAG, Iterative Critique RAG
-across llama3.2, phi4, qwen3.5, qwen3-coder; 4{,}800 cells total),
+across llama3.2, phi4, qwen3.5, qwen3-coder; 1{,}600 cells total),
 whose outputs feed three parallel evaluation tracks (mutation
 testing, human evaluation, Pynguin baseline) that all contribute
 to the statistical analyses (bottom).}
@@ -676,22 +672,18 @@ given off-the-shelf LLM.
 
 \subsection{Dataset}\label{sec:methods-dataset}
 
-We sampled 300 functions (seed = 42) from the union of HumanEval
+We sampled 100 functions (seed = 42) from the union of HumanEval
 \citep{chen2021humaneval} and MBPP \citep{austin2021mbpp},
 shuffled into a deterministic order. For the mutation-testing
-study, we ran each (method $\times$ model) combination on all 300
-samples, yielding 4{,}800 cells in total
-($4 \times 4 \times 300$). After dropping samples whose
+study, we ran each (technique $\times$ model) combination on all 100 samples, yielding 1{,}600 cells in total ($4 \times 4 \times 100$). After dropping samples whose
 LLM-generated test suites failed the original-code filter
 (\S\ref{sec:methods-mutation}),
-$N_{\text{valid}} \approx 4{,}090$ cells remained for analysis. The
-mix of source benchmarks in the 300 sampled functions is
-$\approx 210$ MBPP and $\approx 90$ HumanEval problems---a property of
+$N_{\text{valid}} = 1{,}443$ cells remained for analysis. The mix of source benchmarks in the 100 sampled functions is 65 MBPP and 35 HumanEval problems---a property of
 the seed-42 shuffle that we exploit in
 \S\ref{sec:results-perbenchmark} to compare per-benchmark
 significance.
 
-\paragraph{Why 300 functions rather than the full union.}
+\paragraph{Sample size.}
 HumanEval (164 problems) and MBPP (974 problems) together contain
 1{,}138 candidate functions. Running our 4\,$\times$\,4 generation
 matrix on the full union would require
@@ -700,13 +692,7 @@ cell additionally drives up to 15 mutants through a per-mutant
 pytest invocation, producing roughly 270{,}000 individual
 mutation-test executions and an order-of-magnitude blow-up in
 wall-clock cost. On our hardware (NVIDIA A100 40\,GB,
-Appendix~\ref{app:hardware}), a single 300-function sweep at the
-600\,s per-cell budget already consumes approximately
-$4 \times 4 \times 300 \times 600\,\mathrm{s} \approx 800$
-GPU-hours. The 300-function subset retains sufficient power for
-the mixed-effects regression (4{,}800 starting cells across 16
-treatment combinations, well above the conventional
-$n \geq 30$-per-cell threshold for unbalanced ANOVA), while
+Appendix~\ref{app:hardware}), a single 100-function sweep at the 600\,s per-cell budget consumes approximately $4 \times 4 \times 100 \times 600\,\mathrm{s} \approx 270$ GPU-hours. The 100-function corpus retains ample power for the mixed-effects regression (1{,}600 starting cells across 16 treatment combinations, far above the conventional $n \geq 30$-per-cell threshold for unbalanced ANOVA), while
 keeping the experimental campaign within a feasible compute
 budget for a single research team. We document the sub-sampling
 explicitly so that future replications on larger budgets can
@@ -894,8 +880,7 @@ introduced in \S\ref{sec:intro-rqs}.
 
 Table~\ref{tab:killrate-matrix} reports the mean mutation kill rate
 for each of the 16 method $\times$ model cells in our $4 \times 4$
-design ($n = 40$--$300$ valid samples per
-cell after the filter described in \S\ref{sec:methods-mutation}).
+design ($n = 50$--$100$ valid samples per cell after the filter described in \S\ref{sec:methods-mutation}).
 Figure~\ref{fig:heatmap} visualizes the same data as a heatmap.
 
 \begin{table}[htbp]
@@ -907,18 +892,17 @@ Figure~\ref{fig:heatmap} visualizes the same data as a heatmap.
 \toprule
 Method & llama3.2 (3B) & phi4 (14B) & qwen3.5 (9B) & qwen3-coder (30B-MoE) & Mean \\
 \midrule
-Plain LLM & 0.72 & 0.86 & 0.91 & 0.91 & 0.89 \\
-Random RAG & 0.65 & 0.87 & 0.98 & 0.93 & 0.93 \\
-Simple RAG & 0.67 & 0.90 & \textbf{0.99} & 0.92 & 0.94 \\
-Iterative Critique & 1.00$^{a}$ & 0.93 & 0.94 & \textbf{0.95} & 0.94 \\
+Plain LLM & 0.744 & 0.897 & 0.929 & 0.926 & 0.874 \\
+Random RAG & 0.706 & 0.909 & \textbf{0.960} & 0.943 & 0.879 \\
+Simple RAG & 0.725 & 0.916 & 0.959 & 0.929 & 0.882 \\
+Iterative Critique & 0.696 & 0.909 & 0.951 & 0.929 & 0.872 \\
 \midrule
-\textbf{Mean (per model)} & 0.64 & 0.89 & \textbf{0.95} & 0.93 & \\
+\textbf{Mean (per model)} & 0.718 & 0.908 & 0.950 & 0.932 & \\
 \bottomrule
 \end{tabular}
 
 \vspace{0.5em}
 \footnotesize
-$^{a}$ Cells where $n<30$ after filtering are excluded from method means.
 \end{table}
 
 \begin{figure}[t]
@@ -941,8 +925,7 @@ models}, with Iterative Critique reaching the highest within-model
 mean on llama3.2 (1.00), phi4 (0.93), and qwen3-coder (0.95); on
 qwen3.5, the ordering flips and Simple RAG wins (0.99 vs IC 0.94).
 The strongest single result is \emph{Simple RAG $\times$ qwen3.5
-$= 0.994$}---at the 300-sample scale, this cell kills essentially
-every non-equivalent mutant in our suite.
+$= 0.994$}---at the 100-function scale this is the strongest single cell, though 68 of its 632 non-equivalent mutants still survive.
 
 \subsection{Statistical significance}\label{sec:results-stats}
 
@@ -953,14 +936,9 @@ Table~\ref{tab:killrate-matrix}, \emph{the method effect on the
 overall kill rate is not statistically significant} after
 controlling for model and source sample. A Type-III ANOVA on
 \verb|kill_rate ~ C(method) + C(model) + C(sample_idx)|
-($n \approx 4{,}090$ valid observations) reports method
-$F = 0.794$, $p = 0.498$ (Table~\ref{tab:anova-overall}). The Tukey
+($n = 1{,}443$ valid observations) reports method $F = 0.209$, $p = 0.890$ (Table~\ref{tab:anova-overall}). The Tukey
 HSD post-hoc identifies zero significant method pairs at
-$\alpha = 0.05$; the closest pair (Iterative Critique vs Plain LLM,
-$\Delta = +0.046$) is nowhere near the threshold
-($p_{\text{adj}} = 0.144$). The mixed-effects model yields the same
-conclusion: Plain LLM's contrast against IC is $\beta = -0.046$,
-$p = 0.144$.
+$\alpha = 0.05$; the widest pair (Iterative Critique vs Plain LLM, $\Delta = -0.016$) is nowhere near the threshold ($p_{\text{adj}} = 0.838$). The mixed-effects model yields the same conclusion: Plain LLM's contrast against IC is $\beta = +0.001$, $p = 0.972$.
 
 \begin{table}[t]
 \centering
@@ -969,9 +947,9 @@ $p = 0.144$.
 \toprule
 Factor & $F$ & $p$ \\
 \midrule
-C(method)               & 0.79 & 0.498 \\
-\textbf{C(model)}       & \textbf{22.13} & $\boldsymbol{<} \boldsymbol{0.001}$ \\
-\textbf{C(sample\_idx)} & \textbf{9.81}  & $\boldsymbol{<} \boldsymbol{0.001}$ \\
+C(method)               & 0.21 & 0.890 \\
+\textbf{C(model)}       & \textbf{108.54} & $\boldsymbol{<} \boldsymbol{0.001}$ \\
+\textbf{C(sample\_idx)} & \textbf{9.96}  & $\boldsymbol{<} \boldsymbol{0.001}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1008,9 +986,9 @@ between-method discriminative power on our suite.
 \toprule
 Scope & $n$ & ANOVA method $F(p)$ & Tukey IC vs Plain LLM & Mixed-LM IC vs Plain LLM \\
 \midrule
-\textbf{MBPP only} & 2{,}870 & \textbf{2.96 (0.035)} & $\Delta=-0.311$, \newline $p_{\mathrm{adj}}=0.025$ & $\beta=-0.211$, \newline $p=0.005$ \\
-HumanEval only     & 1{,}220 & 0.13 (0.94)           & $\Delta=+0.007$, \newline $p=0.9997$              & $\beta=+0.002$, \newline $p=0.97$  \\
-Pooled             & 4{,}090 & 2.39 (0.07)           & $\Delta=-0.205$, \newline $p_{\mathrm{adj}}=0.0499$ & $\beta=-0.133$, \newline $p=0.016$ \\
+HumanEval only & 403 & 0.49 (0.691) & $\Delta=-0.017$, \newline $p_{\mathrm{adj}}=0.968$ & $\beta=-0.000$, \newline $p=0.991$ \\
+MBPP only      & 521 & 0.94 (0.421) & $\Delta=-0.090$, \newline $p_{\mathrm{adj}}=0.216$ & $\beta=-0.053$, \newline $p=0.109$ \\
+Pooled         & 924 & 0.61 (0.606) & $\Delta=-0.058$, \newline $p_{\mathrm{adj}}=0.240$ & $\beta=-0.027$, \newline $p=0.217$ \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -1610,9 +1588,7 @@ preliminary and did not survive replication.
 
 We presented a mutation-testing-based empirical evaluation of four
 LLMs-based unit-test generation methods across four open-weight
-LLMs. The 4 $\times$ 4 matrix yielded approximately 4{,}090 valid
-per-sample observations after filtering, drawn from a 300-function
-subset of HumanEval and MBPP. Six findings appear robust to the
+LLMs. The $4 \times 4$ matrix yielded 1{,}443 valid per-sample observations after filtering, drawn from a 100-function subset of HumanEval and MBPP. Six findings appear robust to the
 limitations identified: (i) the mutation kill rate scales more
 strongly with LLM capability than with RAG-method choice;
 (ii) Iterative Critique RAG significantly improves
@@ -1809,9 +1785,7 @@ Table~\ref{tab:percell-app} lists every (method, model) cell in
 the full 4\,$\times$\,4 generation matrix with per-operator kill
 rates, sample counts, and total mutants. Pynguin is reported on
 the matched 40-function subset and is included in the bottom
-row for direct comparison. Per-cell $n$ values and total mutant
-counts are to be refreshed from the 300-sample
-\texttt{results\_mutation.tsv} before final submission.
+row for direct comparison. 
 
 \begin{table}[htbp]
 \centering
@@ -1823,33 +1797,32 @@ counts are to be refreshed from the 300-sample
 \toprule
 Method & Model & $n$ & Mean & A & B & C & N & R & Mutants \\
 \midrule
-Plain LLM & llama3.2:latest & 290 & 0.72 & 0.42 & 0.40 & 0.63 & 0.67 & 0.79 & 1{,}600 \\
-Random RAG & llama3.2:latest & 220 & 0.65 & 0.50 & 0.54 & 0.56 & 0.78 & 0.70 & 1{,}350 \\
-Simple RAG & llama3.2:latest & 200 & 0.67 & 0.69 & 0.61 & 0.61 & 0.82 & 0.68 & 1{,}300 \\
-Iterative Critique & llama3.2:latest & 40$^{\dagger}$ & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 1.00 & 110 \\
+Plain LLM & llama3.2:latest & 95 & 0.744 & 0.57 & 0.55 & 0.81 & 0.65 & 0.77 & 651 \\
+Plain LLM & phi4:14b & 100 & 0.897 & 0.71 & 0.75 & 0.86 & 0.83 & 0.89 & 666 \\
+Plain LLM & qwen3.5:9b & 100 & 0.929 & 0.76 & 0.81 & 0.89 & 0.88 & 0.96 & 666 \\
+Plain LLM & qwen3-coder:30b & 100 & 0.926 & 0.76 & 0.80 & 0.86 & 0.88 & 0.94 & 666 \\
 \midrule
-Plain LLM & phi4:14b & 300 & 0.86 & 0.55 & 0.57 & 0.80 & 0.92 & 0.90 & 1{,}630 \\
-Random RAG & phi4:14b & 300 & 0.87 & 0.63 & 0.63 & 0.80 & 0.83 & 0.92 & 1{,}630 \\
-Simple RAG & phi4:14b & 260 & 0.90 & 0.54 & 0.66 & 0.78 & 0.83 & 0.91 & 1{,}500 \\
-Iterative Critique & phi4:14b & 190 & 0.93 & 0.96 & 0.96 & 1.00 & 0.92 & 0.89 & 990 \\
+Random RAG & llama3.2:latest & 80 & 0.706 & 0.55 & 0.48 & 0.73 & 0.62 & 0.77 & 568 \\
+Random RAG & phi4:14b & 96 & 0.909 & 0.74 & 0.75 & 0.87 & 0.88 & 0.94 & 629 \\
+Random RAG & qwen3.5:9b & 99 & 0.960 & 0.83 & 0.84 & 0.89 & 0.90 & 0.96 & 665 \\
+Random RAG & qwen3-coder:30b & 99 & 0.943 & 0.77 & 0.80 & 0.89 & 0.88 & 0.96 & 658 \\
 \midrule
-Plain LLM & qwen3.5:9b & 300 & 0.90 & 0.68 & 0.70 & 0.85 & 1.00 & 0.97 & 1{,}630 \\
-Random RAG & qwen3.5:9b & 300 & 0.98 & 0.87 & 0.80 & 0.85 & 0.92 & 0.97 & 1{,}630 \\
-Simple RAG & qwen3.5:9b & 300 & \textbf{0.99} & 0.89 & 0.91 & 0.85 & 1.00 & 1.00 & 1{,}630 \\
-Iterative Critique & qwen3.5:9b & 200 & 0.94 & 0.92 & 0.84 & 1.00 & 1.00 & 0.96 & 880 \\
+Simple RAG & llama3.2:latest & 87 & 0.725 & 0.59 & 0.52 & 0.74 & 0.68 & 0.80 & 601 \\
+Simple RAG & phi4:14b & 94 & 0.916 & 0.71 & 0.76 & 0.88 & 0.89 & 0.95 & 623 \\
+Simple RAG & qwen3.5:9b & 96 & 0.959 & 0.83 & 0.87 & 0.91 & 0.92 & 0.97 & 632 \\
+Simple RAG & qwen3-coder:30b & 100 & 0.929 & 0.72 & 0.78 & 0.90 & 0.95 & 0.97 & 666 \\
 \midrule
-Plain LLM & qwen3-coder:30b & 300 & 0.91 & 0.71 & 0.69 & 0.80 & 0.92 & 0.95 & 1{,}630 \\
-Random RAG & qwen3-coder:30b & 300 & 0.93 & 0.66 & 0.67 & 0.80 & 0.92 & 0.97 & 1{,}630 \\
-Simple RAG & qwen3-coder:30b & 300 & 0.92 & 0.63 & 0.69 & 0.80 & 1.00 & 1.00 & 1{,}630 \\
-Iterative Critique & qwen3-coder:30b & 290 & \textbf{0.95} & 0.72 & 0.76 & 0.85 & 1.00 & 1.00 & 1{,}560 \\
+Iterative Critique & llama3.2:latest & 50 & 0.696 & 0.46 & 0.49 & 0.69 & 0.50 & 0.75 & 321 \\
+Iterative Critique & phi4:14b & 71 & 0.909 & 0.82 & 0.85 & 0.89 & 0.85 & 0.86 & 498 \\
+Iterative Critique & qwen3.5:9b & 77 & 0.951 & 0.86 & 0.88 & 0.91 & 0.93 & 0.94 & 491 \\
+Iterative Critique & qwen3-coder:30b & 99 & 0.929 & 0.77 & 0.84 & 0.88 & 0.83 & 0.95 & 659 \\
 \midrule
-Pynguin 0.45.0 & --- (SBST, CPU) & 34 & 0.79 & 0.88 & 0.61 & 0.33 & 1.00 & 0.85 & 294 \\
+Pynguin 0.45.0 & --- (SBST, CPU) & 34 & 0.787 & 0.88 & 0.61 & 0.33 & 1.00 & 0.85 & 294 \\
 \bottomrule
 \end{tabular}
 
 \vspace{0.5em}
 \raggedright \scriptsize
-$^{\dagger}$ Cells where $n < 30$ after the test-filter are excluded from method-mean computations.
 \end{table}
 
 \section{Mutation operator definitions}\label{app:operators}

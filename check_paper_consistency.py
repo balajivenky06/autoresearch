@@ -50,6 +50,7 @@ OPS = ("kill_arithmetic", "kill_boundary", "kill_comparison",
 
 MODEL_COL_ORDER = ["llama3.2:latest", "phi4:14b", "qwen3.5:9b", "qwen3-coder:30b"]
 METHOD_ROW_ORDER = ["Plain LLM", "Random RAG", "Simple RAG", "Iterative Critique"]
+BASELINE_ROWS = {"pynguin", "Pynguin"}   # comparator tools, not treatment cells
 
 failures: list[str] = []
 warnings: list[str] = []
@@ -155,6 +156,11 @@ def layer1(tsv: dict, rep: dict) -> None:
                 fail("L1", f"{key[0]} x {key[1]}: TSV {fld}={tv:g} but report says {rv:g}")
     for key in tsv:
         if key not in rep:
+            # mutation_report.txt covers the 4x4 treatment matrix only; the
+            # Pynguin baseline is a separate comparator reported in its own
+            # section, so its absence from the report is by design.
+            if key[0] in BASELINE_ROWS:
+                continue
             warn("L1", f"{key} in TSV but not in report")
 
 
@@ -195,6 +201,9 @@ def layer2(tsv: dict, tex: str) -> None:
         if len(cells) < 10:
             continue
         method = cells[0].strip()
+        # Column specs ("llcccccccc@{}}") survive the row split; they are not data.
+        if "@{" in method or method.startswith("\\"):
+            continue
         model = cells[1].strip()
         if (method, model) not in tsv:
             if "Pynguin" not in method:

@@ -1,0 +1,27 @@
+\begin{tabular}{@{}llcccccccc@{}}
+\toprule
+Method & Model & $n$ & Mean & A & B & C & N & R & Mutants \\
+\midrule
+Plain LLM & llama3.2:latest & 95 & 0.744 & 0.57 & 0.55 & 0.81 & 0.65 & 0.77 & 651 \\
+Plain LLM & phi4:14b & 100 & 0.897 & 0.71 & 0.75 & 0.86 & 0.83 & 0.89 & 666 \\
+Plain LLM & qwen3.5:9b & 100 & 0.929 & 0.76 & 0.81 & 0.89 & 0.88 & 0.96 & 666 \\
+Plain LLM & qwen3-coder:30b & 100 & 0.926 & 0.76 & 0.80 & 0.86 & 0.88 & 0.94 & 666 \\
+\midrule
+Random RAG & llama3.2:latest & 80 & 0.706 & 0.55 & 0.48 & 0.73 & 0.62 & 0.77 & 568 \\
+Random RAG & phi4:14b & 96 & 0.909 & 0.74 & 0.75 & 0.87 & 0.88 & 0.94 & 629 \\
+Random RAG & qwen3.5:9b & 99 & 0.960 & 0.83 & 0.84 & 0.89 & 0.90 & 0.96 & 665 \\
+Random RAG & qwen3-coder:30b & 99 & 0.943 & 0.77 & 0.80 & 0.89 & 0.88 & 0.96 & 658 \\
+\midrule
+Simple RAG & llama3.2:latest & 87 & 0.725 & 0.59 & 0.52 & 0.74 & 0.68 & 0.80 & 601 \\
+Simple RAG & phi4:14b & 94 & 0.916 & 0.71 & 0.76 & 0.88 & 0.89 & 0.95 & 623 \\
+Simple RAG & qwen3.5:9b & 96 & 0.959 & 0.83 & 0.87 & 0.91 & 0.92 & 0.97 & 632 \\
+Simple RAG & qwen3-coder:30b & 100 & 0.929 & 0.72 & 0.78 & 0.90 & 0.95 & 0.97 & 666 \\
+\midrule
+Iterative Critique & llama3.2:latest & 50 & 0.696 & 0.46 & 0.49 & 0.69 & 0.50 & 0.75 & 321 \\
+Iterative Critique & phi4:14b & 71 & 0.909 & 0.82 & 0.85 & 0.89 & 0.85 & 0.86 & 498 \\
+Iterative Critique & qwen3.5:9b & 77 & 0.951 & 0.86 & 0.88 & 0.91 & 0.93 & 0.94 & 491 \\
+Iterative Critique & qwen3-coder:30b & 99 & 0.929 & 0.77 & 0.84 & 0.88 & 0.83 & 0.95 & 659 \\
+\midrule
+Pynguin 0.45.0 & --- (SBST, CPU) & 34 & 0.787 & 0.88 & 0.61 & 0.33 & 1.00 & 0.85 & 294 \\
+\bottomrule
+\end{tabular}

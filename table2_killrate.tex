@@ -1,0 +1,12 @@
+\begin{tabular}{@{}lccccc@{}}
+\toprule
+Method & llama3.2 (3B) & phi4 (14B) & qwen3.5 (9B) & qwen3-coder (30B-MoE) & Mean \\
+\midrule
+Plain LLM & 0.744 & 0.897 & 0.929 & 0.926 & 0.874 \\
+Random RAG & 0.706 & 0.909 & \textbf{0.960} & 0.943 & 0.879 \\
+Simple RAG & 0.725 & 0.916 & 0.959 & 0.929 & 0.882 \\
+Iterative Critique & 0.696 & 0.909 & 0.951 & 0.929 & 0.872 \\
+\midrule
+\textbf{Mean (per model)} & 0.718 & 0.908 & 0.950 & 0.932 & \\
+\bottomrule
+\end{tabular}
