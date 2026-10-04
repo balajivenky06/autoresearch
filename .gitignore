@@ -54,3 +54,5 @@ human_eval_pairs.meta.csv
 human_eval_annotations/
 
 SKILL.md
+# rebuild_tsv.py writes a .bak of the previous TSV before overwriting
+*.tsv.bak
