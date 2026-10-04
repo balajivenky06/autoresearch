@@ -1,153 +1,200 @@
-# Unit Test Generation via RAG — PhD Research
+# Mutation-Testing Quality of LLM and RAG-based Unit Test Generators
 
-Comparing **Plain LLM vs Simple RAG vs Iterative Critique RAG** for automated unit test generation, evaluated across reasoning techniques and models.
+Replication package for a cross-model empirical study asking a narrow question:
+**does retrieval augmentation make LLM-generated unit tests better at catching
+bugs?**
 
-## Research Questions
+The answer is no, and most of this repository exists to make that answer
+checkable.
 
-- **RQ1** — Does RAG outperform plain LLM for unit test generation?
-- **RQ2** — When does retrieval help vs. hurt (noise rate analysis)?
-- **RQ3** — How faithful are generated tests to retrieved context?
-- **RQ4** — What is the cost-faithfulness trade-off across methods?
+---
 
-## Methods
+## Headline results
 
-| Method | Description |
-|--------|-------------|
-| `plain_llm` | Direct LLM generation, no retrieval |
-| `simple_rag` | Single retrieval pass from testing docs KB |
-| `iterative_critique` | Generate → critique → refine loop with RAG context |
+A 4 × 4 factorial experiment — four generation methods × four open-weight LLMs
+— over 100 HumanEval and MBPP functions, producing 1,443 valid observations and
+9,660 mutants.
 
-## Reasoning Techniques
+| Finding | Evidence |
+|---|---|
+| **Method choice has no detectable effect** | spread 0.011 in mean kill rate; ANOVA *F* = 0.21, *p* = 0.890; no Tukey pair separates in any scope |
+| **Model choice dominates it 21.7×** | model spread 0.232; *F* = 108.5, *p* < 10⁻⁶⁰ |
+| **Semantic retrieval ≈ random retrieval** | Simple RAG beats a random-chunk placebo from the same corpus by **0.3 percentage points** |
+| **A strong correlation that isn't one** | faithfulness vs kill rate pools to *r* = −0.907, but partial *r* controlling for model is **+0.079** (*p* = 0.818) |
+| **Humans and mutants disagree** | annotators rank Iterative Critique top on all three rubric dimensions; its kill rate is indistinguishable from plain prompting, and ratings don't predict kill rate (*r* = +0.18, *p* = 0.30) |
+| **SBST and LLMs split by operator family** | Pynguin leads on arithmetic (0.850 vs 0.809) and negate-boolean (1.000 vs 0.917); LLMs lead on comparison (0.917 vs 0.250) and boundary (0.817 vs 0.554) |
 
-| Technique | Description |
-|-----------|-------------|
-| `base` | Direct prompt |
-| `cot` | Chain-of-Thought — step-by-step reasoning before writing tests |
-| `tot` | Tree-of-Thought — generate two candidates, select the best |
-| `got` | Graph-of-Thought — generate happy path, edge cases, and error cases separately, then merge |
+The null survives two robustness checks: a **decontaminated replication**
+(functions and parameters renamed via AST; kill rates go *up*, method
+*F* = 0.072) and a **matched-subset replication** controlling for differential
+test-filter attrition (spread 0.011 on 273 matched function-model units).
 
-**Full comparison: 3 methods × 4 reasoning × 3 models = 36 experiments.**
+---
 
-## Evaluation Metric
+## Experimental design
 
-`val_score` (higher is better):
+**Methods** (the only factor under test):
 
-```
-val_score = 0.30 × syntactic_validity
-          + 0.25 × edge_case_score
-          + 0.20 × assert_density
-          + 0.15 × semantic_sim        (sentence-transformers cosine vs. ground truth)
-          + 0.10 × rouge_1_f1
-```
+| Method | What it does |
+|---|---|
+| `plain_llm` | Direct generation, no retrieval |
+| `random_rag` | **Placebo.** Identical to `simple_rag` but the 5 chunks are drawn uniformly at random instead of by cosine rank. Isolates retrieval *relevance* from extra context. |
+| `simple_rag` | One cosine-similarity pass, top *k* = 5 chunks |
+| `iterative_critique` | `simple_rag` draft, then up to 3 critique-and-refine rounds |
 
-**Diagnostic metrics** (not in val_score):
+**Models:** `llama3.2:latest` (3B), `phi4:14b` (14B), `qwen3.5:9b` (9B),
+`qwen3-coder:30b` (30B-A3.3B MoE) — all via Ollama, all Q4_K_M.
 
-| Metric | Purpose |
-|--------|---------|
-| `noise_rate` | Fraction of retrieved chunks with cosine sim < 0.3 (RQ2) |
-| `faithfulness` | Token overlap between generated tests and retrieved context (RQ3) |
-| `avg_retrieval_secs`, `avg_llm_secs` | Cost breakdown per method (RQ4) |
+**Corpus:** 100 functions from HumanEval + MBPP, fixed by
+`random.Random(42).shuffle` and recorded in `corpus_manifest.tsv` with a
+fingerprint. `verify_corpus.py` checks any checkpoint against it.
 
-## Models
+**Metric:** mutation kill rate. Five AST operators — arithmetic, boundary,
+comparison, negate-boolean, return-None. Suites that fail against the
+*original* function are discarded before mutation, since a suite that can't
+pass on correct code can't meaningfully detect a defect in it.
 
-| Model | Size | Role |
-|-------|------|------|
-| `llama3.2:latest` | 3B | Fast baseline |
-| `phi4:14b` | 14B | Mid-size general |
-| `qwen3.5:9b` | 9B | Latest-gen general |
-| `qwen3-coder:30b` | 30B (3.3B active, MoE) | Code-specialized SOTA |
+### Knowledge base
 
-Rankings across models compared using **Spearman rank correlation** (ρ ≥ 0.8 = findings generalize).
+The object the whole null is about, so the real numbers rather than the
+configured ones:
 
-## Dataset
+- **14 URLs configured, 2 failed to fetch → 12 contribute**
+- **964 chunks** (500-char windows, 100-char overlap, <50 chars discarded)
+- `all-MiniLM-L6-v2`, 384-dim, exact cosine over an in-memory NumPy matrix —
+  no approximate index, so ranking is deterministic
+- Query = `"pytest unit testing examples patterns for python function: "` +
+  first 300 chars of the function
 
-Fixed **100-sample** evaluation subset from **HumanEval + MBPP** (seed=42). Same subset used for every experiment. Size increased from 25→100 for journal-quality statistical power (Cohen 1988: medium effect, α=0.05, power=0.80 requires n≥52 per group).
+Composition is uneven in a way that bears on the result: `unittest` +
+`unittest.mock` supply **46%** of chunks, while the Hypothesis quickstart —
+the only edge-case-oriented source — supplies **1.1%**.
 
-## Knowledge Base
+The `noise_rate` diagnostic (fraction of retrieved chunks below cosine 0.3) is
+**identically zero** for every query. Reported as degenerate rather than
+dropped: it rules out "the retriever returns garbage" as an explanation of the
+null, without establishing that what it returns is useful.
 
-8 pytest/unittest documentation pages, embedded with `all-MiniLM-L6-v2` (in-memory vector store, cosine similarity, top-k=3):
+---
 
-- pytest assert, parametrize, exception, getting-started docs
-- Python `unittest` stdlib docs
-- RealPython pytest guide, GeeksForGeeks unittest, Semaphore pytest tutorial
+## Reproducing the analysis
 
-## Project Files
-
-```
-prepare_unitest.py          — fixed harness: dataset, VectorStore, evaluation (do not modify)
-train_unitest.py            — edit this: METHOD, REASONING, prompts, RAG config
-program_unitest.md          — agent instructions
-unitest_colab.ipynb         — Colab notebook: full 36-run multi-model sweep
-visualize_unitest.py        — generates 10 KPI charts from results_unitest.tsv
-analyze_generalizability.py — Spearman rank correlation across models (with p-values)
-faithfulness.py             — token-overlap + LLM-as-Judge faithfulness metrics
-statistical_tests.py        — Kruskal-Wallis, Mann-Whitney U, Bonferroni, Cohen's d + sensitivity
-human_eval_sampler.py       — stratified annotation sampler + post-annotation validation
-test_run.py                 — 22-check local pipeline verification
-```
-
-## Quick Start (Local)
+Everything below runs from the committed artifacts — no GPU, no network.
 
 ```bash
-# One-time setup (~3 min)
-python prepare_unitest.py
+# regenerate results_mutation.tsv from the analysis checkpoints alone
+python3 rebuild_tsv.py
 
-# Set METHOD, REASONING, GENERATOR_MODEL at top of train_unitest.py, then run
-python train_unitest.py
+# statistics: ANOVA, Tukey, mixed-effects, per-benchmark, generalizability
+python3 mutation_statistical_tests.py
+python3 mutation_mixed_effects.py
+python3 mutation_per_benchmark.py
+python3 analyze_mutation_generalizability.py
 
-# Visualize
-python visualize_unitest.py
-open plots_unitest/
+# inter-rater agreement (self-validates against Krippendorff's worked example)
+python3 krippendorff_alpha.py
+
+# figures
+python3 plot_rebuild_figures.py
+python3 plot_stale_figures.py
 ```
 
-Set `MAX_SAMPLES = 3` in `train_unitest.py` for a fast trial run.
+### The two gates
 
-## Running on Google Colab (Full Experiment)
-
-Open `unitest_colab.ipynb` on a Colab A100:
-
-1. Mount Google Drive
-2. Install dependencies
-3. Install Ollama + pull all 3 models
-4. Clone repo
-5. One-time setup
-6. Single experiment quick test
-7. **Full sweep: 36 runs** (~6–10 hours on A100)
-8. Generalizability analysis (Spearman ρ heatmap + rank stability)
-9. Visualize results (10 charts)
-10. Cross-task comparison with Docstring RAG results (RQ4)
-11. Push results to GitHub
-
-**Checkpoint/resume:** checkpoints are saved to Google Drive after every sample. On disconnect, re-run Steps 1–5 then Step 7 — resumes automatically from the last completed sample.
-
-## Outputs
-
-| File | Description |
-|------|-------------|
-| `results_unitest.tsv` | One row per experiment (not committed) |
-| `plots_unitest/` | 10 charts: heatmap, grouped bar, radar, per-metric bar, noise rate, cost breakdown, faithfulness + 3 cross-model charts |
-| `plots_generalizability/` | Spearman ρ heatmap (with p-values), rank stability, val_score/faithfulness by model, sensitivity chart + generalizability report |
-| `statistical_report.txt` | Kruskal-Wallis + pairwise Mann-Whitney U significance table (in `plots_generalizability/`) |
-| `human_eval_samples.csv` | Annotation worksheet for 40 stratified samples (not committed) |
-| `human_eval_guide.txt`   | Annotation instructions for human raters |
-| `human_eval_pairs.csv`   | Per-pair worksheet (function, generated_tests) for the Streamlit app |
-| `summary_all_experiments.csv` | Pivot summary across all models (not committed) |
-
-## Human Evaluation (Streamlit app)
-
-A separate Streamlit annotation app is bundled for the human evaluation
-study that backs the EMSE resubmission. Annotators rate 40 stratified
-(function, generated_tests) pairs on three 0–5 dimensions: Test idiom
-quality, Correctness, Completeness.
+Run both before trusting any number, and before any submission:
 
 ```bash
-pip install -r requirements.txt
-python3 human_eval_pair_sampler.py        # build the blinded worksheet (one-time)
-streamlit run human_eval_app.py           # opens http://localhost:8501
+python3 check_paper_consistency.py   # every figure, table and in-text
+                                     # statistic must trace to the TSV
+python3 verify_citations.py          # DOI resolution + topic match for
+                                     # every bibliography entry
 ```
 
-Full setup, rubric, and distribution options: see
-[`README_human_eval.md`](README_human_eval.md).
+`check_paper_consistency.py` exists because a stale row once survived for
+months: one cell kept its 30-sample values while every other moved to 100, and
+the TSV disagreed with both the report and the checkpoints. It compares three
+layers — TSV against report, tables against TSV, prose claims against TSV.
+
+> **macOS note:** use `python3`, not `uv run`. The pinned PyTorch build is
+> CUDA-only and fails on Apple Silicon.
+
+---
+
+## Re-running the sweep
+
+Generation needs GPUs and Ollama; the published results came from a Colab A100.
+
+```bash
+python3 prepare_unitest.py                 # one-time: datasets + knowledge base
+python3 train_unitest.py                   # one cell; edit METHOD/REASONING/model
+python3 mutation_testing.py --help         # the sweep driver
+python3 pynguin_runner.py --from-corpus --n 40 --budget 60
+python3 decontaminate.py                   # build the renamed corpus
+```
+
+`mutation_testing.py` validates every existing checkpoint against the corpus
+manifest *before* any side effect, so a run against a different corpus aborts
+rather than silently mixing populations.
+
+---
+
+## What's in the package, and what isn't
+
+| Artifact | Status |
+|---|---|
+| `results_mutation.tsv`, `results_mutation_decontaminated.tsv` | committed |
+| `checkpoints_mutation_analysis/` (+ decontam) | committed — per-sample kill/survive/equivalent counts for all 100 functions |
+| `corpus_manifest.tsv` | committed — the 100 task IDs and fingerprint |
+| `human_eval_annotations/` | committed — three annotators × 40 pairs |
+| `plots_mutation/` | committed |
+| **`checkpoints_mutation/` (generated test source)** | **30-function pilot only** |
+
+The last row is a real limitation. The 100-function sweep ran on hosted
+accelerators and only the *analysis* checkpoints were synced back; those carry
+per-sample counts but not the generated test code. **Every statistic in the
+paper is recomputable from this repository**, but inspecting the generated
+tests for all 100 functions would require re-running the sweep.
+
+---
+
+## Layout
+
+```
+mutation_testing.py              sweep driver, AST mutation operators, checkpointing
+mutation_statistical_tests.py    ANOVA, Tukey, Kruskal-Wallis, per-sample loader
+mutation_mixed_effects.py        mixed-effects regression, sample_idx random intercept
+mutation_per_benchmark.py        HumanEval vs MBPP decomposition
+analyze_mutation_generalizability.py   cross-model Spearman
+krippendorff_alpha.py            self-validating inter-rater agreement
+decontaminate.py                 AST rename pass for the contamination check
+verify_corpus.py                 read-only corpus identity check
+pynguin_runner.py                SBST baseline
+rebuild_tsv.py                   derive the TSV from checkpoints only
+check_paper_consistency.py       gate: numbers ↔ artifacts
+verify_citations.py              gate: bibliography ↔ DOI registries
+plot_rebuild_figures.py          heatmaps, attrition, contamination, distribution
+plot_stale_figures.py            faithfulness scatter, rank correlation, rank stability
+human_eval_app.py                Streamlit annotation interface
+prepare_unitest.py               datasets + knowledge base (fixed harness)
+train_unitest.py                 generation: method, reasoning, prompts, RAG config
+paper_draft.tex / references.bib  manuscript (elsarticle, targeting IST)
+```
+
+## Human evaluation
+
+Three annotators rated 40 stratified `(function, generated_tests)` pairs blinded
+to method and model, on three 0–5 behaviourally-anchored dimensions.
+
+Agreement is **below** the conventional threshold — ordinal Krippendorff's
+α = −0.001 / −0.127 / +0.304 — driven by one annotator's systematically lower
+scale use (means 2.88/3.45/3.62 against 4.40/4.25/4.08). This is reported
+rather than hidden; the pairwise κ between the other two annotators is
+0.32–0.46. Setup and rubric: [`README_human_eval.md`](README_human_eval.md).
+
+```bash
+python3 human_eval_pair_sampler.py    # build the blinded worksheet
+streamlit run human_eval_app.py
+```
 
 ## License
 
