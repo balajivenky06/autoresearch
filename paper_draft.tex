@@ -1039,9 +1039,19 @@ two years of Python development experience.
 
 \paragraph{Inter-rater agreement.}
 We report pairwise Cohen's $\kappa$ with linear weighting for
-ordinal data, plus three-rater Fleiss' $\kappa$ and Krippendorff's
-$\alpha$ with the ordinal metric. Agreement targets follow
-\citet{landis1977}: $\geq 0.4$ moderate, $\geq 0.6$ substantial.
+ordinal data, plus Krippendorff's $\alpha$ with the ordinal metric as
+the primary three-rater statistic. Because the ordinal difference
+function is defined with respect to the observed marginal
+distribution rather than as a fixed distance, the metric must be
+named whenever an $\alpha$ is reported; we give the interval and
+nominal values alongside the ordinal one in
+\S\ref{sec:results-humaneval} so the figure is interpretable
+independently of that choice. Our implementation
+(\texttt{krippendorff\_alpha.py}) reproduces the worked example in
+\citet{krippendorff2018} to three decimal places on both the nominal
+and interval metrics, and the self-test runs on every invocation.
+Agreement targets follow \citet{landis1977}: $\geq 0.4$ moderate,
+$\geq 0.6$ substantial.
 
 \subsection{Tool comparison---Pynguin baseline}\label{sec:methods-pynguin}
 
@@ -1542,9 +1552,11 @@ three-annotator means. The completeness dimension shows the largest
 IC-vs-Plain-LLM gap (4.58 vs 3.63).
 
 \emph{Inter-rater agreement was below the conventional $\geq 0.4$
-threshold} on all three dimensions (Krippendorff's
-$\alpha = -0.03 / -0.12 / +0.33$ for idiom, correctness, and
-completeness). Pairwise Cohen's $\kappa$ analysis
+threshold} on all three dimensions (ordinal Krippendorff's
+$\alpha = -0.001 / -0.127 / +0.304$ for idiom, correctness, and
+completeness; the interval metric gives $-0.027 / -0.115 / +0.328$
+and the nominal metric $-0.095 / -0.016 / +0.151$, so the conclusion
+does not depend on the choice). Pairwise Cohen's $\kappa$ analysis
 (Table~\ref{tab:humaneval-kappa}) reveals the cause: \emph{two of
 the three annotators (GS and BV) agreed at fair-to-moderate levels}
 ($\kappa = 0.32$--$0.46$), but the third annotator (SA) used
@@ -2156,7 +2168,9 @@ The complete analysis pipeline—the mutation-testing implementation
 \texttt{mutation\_mixed\_effects.py},
 \texttt{analyze\_mutation\_generalizability.py},
 \texttt{noise\_vs\_kill.py},
-\texttt{mutation\_per\_benchmark.py}), the Pynguin runner
+\texttt{mutation\_per\_benchmark.py}), the self-validating
+inter-rater agreement implementation
+(\texttt{krippendorff\_alpha.py}), the Pynguin runner
 (\texttt{pynguin\_runner.py}), the Streamlit human-evaluation
 application (\texttt{human\_eval\_app.py}), the figure scripts
 (\texttt{plot\_rebuild\_figures.py},
