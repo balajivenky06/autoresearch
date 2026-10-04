@@ -255,13 +255,14 @@ LLM-based unit-test generation:
 \item \textbf{First LLM-vs-SBST head-to-head comparison on mutation
   kill rate} in Python. We benchmark our LLM methods against
   Pynguin 0.45.0 on the same 40 functions used in the human
-  evaluation, with a 60-second per-function search budget. LLM
-  methods outperform Pynguin overall ($0.872$--$0.883$ vs $0.787$),
-  but the advantage is concentrated entirely on
-  \emph{comparison-operator mutators} (Pynguin $0.333$ vs Iterative
-  Critique $0.844$); on arithmetic and negate-boolean operators
-  Pynguin \emph{leads} every LLM method ($0.879$ vs $0.727$ and
-  $1.000$ vs $0.778$). The two approaches are therefore
+  evaluation, with a 60-second per-function search budget. Matched on
+  the 34 functions Pynguin could handle, LLM methods outperform it
+  overall ($0.898$--$0.922$ vs $0.787$, Mann--Whitney $p < 0.001$),
+  but the advantage is confined to the relational and boundary
+  operator families (comparison $0.917$ vs $0.250$; boundary $0.817$
+  vs $0.554$); on arithmetic and negate-boolean operators Pynguin
+  \emph{leads} every LLM method ($0.850$ vs $0.809$ and $1.000$ vs
+  $0.917$). The two approaches are therefore
   complementary along a specific axis---value-sensitive versus
   relational operator families---which is a sharper design brief for
   a hybrid generator than general complementarity.
@@ -1453,23 +1454,28 @@ llama3.2:latest & 3.53          & 3.83          & 3.87          & 0.972 \\
 To ground our LLM-method results against the prior dominant
 automated-test-generation paradigm, we ran Pynguin 0.45.0
 \citep{lukasczyk2022} on the same 40 functions used in the human
-evaluation. Figure~\ref{fig:pynguin-overall} shows the overall
+evaluation. Pynguin produced a valid suite for 34 of them; all
+comparisons below are matched to those 34 functions, with the LLM
+methods restricted to exactly the same source problems so that the
+two generators are never scored on different populations. Figure~\ref{fig:pynguin-overall} shows the overall
 comparison; Figure~\ref{fig:pynguin-peroperator} shows the
 per-operator breakdown.
 
 \begin{table}[t]
 \centering
-\caption{Pynguin vs LLM methods on the same 40 functions.}
+\caption{Pynguin vs LLM methods, matched on the 34 functions for which
+Pynguin produced a valid suite. LLM rows pool all four models on exactly
+those functions, so $n$ counts (model, function) observations.}
 \label{tab:pynguin-overall}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-Generator & Mean kill rate & $n_{\text{valid}}$ & Killed / Total mutants \\
+Generator & Mean kill rate & $n$ obs. & Killed / Total mutants \\
 \midrule
-\textbf{Iterative Critique} (LLM, avg.) & \textbf{0.957} & 18 & 317 / 354 \\
-Simple RAG (LLM, avg.)                  & 0.871 & 27 & 472 / 606 \\
-Random RAG (LLM, avg.)                  & 0.858 & 28 & 467 / 624 \\
-Plain LLM (LLM, avg.)                   & 0.849 & 30 & 460 / 649 \\
-\textbf{Pynguin} (SBST, 60s budget)     & \textbf{0.787} & \textbf{34} & 211 / 294 \\
+\textbf{Iterative Critique} (LLM, avg.) & \textbf{0.922} & 91 & 410 / 486 \\
+Simple RAG (LLM, avg.) & 0.917 & 124 & 586 / 724 \\
+Random RAG (LLM, avg.) & 0.910 & 124 & 554 / 717 \\
+Plain LLM (LLM, avg.) & 0.898 & 134 & 574 / 764 \\
+\textbf{Pynguin} (SBST, 60\,s budget) & \textbf{0.787} & 34 & 211 / 294 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1487,7 +1493,7 @@ Pynguin is a single 40-function row.}
 \centering
 \includegraphics[width=\linewidth]{pynguin_vs_llm_per_operator.png}
 \caption{Per-operator kill rate: Pynguin vs LLM methods. The
-LLM-vs-Pynguin gap concentrates on the comparison operator family
+LLM-vs-Pynguin gap concentrates on the comparison and boundary operator families
 (Pynguin 0.33 vs IC 0.96).}
 \label{fig:pynguin-peroperator}
 \end{figure}
@@ -1677,20 +1683,23 @@ estimated within model.
 \label{sec:discussion-sbst}
 
 \emph{On arithmetic and negate-boolean operators Pynguin
-outperforms every LLM method}, including Iterative Critique (0.879
-vs 0.727 on arithmetic; 1.000 vs 0.778 on negate-boolean). The LLM
-advantage is confined to the comparison family, where it is very
-large (0.844 vs 0.333), and this single family is what carries the
-LLM lead in the pooled kill rate (0.872--0.883 vs 0.787).
+outperforms every LLM method}, including Iterative Critique (0.850
+vs 0.809 on arithmetic; 1.000 vs 0.917 on negate-boolean). The LLM
+advantage concentrates on the two operator families that require a
+relational or value-boundary judgement: comparison, where the gap is
+very large (0.917 vs 0.250), and boundary (0.817 vs 0.554). These
+two families carry the LLM lead in the pooled kill rate (0.898--0.922
+vs 0.787, Mann--Whitney $p < 0.001$ for every method against
+Pynguin).
 \emph{Pynguin's behavioral oracles are derived from observed return
 values}, not from operator-level semantics, which explains both
 halves of the pattern: value-derived assertions catch numeric
 perturbation reliably and miss relational-operator substitution
 almost entirely. The hybrid architecture this implies is sharper
 than ``use both'': \emph{use SBST for the value-sensitive operator
-families and an LLM for relational oracles}. We note the comparison
-rests on Pynguin's $n = 34$ successfully-generated functions under a
-60-second budget (\S\ref{sec:limitations-external}).
+families and an LLM for relational oracles}. We note the comparison rests on the 34 functions
+for which Pynguin produced a valid suite, under a 60-second budget
+(\S\ref{sec:limitations-external}).
 
 \paragraph{LLM capability dominates RAG method choice.}
 \label{sec:discussion-llm-dominates}
@@ -1853,7 +1862,8 @@ independent annotators ranked Iterative Critique highest on all
 three quality dimensions, contradicting the mutation-testing
 result; (v) LLM-based test generation outperforms Pynguin's
 SBST on overall mutation kill rate, but the gap concentrates on
-the comparison-operator family.
+the comparison and boundary operator families while Pynguin leads on
+arithmetic and negate-boolean.
 
 \paragraph{Future work.}
 Three directions stand out as natural follow-ups. First, the
