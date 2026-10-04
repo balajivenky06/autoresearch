@@ -35,34 +35,17 @@ series = {ICSE '23}
 % schafer2024, the TSE paper. Same four authors, retitled on publication.
 % Citing both presented one work as two separate contributions.
 
-@ARTICLE{schafer2024,
-  author={Sch{\"a}fer, Max and Nadi, Sarah and Eghbali, Aryaz and Tip, Frank},
-  journal={IEEE Transactions on Software Engineering}, 
-  title={An Empirical Evaluation of Using Large Language Models for Automated Unit Test Generation}, 
-  year={2024},
-  volume={50},
-  number={1},
-  pages={85-105},
-  keywords={Training;Test pattern generators;Documentation;Codes;Source coding;Software;Electronic mail;Test generation;JavaScript;language models},
-  doi={10.1109/TSE.2023.3334955}
-  }
-
-@article{yuan2025chattest,
-author = {Yuan, Zhiqiang and Liu, Mingwei and Ding, Shiji and Wang, Kaixin and Chen, Yixuan and Peng, Xin and Lou, Yiling},
-title = {Evaluating and Improving ChatGPT for Unit Test Generation},
-year = {2024},
-issue_date = {July 2024},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-volume = {1},
-number = {FSE},
-url = {https://doi.org/10.1145/3660783},
-doi = {10.1145/3660783},
-journal = {Proc. ACM Softw. Eng.},
-month = jul,
-articleno = {76},
-numpages = {24},
-keywords = {Unit testing, Test generation, Large language model}
+@article{schafer2024,
+  author  = {Sch{\"a}fer, Max and Nadi, Sarah and Eghbali, Aryaz and Tip, Frank},
+  title   = {An Empirical Evaluation of Using Large Language Models for Automated
+             Unit Test Generation},
+  journal = {IEEE Transactions on Software Engineering},
+  volume  = {50},
+  number  = {1},
+  pages   = {85--105},
+  year    = {2024},
+  eprint  = {2302.06527},
+  archivePrefix = {arXiv}
 }
 
 @article{siddiq2024junit,
@@ -329,19 +312,13 @@ doi = {10.1016/bs.adcom.2018.03.015},
   note = {Published 2019; the key formerly read 2025 and the prose described it as a recent roadmap for LLM-generated code, which a 2019 survey cannot be.}
 }
 
-@article{li2025mutationllm,
-author = {Wang, Bo and Chen, Mingda and Deng, Ming and Lin, Youfang and Harman, Mark and Papadakis, Mike and Zhang, Jie M.},
-title = {A Comprehensive Study on Large Language Models for Mutation Testing},
-year = {2026},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-issn = {1049-331X},
-url = {https://doi.org/10.1145/3805038},
-doi = {10.1145/3805038},
-note = {Just Accepted},
-journal = {ACM Trans. Softw. Eng. Methodol.},
-month = mar,
-keywords = {Empirical Study, Mutation Testing, Mutation Analysis, Mutation Generation, Large Language Models, Coupling}
+@article{wang2026mutationstudy,
+  author  = {Wang, Bo and Chen, Mingda and Deng, Ming and Lin, Youfang and
+             Harman, Mark and Papadakis, Mike and Zhang, Jie M.},
+  title   = {A Comprehensive Study on Large Language Models for Mutation Testing},
+  journal = {ACM Transactions on Software Engineering and Methodology},
+  year    = {2026},
+  doi     = {10.1145/3805038}
 }
 
 @article{mcminn2004,
@@ -596,75 +573,97 @@ series = {CHI '24}
 % ─────────────────────────────────────────────────────────────────────
 
 @article{dakhel2024mutation,
-  title   = {Effective test generation using pre-trained Large Language Models and mutation testing},
-  author  = {Dakhel, Arghavan Moradi and Nikanjam, Amin and Majdinasab, Vahid and Khomh, Foutse and Desmarais, Michel C.},
+  author  = {Dakhel, Arghavan Moradi and Nikanjam, Amin and Majdinasab, Vahid and
+             Khomh, Foutse and Desmarais, Michel C.},
+  title   = {Effective test generation using pre-trained Large Language Models and
+             mutation testing},
   journal = {Information and Software Technology},
+  volume  = {171},
+  pages   = {107468},
   year    = {2024},
-  doi     = {10.1016/j.infsof.2024.107468}
+  eprint  = {2308.16557},
+  archivePrefix = {arXiv}
 }
 
 @inproceedings{bouafif2025primg,
-  title     = {{PRIMG}: Efficient {LLM}-driven Test Generation Using Mutant Prioritization},
-  author    = {Bouafif, Hamed and Hamdaqa, Mohammad and Zulkoski, Ed},
-  booktitle = {Proceedings of the 29th International Conference on Evaluation and Assessment in Software Engineering (EASE)},
+  author    = {Bouafif, Mohamed Salah and Hamdaqa, Mohammad and Zulkoski, Edward},
+  title     = {{PRIMG}: Efficient {LLM}-driven Test Generation Using Mutant
+               Prioritization},
+  booktitle = {Proceedings of the 29th International Conference on Evaluation and
+               Assessment in Software Engineering (EASE '25)},
   year      = {2025},
+  address   = {Istanbul, T{\"u}rkiye},
+  publisher = {ACM},
   doi       = {10.1145/3756681.3756991}
 }
 
-@inproceedings{harman2025meta,
+@inproceedings{foster2025ach,
+  author    = {Foster, Christopher and Gulati, Abhishek and Harman, Mark and
+               Harper, Inna and Mao, Ke and Ritchey, Jillian and
+               Robert, Herv{\'e} and Sengupta, Shubho},
   title     = {Mutation-Guided {LLM}-based Test Generation at {M}eta},
-  author    = {Harman, Mark and Ritchey, Nicholas and Harper, Nadia and Sengupta, Shubho and Mao, Ke and Gulati, Arun and Foster, Jonathan},
-  booktitle = {Proceedings of the 33rd ACM International Conference on the Foundations of Software Engineering (FSE)},
+  booktitle = {Companion Proceedings of the 33rd ACM International Conference on
+               the Foundations of Software Engineering (FSE Companion '25)},
   year      = {2025},
+  address   = {Trondheim, Norway},
+  publisher = {ACM},
   doi       = {10.1145/3696630.3728544}
 }
 
-@inproceedings{straubinger2025debug,
-  title     = {Mutation Testing via Iterative Large Language Model-Driven Scientific Debugging},
-  author    = {Straubinger, Philipp and Kreis, Marvin and Lukasczyk, Stephan and Fraser, Gordon},
-  booktitle = {2025 IEEE International Conference on Software Testing, Verification and Validation Workshops (ICSTW)},
-  year      = {2025},
-  doi       = {10.1109/ICSTW64639.2025.10962485}
+@misc{straubinger2025debug,
+  author       = {Straubinger, Philipp and Kreis, Marvin and
+                  Lukasczyk, Stephan and Fraser, Gordon},
+  title        = {Mutation Testing via Iterative Large Language Model-Driven
+                  Scientific Debugging},
+  year         = {2025},
+  eprint       = {2503.08182},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.SE},
+  note         = {arXiv preprint, v1, 11 March 2025}
 }
 
-@article{wang2026mutation,
-  title   = {Mutation-Guided Unit Test Generation With a Large Language Model},
-  author  = {Wang, Shaoheng and Xu, Bo and Briand, Lionel and Liu, Yang},
-  journal = {IEEE Transactions on Software Engineering},
-  year    = {2026},
-  doi     = {10.1109/TSE.2026.3682975}
+@misc{wang2026mutgen,
+  author       = {Wang, Guancheng and Xu, Qinghua and Briand, Lionel and Liu, Kui},
+  title        = {Mutation-Guided Unit Test Generation with a Large Language Model},
+  year         = {2026},
+  eprint       = {2506.02954},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.SE},
+  note         = {arXiv preprint, v8, 15 April 2026}
 }
 
-@inproceedings{konstantinou2026newer,
-  title     = {How well {LLM}-based test generation techniques perform with newer {LLM} versions?},
-  author    = {Konstantinou, Dimitrios and Degiovanni, Renzo and Papadakis, Mike},
-  booktitle = {2026 IEEE International Conference on Software Testing, Verification and Validation (ICST)},
-  year      = {2026},
-  doi       = {10.1109/ICST69053.2026.00040}
+@misc{konstantinou2026newer,
+  author       = {Konstantinou, Michael and Degiovanni, Renzo and Papadakis, Mike},
+  title        = {How well {LLM}-based test generation techniques perform with
+                  newer {LLM} versions?},
+  year         = {2026},
+  eprint       = {2601.09695},
+  archivePrefix= {arXiv},
+  primaryClass = {cs.SE},
+  note         = {arXiv preprint, v2, 29 July 2026}
 }
 
 @article{zhang2026refrag,
+  author  = {Zhang, Zhe and Liu, Xingyu and Lin, Yuanzhang and Gao, Xiang and
+             Sun, Hailong and Yuan, Yuan},
   title   = {Reference-Based Retrieval-Augmented Unit Test Generation},
-  author  = {Zhang, Yifan and Liu, Mingwei and Lin, Shuhan and Gao, Cuiyun and Sun, Weisong and Yuan, Zhiqiang},
   journal = {ACM Transactions on Software Engineering and Methodology},
+  volume  = {35},
+  number  = {6},
+  pages   = {Article 149},
   year    = {2026},
   doi     = {10.1145/3765758}
 }
 
-@misc{shin2024ragtest,
-  title        = {Retrieval-Augmented Test Generation: How Far Are We?},
-  author       = {Shin, Jiho and Harzevili, Nima Shiri and Aleithan, Reem and Hemmati, Hadi and Wang, Song},
-  year         = {2024},
-  eprint       = {2409.12682},
-  archivePrefix = {arXiv},
-  doi          = {10.48550/arXiv.2409.12682},
-  note         = {To appear, ICSE 2026}
+@inproceedings{shin2026ragtest,
+  author    = {Shin, Jiho and Harzevili, Nima Shiri and Aleithan, Reem and
+               Hemmati, Hadi and Wang, Song},
+  title     = {Retrieval-Augmented Test Generation: How Far Are We?},
+  booktitle = {Proceedings of the IEEE/ACM 48th International Conference on
+               Software Engineering (ICSE '26)},
+  year      = {2026},
+  address   = {Rio de Janeiro, Brazil},
+  publisher = {ACM},
+  doi       = {10.1145/3744916.3773163}
 }
 
-@inproceedings{pan2024icse,
-  title     = {Lost in Translation: A Study of Bugs Introduced by Large Language Models while Translating Code},
-  author    = {Pan, Rangeet and Ibrahimzada, Ali Reza and Krishna, Rahul and Sankar, Divya and Wassi, Lambert Pouguem and Merler, Michele and Sobolev, Boris and Pavuluri, Raju and Sinha, Saurabh and Jabbarvand, Reyhaneh},
-  booktitle = {Proceedings of the IEEE/ACM 46th International Conference on Software Engineering (ICSE)},
-  year      = {2024},
-  doi       = {10.1145/3597503.3639226}
-}
