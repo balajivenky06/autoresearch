@@ -278,10 +278,13 @@ LLM-based unit-test generation:
   \emph{We report a well-powered null:} no method pair separates in
   any scope---pooled, per-benchmark, or per-operator---while the
   model factor is overwhelming ($F = 108.5$, $p < 10^{-60}$). We
-  additionally report a decontaminated replication, a matched-subset
-  replication controlling for differential test-filter attrition,
-  and a power analysis bounding the effect we could have missed to
-  roughly three percentage points.
+  additionally report a decontaminated replication that rules out
+  benchmark memorisation as the source of the null
+  (\S\ref{sec:results-contamination}), a matched-subset replication
+  controlling for differential test-filter attrition
+  (\S\ref{sec:results-attrition}), and a power analysis bounding the
+  effect we could have missed to roughly three percentage points
+  (\S\ref{sec:limitations-conclusion}).
 
 \item \textbf{First human-evaluation study} of LLM-generated unit
   tests under a behaviorally-anchored 0--5 rubric. Three
@@ -842,12 +845,18 @@ Model & \texttt{llama3.2:latest} (3B, dense),
 \paragraph{Methods.}
 \emph{Plain LLM} prompts the model directly with the function under
 test and instructions to generate unit tests, with no retrieval.
-\emph{Random RAG} augments the prompt with three randomly-selected
-text chunks from a small testing-documentation knowledge base; this
-serves as a control for ``does the LLM benefit from extra context
-regardless of relevance?''. \emph{Simple RAG} performs a single
+\emph{Random RAG} augments the prompt with five randomly-selected
+text chunks from the same knowledge base
+(\S\ref{sec:methods-kb}); this serves as a control for ``does the LLM
+benefit from extra context regardless of relevance?''. It is
+identical to Simple RAG in every respect---same knowledge base, same
+number of chunks, same prompt template, same decoding
+parameters---except that the chunks are drawn uniformly at random
+instead of by cosine rank, so the contrast between the two isolates
+the contribution of retrieval \emph{relevance} from that of
+additional context. \emph{Simple RAG} performs a single
 cosine-similarity retrieval pass over the same knowledge base,
-returning the top 3 most relevant chunks. \emph{Iterative Critique
+returning the top $k = 5$ most relevant chunks. \emph{Iterative Critique
 RAG} generates a first draft of tests via Simple RAG, then runs a
 critique-and-refine loop for two iterations where the model judges
 its own output against criteria (coverage, correctness, idioms) and
@@ -863,6 +872,90 @@ parameters). All models were queried with a temperature of 0.2 and
 a 600-second per-run budget. We did not fine-tune any model; the
 goal is to characterize how each generation method \emph{uses} a
 given off-the-shelf LLM.
+
+\subsection{The retrieval knowledge base}\label{sec:methods-kb}
+
+All three retrieval conditions draw from one corpus, built once and
+frozen for the whole study. Because our central result is a null about
+retrieval, the corpus must be specified precisely enough for a reader
+to judge whether the null is a property of retrieval or of this
+particular corpus.
+
+\paragraph{Sources.} We selected 14 URLs covering Python testing
+practice: seven \texttt{pytest} how-to pages (assertions,
+parametrisation, getting started, fixtures, monkeypatching, output
+capture, temporary paths), two CPython standard-library references
+(\texttt{unittest}, \texttt{unittest.mock}), four tutorials
+(two Real~Python articles, GeeksforGeeks, Semaphore CI) and the
+Hypothesis property-based-testing quickstart. \emph{Two of the 14
+failed to fetch at build time} and are absent from the index, leaving
+12 contributing sources. We report this because the composition is
+uneven in a way that matters for interpretation
+(Table~\ref{tab:kb}): the two standard-library pages alone supply
+46\% of all chunks, while the Hypothesis page---the only
+edge-case-oriented source, and the one most plausibly relevant to
+killing boundary mutants---supplies 1.1\%.
+
+\begin{table}[htbp]
+\centering
+\caption{Composition of the retrieval knowledge base as indexed.
+Two of the 14 configured URLs failed to fetch and contribute no
+chunks.}\label{tab:kb}
+\footnotesize
+\begin{tabular}{@{}lrr@{}}
+\toprule
+Source & Chunks & \% \\
+\midrule
+\texttt{docs.python.org} --- \texttt{unittest.mock} & 235 & 24.4 \\
+\texttt{docs.python.org} --- \texttt{unittest}      & 210 & 21.8 \\
+\texttt{docs.pytest.org} --- fixtures               & 131 & 13.6 \\
+Real Python --- mock library                        & 123 & 12.8 \\
+Real Python --- pytest testing                      & 104 & 10.8 \\
+\texttt{docs.pytest.org} --- assertions             &  43 &  4.5 \\
+\texttt{docs.pytest.org} --- monkeypatch            &  33 &  3.4 \\
+\texttt{docs.pytest.org} --- parametrize            &  22 &  2.3 \\
+GeeksforGeeks --- unittest                          &  20 &  2.1 \\
+\texttt{docs.pytest.org} --- getting started        &  19 &  2.0 \\
+\texttt{docs.pytest.org} --- \texttt{tmp\_path}     &  13 &  1.3 \\
+Hypothesis --- quickstart                           &  11 &  1.1 \\
+\midrule
+\textbf{Total} & \textbf{964} & \textbf{100.0} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Indexing.} Each fetched page is reduced to text, then split
+into fixed-width overlapping windows of 500 characters with 100
+characters of overlap; windows shorter than 50 characters after
+stripping are discarded. Overlap ensures that material spanning a
+window boundary is not lost from every retrievable unit. This yields
+\textbf{964 chunks}, which are embedded with
+\texttt{sentence-transformers/all-MiniLM-L6-v2} (384 dimensions) and
+held in an in-memory NumPy matrix. Retrieval is exact cosine
+similarity against that matrix---there is no approximate index, so
+ranking is deterministic given the query.
+
+\paragraph{Querying.} The query is not the bare function. It is a
+fixed task prefix, \texttt{``pytest unit testing examples patterns for
+python function:''}, concatenated with the first 300 characters of the
+function under test. The prefix biases retrieval toward
+testing-idiom material rather than toward code resembling the function
+body, which is the intended behaviour for a documentation corpus.
+Simple RAG and the first iteration of Iterative Critique RAG take the
+$k = 5$ highest-scoring chunks; Random RAG takes 5 chunks drawn
+uniformly at random from the same 964, using an unseeded generator, so
+its draw differs between runs.
+
+\paragraph{A diagnostic that turned out to be degenerate.} We
+instrumented retrieval with a \emph{noise rate}: the fraction of
+returned chunks scoring below a cosine threshold of 0.3, intended as a
+signal for ``the retriever found nothing relevant''. It is identically
+zero for every query in the study---no retrieved chunk ever scored
+below the threshold. We report this rather than discarding it because
+it bounds one explanation of our null: the retriever is not returning
+obvious garbage. Whether the above-threshold material is
+\emph{useful} is a separate question, and the Random RAG contrast
+(\S\ref{sec:results-killrate}) is what actually answers it.
 
 \subsection{Dataset}\label{sec:methods-dataset}
 
@@ -1333,6 +1426,66 @@ Iterative Critique & 4 & 2 & 3 & 2 \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+\subsection{Benchmark contamination}\label{sec:results-contamination}
+
+HumanEval and MBPP were both published in 2021 and ship their
+reference solutions \emph{and} their canonical test suites. Every
+model in our pool has a training cutoff after that date. A model may
+therefore be reciting a memorised suite rather than reasoning about
+the function, and if methods differ in how much they recite, the
+method factor is confounded with memorisation rather than
+measuring generation quality.
+
+\paragraph{Design.} We re-ran the full $4 \times 4$ sweep on a
+decontaminated variant of the corpus, built by applying
+semantics-preserving transformations that break surface recall while
+leaving behaviour identical: the function is renamed via AST rewrite
+with all recursive references updated, its parameters are renamed
+from a fixed alias table, and the reference tests are rewritten to
+call the renamed function. All transformations are deterministic, so
+the decontaminated corpus is itself reproducible. Every transformed
+problem must still pass its own rewritten reference tests; two of the
+100 failed that check and were dropped rather than carried forward,
+since a transform that changed behaviour would confound the
+comparison with plain breakage. The decontaminated arm therefore
+covers 98 functions, yielding 1{,}421 valid observations over
+9{,}404 mutants.
+
+We deliberately did \emph{not} paraphrase docstrings with an LLM.
+Doing so would break recall more thoroughly but would make the corpus
+non-reproducible and unauditable, which is the wrong trade for a
+study whose central claim is a null. Docstring text is left intact,
+and we state the consequence plainly in
+\S\ref{sec:limitations-internal}: our transformation defeats
+\emph{lexical} recall of the function signature, not recall keyed on
+the problem description.
+
+\paragraph{Result.} \emph{Decontamination does not reduce kill rates,
+and does not change the method-level conclusion.} Kill rates move
+slightly \emph{upward} under renaming---mean paired change
+$+0.0120$ across the 1{,}313 observations present in both arms, with
+13 of 16 cells improving---and the change is not significant
+(Wilcoxon signed-rank $p = 0.101$). Per-method means are Plain LLM
+0.892, Random RAG 0.903, Simple RAG 0.893 and Iterative Critique
+0.901, a spread of \textbf{0.0108} against 0.0156 on the original
+corpus. The Type-III ANOVA on the decontaminated arm returns method
+$F = 0.072$, $p = 0.975$---a weaker method effect than the original
+null, not a stronger one---while the model factor remains
+overwhelming ($F = 82.9$, $p < 10^{-40}$).
+
+\paragraph{Interpretation.} Two readings are available and we can
+distinguish them. If the models were reciting memorised suites,
+renaming the function should have degraded performance; it did not.
+The small upward movement is most plausibly an artifact of the
+transformation itself: renaming \texttt{has\_close\_elements} to a
+neutral identifier removes a semantic hint that a model might
+otherwise use to produce a plausible-but-wrong test, so marginally
+more generated suites survive the original-code filter. What we can
+rule out is the strong contamination hypothesis---that our kill rates
+are inflated by recall and would collapse on unseen problems. What we
+cannot rule out is recall keyed on the problem \emph{description},
+which our transformation leaves untouched.
 
 \subsection{Test-filter attrition and the matched subset}
 \label{sec:results-attrition}
@@ -2029,6 +2182,20 @@ direction of the effect, but a future replication should compare
 \emph{pre-filter assertion semantics} between IC and Plain LLM to
 resolve which mechanism dominates.
 
+\paragraph{Decontamination defeats signature recall, not
+description recall.}
+Our decontamination pass (\S\ref{sec:results-contamination}) renames
+the function and its parameters but leaves the docstring intact, a
+choice made so the transformed corpus stays deterministic and
+auditable. A model that memorised a HumanEval suite keyed on the
+problem \emph{description} rather than on the identifier would be
+unaffected by our transformation, and our result---that kill rates
+do not fall under renaming---would not detect it. The stronger test,
+paraphrasing docstrings with an LLM, trades reproducibility for
+coverage of that case; we judged the trade wrong here but it is the
+natural next step for a replication that can afford to publish the
+paraphrased corpus alongside its results.
+
 \subsection{External validity}\label{sec:limitations-external}
 
 \paragraph{Four LLMs is not a population.}
@@ -2245,9 +2412,9 @@ SBST. We list the exact knobs to support replication.
   maximum 2048 generated tokens per call.
 \item \textbf{RAG retriever:}
   \texttt{sentence-transformers/all-MiniLM-L6-v2} with cosine
-  similarity over an in-memory NumPy index, top-3 retrieval
+  similarity over an in-memory NumPy index, $k = 5$ retrieval
   for Simple RAG and the first iteration of Iterative Critique
-  RAG.
+  RAG, and $k = 5$ uniform-random sampling for Random RAG.
 \item \textbf{Iterative Critique loop:} maximum 3 iterations
   with an early-exit if the critic returns ``no issues''; both
   generator and critic share the same underlying model.
@@ -2271,7 +2438,7 @@ SBST. We list the exact knobs to support replication.
 
 We summarize the four generation methods as compact
 pseudocode. \texttt{LLM} denotes a single
-\texttt{Ollama.chat} call, \texttt{retrieves} cosine-top-3
+\texttt{Ollama.chat} call, \texttt{retrieves} cosine-top-$k$ ($k=5$)
 retrieval over the in-memory index, and \texttt{filters}
 the original-source test filter.
 
@@ -2286,7 +2453,7 @@ def plain_llm(function, signature, docstring):
 \paragraph{Random RAG.}
 \begin{verbatim}
 def random_rag(function, signature, docstring, corpus):
-    chunks   = random.sample(corpus, k=3)
+    chunks   = random.sample(corpus, k=5)
     prompt   = TEMPLATE_RAG.format(function, signature, docstring, chunks)
     response = LLM(prompt)
     return filter(parse_tests(response), function)
@@ -2295,8 +2462,8 @@ def random_rag(function, signature, docstring, corpus):
 \paragraph{Simple RAG.}
 \begin{verbatim}
 def simple_rag(function, signature, docstring, index):
-    query    = signature + " " + docstring
-    chunks   = retrieve(index, query, k=3)        # cosine top-3
+    query    = QUERY_PREFIX + function[:300]
+    chunks   = retrieve(index, query, k=5)       # cosine top-5
     prompt   = TEMPLATE_RAG.format(function, signature, docstring, chunks)
     response = LLM(prompt)
     return filter(parse_tests(response), function)
@@ -2306,7 +2473,7 @@ def simple_rag(function, signature, docstring, index):
 \begin{verbatim}
 def iterative_critique(function, signature, docstring, index,
                        max_iters=3):
-    chunks   = retrieve(index, signature + " " + docstring, k=3)
+    chunks   = retrieve(index, QUERY_PREFIX + function[:300], k=5)
     draft    = LLM(TEMPLATE_GEN.format(function, signature,
                                        docstring, chunks))
     for _ in range(max_iters):
