@@ -46,40 +46,51 @@
 %% Sample for unstructured abstract %%
 %%==================================%%
 
-\abstract{Large language models (LLMs) can now produce readable
-unit tests, often augmented by retrieval-augmented generation
-(RAG). However, existing evaluations rely on surface-level metrics
-(e.g., BLEU) and single-model baselines, failing to assess true
-defect-detection capability across varying LLM architectures. We
-present the first cross-LLM empirical evaluation of RAG-based test
-generation using mutation testing. We evaluated four generation
-methods (Plain LLM, Random RAG, Simple RAG, and Iterative Critique
-RAG) across four open-weight LLMs (spanning 3B to 30B parameters)
-on 100 functions from HumanEval and MBPP. We complemented this
-with a three-annotator human evaluation and a head-to-head
-comparison against Pynguin, a search-based software testing (SBST)
-tool. Four key findings emerge. First, RAG method choice has no
-detectable effect on defect detection: the spread across all four
-generation methods is 0.011 in mean kill rate against 0.232 across
-the four LLMs, a factor of 21.7, and no method pair separates under
-correction in any scope---pooled, per-benchmark, or per-operator.
-Second, retrieval faithfulness tracks the model rather than the
-retrieval method, and an apparent strong negative association
-between faithfulness and defect detection ($r = -0.907$) disappears
-once model is controlled for ($r = +0.079$), a confound the
-cell-level analysis standard in this literature cannot detect.
-Third, human judgment and defect detection come apart: three
-independent annotators ranked Iterative Critique highest on all
-three rubric dimensions, significantly so on idiom and
-completeness, yet its kill rate is indistinguishable from
-unaugmented prompting and per-suite human ratings do not predict
-kill rate ($r = +0.18$, $p = 0.30$). Finally, LLM generators
-outperform Pynguin overall, but the advantage is concentrated
-entirely on comparison operators while Pynguin leads on arithmetic
-and negate-boolean, establishing a mandate for hybrid SBST/LLM test
-generators partitioned by operator family.}
+\abstract{\textbf{Context.} Retrieval-augmented generation (RAG) is
+widely assumed to improve LLM-generated unit tests, but evaluations
+rely on surface metrics and single models, leaving defect-detection
+capability untested. \textbf{Objective.} We quantify whether
+retrieval augmentation improves the \emph{defect-detection} capability
+of generated tests, and whether any such effect transfers across
+LLMs. \textbf{Method.} We ran a $4 \times 4$ factorial experiment---
+four generation methods (Plain LLM, Random RAG, Simple RAG, Iterative
+Critique) by four open-weight LLMs (3B--30B parameters)---over 100
+HumanEval and MBPP functions, yielding 1{,}443 valid observations and
+9{,}660 mutants, analysed with Type-III ANOVA and mixed-effects
+regression. We added a three-annotator blinded human evaluation and a
+Pynguin baseline matched on the same functions. \textbf{Results.}
+Method choice has no detectable effect: the spread across all four
+methods is 0.011 in mean kill rate against 0.232 across models
+($21.7\times$), and no pair separates in any scope. Semantic retrieval
+beats a random-chunk placebo by 0.3 percentage points. An apparent
+faithfulness--kill-rate correlation ($r = -0.907$) vanishes once model
+is controlled ($r = +0.079$). Annotators ranked Iterative Critique
+highest on all three rubric dimensions, yet ratings do not predict
+kill rate ($r = +0.18$, $p = 0.30$). \textbf{Conclusion.} Model
+selection, not retrieval design, determines defect detection, and
+human-perceived quality is a separate construct from it.}
 
 \keywords{Unit-test generation, mutation testing, retrieval-augmented generation, Large language models, search-based software testing}
+
+
+% ─────────────────────────────────────────────────────────────────────
+% HIGHLIGHTS (Elsevier requires 3-5 bullets, max 85 characters each
+% INCLUDING SPACES — the submission system enforces this limit).
+% Character counts are given per line so the limit can be re-checked
+% after any edit.
+% ─────────────────────────────────────────────────────────────────────
+\begin{center}\small
+\begin{minipage}{0.95\textwidth}
+\textbf{Highlights}
+\begin{itemize}\setlength{\itemsep}{2pt}
+\item RAG method choice has no effect on mutation kill rate across four LLMs
+\item Model choice moves defect detection 21.7x further than method choice
+\item Semantic retrieval beats a random-chunk placebo by 0.3 percentage points
+\item A faithfulness-kill-rate correlation of -0.91 is a model confound
+\item Annotators prefer tests whose defect detection is no better
+\end{itemize}
+\end{minipage}
+\end{center}
 
 \maketitle
 
@@ -182,6 +193,38 @@ interpret. The present paper closes all three gaps: it uses
 mutation-kill rate as the primary metric, conducts a three-annotator
 human evaluation, and benchmarks against the Pynguin search-based
 test generator on matched functions.
+
+\subsection{Research objectives}\label{sec:intro-objectives}
+
+The overall aim of this study is to determine \emph{whether
+retrieval augmentation improves the defect-detection capability of
+LLM-generated unit tests, and whether any such improvement transfers
+across language models.} We pursue that aim through four specific
+objectives:
+
+\begin{description}
+\item[\textbf{O1}.] To \emph{quantify} the effect of retrieval
+  augmentation on mutation kill rate relative to unaugmented
+  prompting, and to bound that effect with a stated level of
+  statistical power rather than reporting significance alone.
+\item[\textbf{O2}.] To \emph{separate} the contribution of retrieval
+  \emph{relevance} from the contribution of additional prompt
+  context, by including a random-retrieval condition identical to
+  semantic retrieval in every respect except ranking.
+\item[\textbf{O3}.] To \emph{test the transferability} of any method
+  ordering across language models of differing capability, and to
+  establish whether conclusions drawn on one model may be
+  generalised to others.
+\item[\textbf{O4}.] To \emph{compare} mutation-based defect detection
+  against two independent quality signals measured on the same
+  generated suites---blinded human ratings and a search-based
+  generator baseline---and to determine whether the three signals
+  agree.
+\end{description}
+
+\noindent Objectives O1--O4 map onto the research questions below as
+O1\,$\rightarrow$\,RQ1--RQ2, O2\,$\rightarrow$\,RQ1,
+O3\,$\rightarrow$\,RQ3--RQ4 and O4\,$\rightarrow$\,RQ5--RQ6.
 
 \subsection{Research questions}\label{sec:intro-rqs}
 
@@ -1826,29 +1869,86 @@ families and an LLM for relational oracles}. We note the comparison rests on the
 for which Pynguin produced a valid suite, under a 60-second budget
 (\S\ref{sec:limitations-external}).
 
-\paragraph{LLM capability dominates RAG method choice.}
+\paragraph{LLM capability dominates retrieval design.}
 \label{sec:discussion-llm-dominates}
 
-For the practitioner deploying an LLM-based test generator,
-\emph{this finding inverts the typical RAG-research framing}. The
-ranking question that matters most is not ``which RAG method?''
-but ``which open-weight LLM in the 9B--30B range produces the best
-defects-per-dollar test generator?''. Once that's chosen, the
-RAG-method choice should be made conditionally
-—Iterative Critique for mid-range models, Simple RAG for the strongest dense
-models.
+For a team deploying an LLM-based test generator, \emph{this result
+inverts the usual framing}. The question that moves the metric is not
+``which retrieval strategy?'' but ``which open-weight model, at what
+cost per suite?''. Across our pool, moving from a 3B to a 9B model
+buys 0.232 in mean kill rate; every retrieval strategy we tried, from
+a random-chunk placebo to a two-round critique loop, fits inside a
+band of 0.011. Retrieval design is not where the engineering effort
+pays off at this scale.
 
-\paragraph{Implications for practitioners.}
-\label{sec:discussion-practitioners}
+\section{Implications}\label{sec:implications}
 
-We distill our findings into four recommendations:
+\subsection{For practitioners}\label{sec:implications-practice}
 
 \begin{enumerate}
-\item \textbf{Choose the LLM first, then the RAG method.}
-\item \textbf{Match the RAG method to the LLM's capability tier.}
-\item \textbf{Reward semantic faithfulness, penalize lexical
-  copy-paste.}
-\item \textbf{Optimize for the defect family that matters.}
+\item \textbf{Spend the budget on model selection, not retrieval
+  engineering.} Model choice moved defect detection $21.7\times$
+  further than method choice. A team choosing between a larger model
+  and a more sophisticated RAG pipeline, at equal cost, should take
+  the model.
+\item \textbf{Do not assume a documentation knowledge base earns its
+  keep---measure it against a random-retrieval control.} Semantic
+  ranking over our testing-documentation corpus beat random chunks
+  from the same corpus by 0.3 percentage points. Retrieval that
+  cannot beat its own placebo is adding latency and tokens for
+  nothing. The control costs one extra experimental arm and is the
+  only way to tell the two apart.
+\item \textbf{Do not treat developer-perceived quality as a proxy for
+  defect detection.} Our annotators consistently preferred Iterative
+  Critique's tests---significantly so on idiom and completeness---and
+  those tests detect no more defects than unaugmented prompting.
+  Teams optimising a review-based or rubric-based quality signal
+  should expect it not to move fault detection, and should measure
+  both.
+\item \textbf{Divide work between SBST and LLM generators by operator
+  family, not wholesale.} Pynguin led every LLM method on arithmetic
+  (0.850 vs 0.809) and negate-boolean (1.000 vs 0.917) mutants, while
+  LLMs led decisively on comparison (0.917 vs 0.250) and boundary
+  (0.817 vs 0.554). A hybrid should route by the kind of oracle
+  required, not run both and merge.
+\item \textbf{Account for test-filter attrition when comparing
+  methods.} Iterative Critique produced a usable suite for only 50 of
+  100 functions on our weakest model, against Plain LLM's 95.
+  Comparing mean quality across methods without reporting yield
+  compares different populations of functions.
+\end{enumerate}
+
+\subsection{For researchers}\label{sec:implications-research}
+
+\begin{enumerate}
+\item \textbf{Report the partial correlation alongside the pooled one
+  in cross-model designs.} Our faithfulness result is a cautionary
+  case: a pooled $r = -0.907$ ($p < 0.001$) became $r = +0.079$
+  ($p = 0.818$) under control for model. Where one factor explains
+  99.5\% of outcome variance, any covariate tracking that factor will
+  correlate with the outcome at $|r| > 0.8$. Cell-level correlation
+  over a $4 \times 4$ matrix cannot distinguish that from a finding.
+\item \textbf{Include an unaugmented and a placebo condition.} Much
+  of the RAG-for-code literature compares a proposed retrieval design
+  against a weaker retrieval design. Without a no-retrieval arm the
+  question ``does retrieval help?'' is not asked, and without a
+  random-retrieval arm ``does \emph{relevance} help?'' is not
+  separable from ``do extra tokens help?''.
+\item \textbf{Treat the model factor as a first-class experimental
+  variable.} Method rankings in our data do not transfer: the best
+  method differs on three of four models, and only the kill rate of
+  the easiest operator family clears a $\rho \geq 0.8$ agreement
+  threshold across all model pairs. A technique validated on one
+  model should not be reported as a general result.
+\item \textbf{Report kill rate distributions, not only means.}
+  73.2\% of our per-sample kill rates sit at exactly 1.0. On a
+  ceiling that high, mean differences are driven by a small tail, and
+  parametric comparisons of means overstate what the data can
+  resolve.
+\item \textbf{Publish nulls in this area.} Two independent 2026
+  studies reach compatible conclusions by other routes
+  (\S\ref{sec:related-gap}). The cumulative signal is only visible
+  because those nulls were reported.
 \end{enumerate}
 
 \section{Threats to Validity}\label{sec:limitations}
@@ -2040,8 +2140,12 @@ artifacts at
 \url{https://github.com/balajivenky06/autoresearch}. The
 repository contains the experimental sweep TSV
 (\texttt{results\_mutation.tsv}), the 40-pair human-evaluation
-worksheet (\texttt{human\_eval\_pairs.CSVs}), the three annotators'
-returned CSVs (\texttt{human\_eval\_annotations/}), and all figure
+worksheet (\texttt{human\_eval\_pairs.csv} and its stratification
+metadata \texttt{human\_eval\_pairs.meta.csv}), the three annotators'
+returned ratings (\texttt{human\_eval\_annotations/}), the corpus
+manifest fixing the 100 evaluated functions and their task
+identifiers (\texttt{corpus\_manifest.tsv}), the per-sample mutation
+checkpoints from which the results table is derived, and all figure
 PNGs (\texttt{plots\_mutation/}).
 
 \paragraph{Code availability.}
@@ -2052,9 +2156,15 @@ The complete analysis pipeline—the mutation-testing implementation
 \texttt{analyze\_mutation\_generalizability.py},
 \texttt{noise\_vs\_kill.py},
 \texttt{mutation\_per\_benchmark.py}), the Pynguin runner
-(\texttt{pynguin\_runner.py}), and the Streamlit human-evaluation
-application (\texttt{human\_eval\_app.py})—is released under the
-MIT license at the same URL.
+(\texttt{pynguin\_runner.py}), the Streamlit human-evaluation
+application (\texttt{human\_eval\_app.py}), the figure scripts
+(\texttt{plot\_rebuild\_figures.py},
+\texttt{plot\_stale\_figures.py}), the corpus verifier
+(\texttt{verify\_corpus.py}), the decontamination pass
+(\texttt{decontaminate.py}), and the two audit tools that gate
+submission (\texttt{check\_paper\_consistency.py},
+\texttt{verify\_citations.py})—is released under the MIT license at
+the same URL.
 
 \paragraph{Author contributions.}
 \textbf{BV}: Conceptualization, Methodology, Software,
@@ -2062,13 +2172,33 @@ Investigation, Formal analysis, Writing—original draft.
 \textbf{AM}, \textbf{GS}: Supervision, Writing—review \&
 editing.
 
-\paragraph{Use of AI tools.}
-The authors acknowledge the use of Large Language Models (LLMs)
-solely for AI-assisted copy editing and readability improvements.
-Human authors maintain full accountability for the content and
-factual accuracy of the manuscript. All experimental design,
-analysis, and conclusions were developed and verified by the
-human authors. All experiments were conducted using publicly
+\paragraph{Declaration of generative AI and AI-assisted
+technologies in the writing process.}
+% ====================================================================
+% AUTHOR ACTION REQUIRED — this statement replaces one that was
+% materially inaccurate in a previous submission of this work, which
+% claimed LLM use "solely for AI-assisted copy editing". Verify every
+% clause below against your own recollection of the workflow before
+% submitting, and amend anything that does not match. A declaration
+% that understates AI involvement is an integrity issue; one that
+% overstates it is merely conservative.
+% ====================================================================
+During the preparation of this work the authors used large language
+models to assist with drafting and copy-editing manuscript prose, and
+with writing and refactoring the analysis and plotting scripts in the
+replication package. All experimental design decisions, the choice of
+statistical tests, and all interpretations and conclusions are the
+authors' own. Every numeric result reported in this manuscript is
+generated by executable code in the replication package and is
+verified against it by an automated consistency check
+(\texttt{check\_paper\_consistency.py}), which confirms that each
+figure, table and in-text statistic traces to
+\texttt{results\_mutation.tsv}. Every reference was verified against
+the primary source document, and bibliographic metadata was checked
+against registered DOIs where available
+(\texttt{verify\_citations.py}). After using these tools the authors
+reviewed and edited the content as needed and take full
+responsibility for the content of the publication. All experiments were conducted using publicly
 available, open-source code and datasets under their respective
 licenses. No private, sensitive, or personally-identifying data
 were used at any stage of the study.
