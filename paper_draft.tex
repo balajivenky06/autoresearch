@@ -248,11 +248,10 @@ around the three gaps identified above:
   between generated tests and retrieved documentation predict
   mutation kill rate? Does \emph{semantic faithfulness} (an
   LLM-judge metric) predict it differently?
-\item[\textbf{RQ5}.] Do \emph{human annotators} rate the best
-  LLM-generated tests higher than the worst LLM-generated tests on
-  dimensions of test idiom quality, correctness, and
-  completeness---and does their ranking match the mutation-testing
-  ranking?
+\item[\textbf{RQ5}.] Do \emph{human annotators} rank the four
+  generation methods differently on test idiom quality, correctness
+  and completeness---and does their ranking agree with the
+  mutation-testing ranking of the same suites?
 \item[\textbf{RQ6}.] How do LLM-based test generators \emph{compare
   against search-based test generation} (Pynguin) on the same
   matched functions, under a fixed search budget?
@@ -946,6 +945,62 @@ $k = 5$ highest-scoring chunks; Random RAG takes 5 chunks drawn
 uniformly at random from the same 964, using an unseeded generator, so
 its draw differs between runs.
 
+\paragraph{A worked retrieval.} Retrieval is deterministic given
+the query and the frozen index, so a single example is fully
+reproducible and is the clearest way to convey what the retriever
+actually supplies. Corpus sample 0 is MBPP/67:
+
+\begin{verbatim}
+def bell_number(n):
+    bell = [[0 for i in range(n+1)] for j in range(n+1)]
+    bell[0][0] = 1
+    for i in range(1, n+1):
+        bell[i][0] = bell[i-1][i-1]
+        for j in range(1, i+1):
+            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]
+    return bell[n][0]
+\end{verbatim}
+
+\noindent The query is the task prefix plus the first 300 characters
+of that source. The five highest-scoring chunks are:
+
+\begin{table}[htbp]
+\centering
+\caption{The $k = 5$ chunks retrieved for corpus sample 0
+(MBPP/67, \texttt{bell\_number}).}\label{tab:retrieval-example}
+\footnotesize
+\begin{tabular}{@{}clp{0.50\textwidth}@{}}
+\toprule
+\# & cos & Source and content \\
+\midrule
+1 & 0.636 & \texttt{docs.pytest.org} assertions --- assertion-syntax reference \\
+2 & 0.612 & \texttt{hypothesis.readthedocs.io} --- \texttt{@given(st.integers())} property-based example \\
+3 & 0.603 & \texttt{docs.pytest.org} assertions --- \texttt{@parametrize} with an \texttt{[a, b, result]} table \\
+4 & 0.597 & \texttt{hypothesis.readthedocs.io} --- running a Hypothesis test under pytest \\
+5 & 0.588 & \texttt{hypothesis.readthedocs.io} --- \texttt{@given} entry-point description \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\noindent Two features of this retrieval are worth drawing out,
+because they generalise. First, the similarity scores are tightly
+bunched (0.588--0.636 against a whole-corpus range of
+$-0.065$--$0.636$), so the ranking among the top chunks is decided by
+differences of a few hundredths; this is why a random draw from the
+same corpus is not an obviously worse prompt than the ranked one.
+Second, \emph{three of the five chunks come from the Hypothesis
+quickstart}, which is 1.1\% of the index---the retriever is behaving
+sensibly, pulling property-based-testing material for a numeric
+function, but what it supplies is generic testing idiom rather than
+anything specific to Bell numbers. Nothing in the retrieved context
+tells a model what $B_4$ is. The suite that Simple RAG produced for
+this function asserts \texttt{bell\_number(4) == 15} and
+\texttt{bell\_number(10) == 115975} --- correct values the model
+supplied itself --- and then six \texttt{pytest.raises} cases for
+negative, \texttt{None}, float and string inputs that the function
+does not in fact guard against. The retrieved idiom shaped the
+\emph{form} of the tests; the oracle values came from the model.
+
 \paragraph{A diagnostic that turned out to be degenerate.} We
 instrumented retrieval with a \emph{noise rate}: the fraction of
 returned chunks scoring below a cosine threshold of 0.3, intended as a
@@ -1169,10 +1224,56 @@ through exactly the same mutation-testing pipeline
 a directly-comparable kill-rate metric.
 
 \section{Results}\label{sec:results}
+
+Each subsection below is tagged with the research question it answers
+and opens with a one-sentence answer to it; the evidence follows.
+Three subsections (\S\ref{sec:results-contamination},
+\S\ref{sec:results-attrition} and the power analysis in
+\S\ref{sec:limitations-conclusion}) answer no research question
+directly---they exist to test whether the answers to RQ1 and RQ2
+survive the two most plausible alternative explanations for a null,
+memorisation and differential attrition.
+
+\begin{table}[htbp]
+\centering
+\caption{Where each research question is answered.}\label{tab:rqmap}
+\small
+\begin{tabular}{@{}llp{0.52\textwidth}@{}}
+\toprule
+RQ & Section & Answer in brief \\
+\midrule
+RQ1 & \S\ref{sec:results-killrate} &
+  No. The spread across all four methods is 0.011 against 0.232
+  across models. \\
+RQ2 & \S\ref{sec:results-stats}, \S\ref{sec:results-peroperator} &
+  No. $F = 0.21$, $p = 0.890$; no pair separates in any scope, and
+  no operator family separates them either. \\
+RQ3 & \S\ref{sec:results-generalisability} &
+  No. The best method differs on three of four models; only the
+  easiest operator family clears $\rho \geq 0.8$. \\
+RQ4 & \S\ref{sec:results-faithfulness} &
+  No. The pooled association ($r = -0.907$) is a model confound and
+  vanishes under control ($r = +0.079$). \\
+RQ5 & \S\ref{sec:results-humaneval} &
+  Yes to the first half, no to the second. Annotators rank Iterative
+  Critique highest on all three dimensions; that ranking does not
+  agree with the mutation ranking. \\
+RQ6 & \S\ref{sec:results-pynguin} &
+  LLM methods lead overall, but the advantage is confined to the
+  relational and boundary operator families. \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 We organize the findings around the six research questions
 introduced in \S\ref{sec:intro-rqs}.
 
 \subsection{Mutation kill rates across methods and models}
+
+\paragraph{\textnormal{\textbf{RQ1} --- Does retrieval augmentation raise the mutation kill rate?}}
+\emph{Answer: no.} The four methods span 0.011 in mean kill rate
+while the four models span 0.232.
+
 \label{sec:results-killrate}
 
 Table~\ref{tab:killrate-matrix} reports the mean mutation kill rate
@@ -1229,6 +1330,13 @@ $= 0.960$}, and even there 27 mutants survive out of the 665 it
 generated (582 killed, 41 equivalent).
 
 \subsection{Statistical significance}\label{sec:results-stats}
+
+\paragraph{\textnormal{\textbf{RQ2} --- Is the method effect significant once sample difficulty and model are controlled, and does it concentrate anywhere?}}
+\emph{Answer: no, and no.} The method factor is not significant in
+any scope, and the per-benchmark and per-operator decompositions
+(\S\ref{sec:results-perbenchmark}, \S\ref{sec:results-peroperator})
+locate no family in which it becomes so.
+
 
 \subsubsection{Overall kill rate}\label{sec:results-stats-overall}
 
@@ -1330,6 +1438,11 @@ estimates; what the larger corpus removes is any basis for calling
 it an effect.
 
 \subsection{Cross-model generalizability}
+
+\paragraph{\textnormal{\textbf{RQ3} --- Do method rankings transfer across LLMs?}}
+\emph{Answer: no.} The best method differs on three of the four
+models, and Iterative Critique leads on none.
+
 \label{sec:results-generalisability}
 
 A central question is whether the method ordering observed in one
@@ -1548,6 +1661,11 @@ a robustness check rather than a separate finding.
 
 \subsection{Per-operator analysis}\label{sec:results-peroperator}
 
+\paragraph{\textnormal{\textbf{RQ2}, continued --- does the method effect concentrate on a defect family?}}
+\emph{Answer: no.} No method leads on more than two of the five
+operator families, and no gap exceeds nine percentage points.
+
+
 Table~\ref{tab:peroperator} reports per-operator kill rates averaged
 across the four LLMs.
 
@@ -1590,6 +1708,11 @@ more useful explanation of the null overall effect
 
 \subsection{Retrieval faithfulness is a model property, not a
 method property}\label{sec:results-faithfulness}
+
+\paragraph{\textnormal{\textbf{RQ4} --- Does faithfulness to retrieved context predict kill rate?}}
+\emph{Answer: no.} The strong pooled association is produced by
+the model factor and does not survive controlling for it.
+
 
 Token-overlap faithfulness between generated tests and retrieved
 context varies by model, not by retrieval method. A one-way model on
@@ -1669,6 +1792,12 @@ every cell and cannot be correlated with anything. We report it for
 transparency rather than as a result.
 
 \subsection{Human evaluation}\label{sec:results-humaneval}
+
+\paragraph{\textnormal{\textbf{RQ5} --- Do annotators rank the methods differently, and does their ranking agree with the mutation ranking?}}
+\emph{Answer: yes, and no.} Annotators rank Iterative Critique
+highest on all three dimensions; the mutation data cannot distinguish
+it from unaugmented prompting.
+
 
 Three independent annotators rated 40 stratified
 \texttt{(function, generated\_tests)} pairs, blinded to the method and
@@ -1783,6 +1912,12 @@ llama3.2:latest & 3.53          & 3.83          & 3.87          & 0.972 \\
 \end{table}
 
 \subsection{Comparison against a search-based baseline}
+
+\paragraph{\textnormal{\textbf{RQ6} --- How do LLM generators compare against search-based generation?}}
+\emph{Answer: LLMs lead overall, but not uniformly.} The advantage
+is confined to the relational and boundary operator families;
+Pynguin leads on arithmetic and negate-boolean.
+
 \label{sec:results-pynguin}
 
 To ground our LLM-method results against the prior dominant
@@ -2325,8 +2460,19 @@ metadata \texttt{human\_eval\_pairs.meta.csv}), the three annotators'
 returned ratings (\texttt{human\_eval\_annotations/}), the corpus
 manifest fixing the 100 evaluated functions and their task
 identifiers (\texttt{corpus\_manifest.tsv}), the per-sample mutation
-checkpoints from which the results table is derived, and all figure
-PNGs (\texttt{plots\_mutation/}).
+analysis checkpoints from which every results table is derived
+(\texttt{checkpoints\_mutation\_analysis/} and its decontaminated
+counterpart), and all figure PNGs (\texttt{plots\_mutation/}).
+\emph{One limitation of the package should be stated plainly:} the
+archived \emph{generated test suites} cover the 30-function pilot
+rather than the full 100-function sweep, because the main sweep ran
+on hosted accelerators and only the analysis checkpoints---which
+carry per-sample kill, survival and equivalence counts, not the test
+source---were retained. Every statistic in this paper is therefore
+recomputable from the package, and \texttt{rebuild\_tsv.py}
+regenerates \texttt{results\_mutation.tsv} from the checkpoints
+alone, but a reader wishing to inspect the generated tests for all
+100 functions would need to re-run the sweep.
 
 \paragraph{Code availability.}
 The complete analysis pipeline—the mutation-testing implementation
