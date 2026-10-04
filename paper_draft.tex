@@ -118,9 +118,10 @@ code can produce pytest- or JUnit-formatted test suites that read
 like hand-written tests, encode specifications drawn from docstrings
 or function signatures, and require no per-function search budget
 beyond inference time \citep{schafer2024,tufano2022}. Multiple recent studies have benchmarked
-LLM-generated tests against SBST baselines and reported competitive
-or superior coverage on standard benchmarks (HumanEval, MBPP,
-CodeContests). The question that frames the present paper is no
+LLM-generated tests against search-based baselines and reported
+competitive or superior effectiveness on standard benchmarks
+\citep{schafer2024,lemieux2023codamosa,dakhel2024mutation,
+straubinger2025debug,konstantinou2026newer}. The question that frames the present paper is no
 longer ``can LLM replace SBST?''—the empirical answer to that is
 ``yes, on coverage metrics''—but rather: \emph{once we accept
 LLM-based test generation, which augmentation methodology produces
@@ -132,18 +133,35 @@ A natural augmentation for LLM test generators is
 framework \citep{lewis2020} augments an LLM's prompt with passages
 retrieved from a knowledge base; in the test-generation context, the
 knowledge base is typically a curated set of testing tutorials,
-framework documentation, and example test suites. Several RAG
-variants have been proposed for code-generation tasks more
-broadly — Simple RAG (a single top-$k$ retrieval pass),
-Iterative-Critique RAG (a generate-and-refine loop that injects the
-retrieved context across multiple iterations), and Random RAG (an
-ablation baseline where retrieval is unrelated to the
-task) — and there is now a small empirical literature comparing
-their effectiveness on docstring generation, code-completion, and
-related tasks \citep{liu2025codereview,rag4code2025,zhang2023repocoder}.
-Comparable work on \emph{unit test generation specifically} is
-sparser, and the work that does exist has three methodological gaps
-that we address in this paper.
+framework documentation, and example test suites. The general framework is surveyed by
+\citet{rag4code2025}. Several variants have been applied to code
+tasks, and they differ in what they retrieve and how often:
+
+\begin{itemize}
+\item \emph{Simple RAG} performs a single top-$k$ retrieval pass and
+  prepends the result. Its strength is that it is cheap---one
+  embedding lookup---and its weakness is that the retrieval is blind
+  to what the model subsequently does with it.
+\item \emph{Iterative-Critique RAG} drafts, then critiques and
+  refines across several rounds. It can repair an unusable first
+  draft, at a cost of several extra inference calls per function; the
+  known risk is that a critique loop drifts toward over-specific
+  assertions that do not hold.
+\item \emph{Random RAG} is not a technique but an \emph{ablation}:
+  chunks are drawn at random from the same corpus, so the contrast
+  against Simple RAG isolates the contribution of retrieval
+  \emph{relevance} from that of simply having more context in the
+  prompt. Studies that omit this arm cannot separate the two.
+\end{itemize}
+
+\noindent Retrieval has been evaluated on adjacent code tasks such as
+repository-level completion \citep{zhang2023repocoder} and
+retrieval-augmented code generation \citep{su2025evor,lu2022reacc}.
+For \emph{unit test generation specifically} the literature is
+thinner: \citet{shin2026ragtest} and \citet{zhang2026refrag} are the
+two closest studies, and neither measures defect detection
+(\S\ref{sec:related-rag}). That leaves three methodological gaps,
+which we address in this paper.
 
 \subsection{Three gaps in existing work}\label{sec:intro-gaps}
 
@@ -374,10 +392,12 @@ The use of large language models for unit-test synthesis predates
 the modern transformer-LLM era. \citet{watson2020} showed that
 sequence-to-sequence models could learn to generate assert
 statements from method bodies, evaluated against Java open-source
-projects. \citet{tufano2022} scaled this approach with a BART-based
-encoder-decoder trained on millions of test pairs and reported
-improved syntactic correctness and reference similarity on the
-Methods2Test benchmark.
+projects. \citet{tufano2022assert} scaled this approach with a BART-based
+encoder-decoder for assert generation, reporting improved accuracy
+over prior sequence models; the training data came from
+\citet{tufano2022}'s Methods2Test, a corpus of focal methods mapped
+to their test cases, which is a dataset contribution rather than a
+model.
 
 The arrival of decoder-only frontier LLMs (Codex, GPT-3.5, GPT-4)
 shifted research toward prompt-based test generation.
@@ -459,12 +479,20 @@ benchmarks, finding that the best variant depends on the
 type of code-completion task.
 
 \paragraph{For RAG specifically applied to test generation,} the
-literature is much thinner. \citet{rag4code2025} evaluates
-retrieval-augmented test generation against plain-LLM baselines on
-a small subset of HumanEval, reporting modest improvements in
-coverage metrics but not in defect detection. To our knowledge, no
-prior study reports the kind of cross-method, cross-LLM
-mutation-testing matrix that the present paper presents.
+literature is thin but no longer empty, and two 2026 studies bound
+the question this paper sits inside. \citet{shin2026ragtest} compare
+basic-instruction prompting against two RAG configurations over three
+knowledge sources for five Python ML libraries across four LLMs, and
+find that retrieval does not improve correctness while adding 6.5\%
+line coverage. \citet{zhang2026refrag} retrieve the existing tests of
+related methods rather than documentation, decomposing the retrieval
+target along the Given--When--Then structure of a unit test, and
+report gains in correctness, completeness and maintainability over
+ChatUniTest, TestPilot, default-RAG prompting and EvoSuite on 1{,}515
+Java methods. Neither evaluates defect detection. We are not aware of
+a study that reports a cross-method, cross-LLM \emph{mutation-testing}
+matrix for retrieval-augmented test generation, which is the gap this
+paper addresses.
 
 \paragraph{Where our faithfulness result sits.}
 Our finding (\S\ref{sec:results-faithfulness}) that token-overlap
@@ -1013,7 +1041,7 @@ negative, \texttt{None}, float and string inputs that the function
 does not in fact guard against. The retrieved idiom shaped the
 \emph{form} of the tests; the oracle values came from the model.
 
-\paragraph{A diagnostic that turned out to be degenerate.} We
+\paragraph{Retrieval noise rate.} We
 instrumented retrieval with a \emph{noise rate}: the fraction of
 returned chunks scoring below a cosine threshold of 0.3, intended as a
 signal for ``the retriever found nothing relevant''. It is identically
@@ -1099,7 +1127,7 @@ as equivalent and exclude it from the denominator of the kill rate.
 Approximately 5--15\% of mutants per cell are detected as equivalent
 under this rule.
 
-\paragraph{One critical implementation detail.}
+\paragraph{Mutant execution against the original suite.}
 Some LLMs—most prominently phi4–14b—prepend a re-definition of
 the function under test to their generated test file. When the
 mutation harness concatenates the (possibly mutated) function with
@@ -2191,7 +2219,7 @@ in the fourth decimal place
 here is better read as the absence of a stable ordering to
 generalize than as a method-by-model interaction.}
 
-\paragraph{The qwen3.5 vs qwen3-coder ratings puzzle.}
+\paragraph{Divergence between human ratings and kill rate across the two qwen models.}
 \label{sec:discussion-moe}
 
 On per-model human ratings (\S\ref{sec:results-humaneval}),
