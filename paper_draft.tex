@@ -1062,7 +1062,10 @@ it an effect.
 A central question is whether the method ordering observed in one
 LLM transfers to others. Table~\ref{tab:generalisability} reports
 the minimum and mean off-diagonal Spearman $\rho$ for the overall
-kill rate and per-operator kill rates; Figure~\ref{fig:rho-heatmap}
+kill rate and per-operator kill rates. We treat a metric as
+generalizing only when \emph{every} model pair reaches
+$\rho \geq 0.8$, i.e.\ when the minimum clears the threshold; a
+single agreeing pair is not evidence that an ordering transfers. Figure~\ref{fig:rho-heatmap}
 shows the pairwise heatmap; Figure~\ref{fig:rank-stability} shows
 the underlying rank trajectories across models.
 
@@ -1089,8 +1092,10 @@ kill\_negate\_bool           & $-0.40$ & $+0.23$ & Does NOT generalize \\
 \centering
 \includegraphics[width=0.85\linewidth]{mutation_rank_correlation.png}
 \caption{Spearman rank correlation between every pair of models on
-overall mean kill rate. No pair clears the $\rho \geq 0.8$
-threshold, and one pair inverts almost perfectly
+overall mean kill rate. Only one of the six pairs reaches
+$\rho \geq 0.8$, so the metric fails the generalization criterion,
+which requires the threshold to hold across all pairs; the
+llama3.2--qwen3-coder pair inverts almost perfectly
 ($\rho = -0.80$).}
 \label{fig:rho-heatmap}
 \end{figure}
