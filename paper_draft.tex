@@ -264,8 +264,8 @@ This paper makes five contributions to the empirical literature on
 LLM-based unit-test generation:
 
 \begin{enumerate}
-\item \textbf{First cross-LLM mutation-testing study} of
-  plain-vs-RAG test generation. We evaluate four methods (Plain LLM,
+\item \textbf{A cross-LLM mutation-testing study} of
+  plain-vs-RAG test generation, with a random-retrieval control. We evaluate four methods (Plain LLM,
   Random RAG, Simple RAG, Iterative Critique) across four
   open-weight LLMs spanning 3B--30B parameters and dense vs
   mixture-of-experts architectures, on a 100-function subset of HumanEval + MBPP. To our knowledge, no prior study has reported
@@ -286,8 +286,10 @@ LLM-based unit-test generation:
   effect we could have missed to roughly three percentage points
   (\S\ref{sec:limitations-conclusion}).
 
-\item \textbf{First human-evaluation study} of LLM-generated unit
-  tests under a behaviorally-anchored 0--5 rubric. Three
+\item \textbf{A multi-annotator human evaluation reporting formal
+  agreement statistics.} To our knowledge this is the first human
+  evaluation of \emph{RAG-based} test generation to report
+  inter-rater agreement rather than pooled means alone. Three
   independent annotators rated 40 stratified
   (function, generated\_tests) pairs blinded to method and model.
     \emph{Iterative Critique RAG ranked highest on all three rubric
@@ -301,8 +303,13 @@ LLM-based unit-test generation:
   defect-detection capability are separate constructs, and that
   studies reporting only one of them are not interchangeable.
 
-\item \textbf{First LLM-vs-SBST head-to-head comparison on mutation
-  kill rate} in Python. We benchmark our LLM methods against
+\item \textbf{A per-operator LLM-vs-SBST comparison on matched
+  Python functions.} Head-to-head LLM-vs-Pynguin comparison on
+  mutation score is not itself new---\citet{dakhel2024mutation} and
+  \citet{straubinger2025debug} both report one. What we add is the
+  operator-level decomposition on a matched function set, which
+  turns ``which paradigm is better'' into ``which defect families
+  does each catch''. We benchmark our LLM methods against
   Pynguin 0.45.0 on the same 40 functions used in the human
   evaluation, with a 60-second per-function search budget. Matched on
   the 34 functions Pynguin could handle, LLM methods outperform it
@@ -670,11 +677,12 @@ sub-literatures. Relative to each:
   instead. We are not aware of a prior cross-model mutation study
   that reports a null of this kind at this scale, nor one that pairs
   it with a human-evaluation signal pointing the other way.
-\item \textbf{SBST (\S\ref{sec:related-sbst})}: our Pynguin
-  head-to-head comparison on the same matched functions, with
-  identical evaluation pipelines for both LLM and SBST outputs, is
-  the first direct LLM-vs-Pynguin mutation-kill-rate benchmark we
-  are aware of.
+\item \textbf{SBST (\S\ref{sec:related-sbst})}: prior work already
+  benchmarks LLM test generation against Pynguin on mutation score
+  \citep{dakhel2024mutation,straubinger2025debug}. Our contribution
+  is the \emph{per-operator} decomposition on a matched function
+  set, with identical evaluation pipelines for both outputs, which
+  identifies a complementarity axis rather than a winner.
 \item \textbf{Human evaluation (\S\ref{sec:related-humaneval})}: our
   three-annotator behaviorally-anchored 0–5 rubric study on 40
   stratified samples is, to our knowledge, the first human
@@ -965,7 +973,8 @@ def bell_number(n):
 \end{verbatim}
 
 \noindent The query is the task prefix plus the first 300 characters
-of that source. The five highest-scoring chunks are:
+of that source. The five highest-scoring chunks are listed in
+Table~\ref{tab:retrieval-example}:
 
 \begin{table}[htbp]
 \centering
@@ -1230,6 +1239,8 @@ a directly-comparable kill-rate metric.
 
 Each subsection below is tagged with the research question it answers
 and opens with a one-sentence answer to it; the evidence follows.
+Table~\ref{tab:rqmap} maps every question to the section that
+answers it.
 Three subsections (\S\ref{sec:results-contamination},
 \S\ref{sec:results-attrition} and the power analysis in
 \S\ref{sec:limitations-conclusion}) answer no research question
@@ -1368,6 +1379,25 @@ C(method)               & 0.21 & 0.890 \\
 
 \emph{LLM choice and source-problem difficulty explain substantially
 more of the variance in kill rate than RAG-method choice does.}
+
+\paragraph{How the spreads are computed.} Because the test filter
+leaves cells of unequal size (\S\ref{sec:results-attrition}), the
+method and model spreads depend on the estimator, and we state ours.
+Our headline figures average the 16 cell means with equal weight:
+method spread 0.011, model spread 0.232, ratio $21.7\times$. This is
+the appropriate estimator for an unbalanced design, because a
+method that loses more suites on the weakest model would otherwise
+have its mean computed over a disproportionately easy subset.
+Weighting instead by observation count gives method spread 0.016,
+model spread 0.228 and a ratio of $14.7\times$. The two differ
+because Iterative Critique contributes 50 of its 297 observations
+from llama3.2 against Plain LLM's 95 of 395, so the weighted mean
+flatters Iterative Critique. \emph{Both estimators support the same
+conclusion}---the model factor dominates by more than an order of
+magnitude---and we report the balanced one as primary and the
+weighted one here so that either reproduction route lands on a
+number this paper states.
+
 We return to this finding in \S\ref{sec:discussion-llm-dominates}.
 
 \subsubsection{Per-benchmark decomposition}\label{sec:results-perbenchmark}
@@ -1925,8 +1955,11 @@ Figure~\ref{fig:humaneval-correlations} shows the per-sample mean
 human rating against mutation kill rate for each of the three
 rubric dimensions. Pearson correlations are weak overall (idiom
 $r = -0.08$, correctness $r = +0.18$, completeness $r = +0.02$;
-none significant at $\alpha = 0.05$ with $n = 40$ after pooling
-all three annotators); we discuss in \S\ref{sec:limitations} why
+none significant at $\alpha = 0.05$). The correlation is computed
+over the $n = 37$ pairs for which a kill rate exists: three of the
+40 rated suites fail the original-code filter on the full corpus and
+carry no kill rate, so they cannot enter a correlation against
+one; we discuss in \S\ref{sec:limitations} why
 the kill-rate $\leftrightarrow$ human-correctness relationship
 that was significant on $n = 2$ annotators did not survive
 three annotator pooling.
@@ -1977,9 +2010,10 @@ automated-test-generation paradigm, we ran Pynguin 0.45.0
 evaluation. Pynguin produced a valid suite for 34 of them; all
 comparisons below are matched to those 34 functions, with the LLM
 methods restricted to exactly the same source problems so that the
-two generators are never scored on different populations. Figure~\ref{fig:pynguin-overall} shows the overall
-comparison; Figure~\ref{fig:pynguin-peroperator} shows the
-per-operator breakdown.
+two generators are never scored on different populations. Table~\ref{tab:pynguin-overall} and
+Figure~\ref{fig:pynguin-overall} show the overall comparison;
+Figure~\ref{fig:pynguin-peroperator} shows the per-operator
+breakdown.
 
 \begin{table}[t]
 \centering
@@ -2060,7 +2094,12 @@ Five findings appear robust to the limitations cataloged in
   kill rate by 0.232; the entire spread across the four generation
   methods is 0.011, and Iterative Critique sits 0.002 \emph{below}
   unaugmented prompting. Model choice moves the metric
-  $21.7\times$ as far as method choice.
+  $21.7\times$ as far as method choice. Spreads here are computed over
+  the 16 cell means, giving each (method, model) cell equal weight;
+  because cell sizes differ after the test filter
+  (\S\ref{sec:results-attrition}), the observation-weighted estimate
+  differs and is reported alongside it in
+  \S\ref{sec:results-stats-overall}.
 \item \emph{Method rankings do not generalize across LLMs.} The best
   method differs on three of four models and Iterative Critique
   leads on none. The only metric clearing $\rho \geq 0.8$ is

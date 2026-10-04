@@ -285,6 +285,86 @@ def fig_rank_stability(out: Path) -> None:
     save(fig, out)
 
 
+
+# ──────────────────────────────────────────────────────────────────────
+# 4. Pynguin vs LLM, MATCHED on the functions Pynguin could handle
+# ──────────────────────────────────────────────────────────────────────
+# plot_pynguin_comparison.py builds these from results_mutation.tsv, i.e.
+# LLM cell means over all 100 functions against Pynguin's 34. That is the
+# unmatched comparison corrected in sec 4.9; regenerating from that script
+# would put the error back into the figures. These versions restrict the
+# LLM arms to exactly the functions Pynguin produced a suite for.
+LBL = {"plain_llm": "Plain LLM", "random_rag": "Random RAG",
+       "simple_rag": "Simple RAG", "iterative_critique": "Iterative Critique"}
+OPS = ["arithmetic", "boundary", "comparison", "negate_bool", "return_none"]
+OPLBL = ["Arithmetic", "Boundary", "Comparison", "Negate bool", "Return None"]
+
+
+def _matched():
+    from mutation_statistical_tests import load_per_sample_kill_rates
+    d = load_per_sample_kill_rates(include_baselines=True)
+    pyn = d[d.method == "pynguin"].dropna(subset=["kill_rate"])
+    ids = set(pyn.sample_idx.astype(int))
+    sub = d[(d.method != "pynguin") & d.sample_idx.astype(int).isin(ids)]
+    return pyn, sub.dropna(subset=["kill_rate"]), len(ids)
+
+
+def fig_pynguin_overall(out: Path) -> None:
+    pyn, sub, n = _matched()
+    order = ["iterative_critique", "simple_rag", "random_rag", "plain_llm"]
+    labels = [LBL[m] for m in order] + ["Pynguin (SBST)"]
+    vals = [sub[sub.method == m].kill_rate.mean() for m in order] + [pyn.kill_rate.mean()]
+    colors = [CAT4[0]] * 4 + [CAT4[1]]
+
+    fig, ax = plt.subplots(figsize=(8.4, 4.4))
+    style(ax, grid_axis="x")
+    y = np.arange(len(labels))[::-1]
+    ax.barh(y, vals, height=0.62, color=colors, zorder=3)
+    for yy, v in zip(y, vals):
+        ax.text(v + 0.006, yy, f"{v:.3f}", va="center", color=INK, fontsize=10)
+    ax.set_yticks(y, labels, fontsize=10)
+    ax.set_xlim(0, 1.04)
+    ax.set_xlabel("mean mutation kill rate", color=INK_2, fontsize=10)
+    fig.suptitle("LLM generators lead search-based generation overall",
+                 color=INK, fontsize=13, x=0.012, ha="left", y=0.985)
+    fig.text(0.012, 0.90,
+             f"Matched on the {n} functions Pynguin produced a valid suite for; "
+             "LLM arms pool all four models on\nexactly those functions. "
+             "Mann-Whitney p < 0.001 for every LLM method against Pynguin.",
+             color=INK_2, fontsize=9.6, ha="left", va="top")
+    fig.subplots_adjust(top=0.73, left=0.22, right=0.97, bottom=0.14)
+    save(fig, out)
+
+
+def fig_pynguin_peroperator(out: Path) -> None:
+    pyn, sub, n = _matched()
+    order = ["iterative_critique", "plain_llm"]
+    series = [(LBL[m], [sub[sub.method == m][f"kill_rate_{o}"].mean() for o in OPS])
+              for m in order]
+    series.append(("Pynguin (SBST)", [pyn[f"kill_rate_{o}"].mean() for o in OPS]))
+    cols = [CAT4[0], CAT4[2], CAT4[1]]
+
+    fig, ax = plt.subplots(figsize=(9.4, 4.8))
+    style(ax, grid_axis="y")
+    x = np.arange(len(OPS)); w = 0.26
+    for i, ((lab, vals), c) in enumerate(zip(series, cols)):
+        ax.bar(x + (i - 1) * w, vals, width=w - 0.02, color=c, label=lab, zorder=3)
+    ax.set_xticks(x, OPLBL, fontsize=9.5)
+    ax.set_ylim(0, 1.08)
+    ax.set_ylabel("mean kill rate", color=INK_2, fontsize=10)
+    ax.legend(frameon=False, fontsize=9.5, labelcolor=INK_2, ncol=3,
+              loc="upper left", bbox_to_anchor=(0, 1.0))
+    fig.suptitle("The two paradigms split by operator family",
+                 color=INK, fontsize=13, x=0.012, ha="left", y=0.985)
+    fig.text(0.012, 0.90,
+             "Pynguin leads on the value-derived families (arithmetic, "
+             "negate-boolean); LLMs lead where a\nrelational or boundary "
+             f"judgement is needed. Matched on {n} functions.",
+             color=INK_2, fontsize=9.6, ha="left", va="top")
+    fig.subplots_adjust(top=0.72, left=0.09, right=0.97, bottom=0.12)
+    save(fig, out)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", default="plots_mutation")
@@ -295,7 +375,9 @@ def main() -> int:
     fig_faithfulness(out / "noise_vs_kill_scatter.png")
     fig_rank_correlation(out / "mutation_rank_correlation.png")
     fig_rank_stability(out / "mutation_rank_stability.png")
-    print("\n3 figures regenerated from the 100-function results.")
+    fig_pynguin_overall(out / "pynguin_vs_llm_kill_rate.png")
+    fig_pynguin_peroperator(out / "pynguin_vs_llm_per_operator.png")
+    print("\n5 figures regenerated from the 100-function results.")
     return 0
 
 
