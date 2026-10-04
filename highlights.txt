@@ -1,0 +1,11 @@
+Highlights
+Mutation-Testing Quality of Language Models and RAG-based Unit Test
+Generators: A Cross-Model Empirical Study
+
+- RAG method choice has no effect on mutation kill rate across four LLMs  [70 chars]
+- Model choice moves defect detection 21.7x further than method choice  [68 chars]
+- Semantic retrieval beats a random-chunk placebo by 0.3 percentage points  [72 chars]
+- A faithfulness-kill-rate correlation of -0.91 is a model confound  [65 chars]
+- Annotators prefer tests whose defect detection is no better  [59 chars]
+
+Elsevier limit: 3-5 bullets, max 85 characters each including spaces.

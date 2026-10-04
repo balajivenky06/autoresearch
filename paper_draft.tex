@@ -1,52 +1,62 @@
-%Version 3.1 December 2024
-% See section 11 of the User Manual for version history
-%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%                                                                 %%
-%% Please do not use \input{...} to include other tex files.       %%
-%% Submit your LaTeX manuscript as one .tex document.              %%
-%%                                                                 %%
-%% All additional figures and files should be attached             %%
-%% separately and not embedded in the \TeX\ document itself.       %%
-%%                                                                 %%
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Information and Software Technology (Elsevier) submission
+%% Converted from Springer sn-jnl on 2026-10-04. The Springer version
+%% is recoverable with:  git show springer-sn-jnl-version:paper_draft.tex
+%%
+%% NOTE ON HIGHLIGHTS: Elsevier's submission system takes Highlights as
+%% a SEPARATE file, not inside the manuscript. highlights.txt in this
+%% repository holds the submittable copy; the in-manuscript block below
+%% is retained for the reviewers' benefit and can be deleted at
+%% submission without losing anything.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\documentclass[pdflatex,sn-mathphys-ay,hidelinks]{sn-jnl}% Math and Physical Sciences Author-Year Reference Style
+\documentclass[preprint,12pt,authoryear]{elsarticle}
 
-%%%% Standard Packages
-\usepackage{graphicx}%
-\usepackage{multirow}%
-\usepackage{amsmath,amssymb,amsfonts}%
-\usepackage[title]{appendix}%
-\usepackage{xcolor}%
-\usepackage{textcomp}%
-\usepackage{booktabs}%
-\usepackage{tabularx} % Add this to your preamble for text-wrapping columns
 \usepackage{graphicx}
-\usepackage{amsmath}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{xcolor}
+\usepackage{textcomp}
+\usepackage{booktabs}
+\usepackage{tabularx}
 \usepackage{threeparttable}
+\usepackage{url}
+\usepackage[hidelinks]{hyperref}
+
+% elsarticle does not define a `highlights' environment in every
+% release, so the manuscript defines its own. The Highlights are
+% submitted separately via highlights.txt in any case; this block
+% exists so reviewers see them in the PDF.
+\newenvironment{highlightslist}%
+  {\section*{Highlights}\begin{itemize}}%
+  {\end{itemize}}
+
 \graphicspath{{./plots_mutation/}}
-%%%%
+\journal{Information and Software Technology}
 
 \raggedbottom
 
 \begin{document}
 
-\title[Article Title]{Mutation-Testing Quality of Language Models and RAG based Unit Test Generators: A Cross-Model Empirical Study}
+\begin{frontmatter}
 
-\author*[1]{\fnm{Balaji} \sur{Venktesh}}\email{balaji23610040@snuchennai.edu.in}
+\title{Mutation-Testing Quality of Language Models and RAG-based Unit
+Test Generators: A Cross-Model Empirical Study}
 
-\author*[1]{\fnm{Amsaprabhaa} \sur{M}}\email{amsaprabhaam@snuchennai.edu.in}
+\author[snu]{Balaji Venktesh\corref{cor1}}
+\ead{balaji23610040@snuchennai.edu.in}
+\author[snu]{Amsaprabhaa M\corref{cor1}}
+\ead{amsaprabhaam@snuchennai.edu.in}
+\author[snu]{Gireesh Sundaram}
+\ead{gireesh23610036@snuchennai.edu.in}
+\cortext[cor1]{Corresponding author}
 
-\author[1]{\fnm{Gireesh} \sur{Sundaram}}\email{gireesh23610036@snuchennai.edu.in}
+\affiliation[snu]{organization={Department of Computer Science and
+    Engineering, Shiv Nadar University},
+  city={Chennai}, state={Tamil Nadu}, country={India}}
 
-\affil*[1]{\orgdiv{Department of Computer Science and Engineering}, \orgname{Shiv Nadar University}, \orgaddress{\city{Chennai}, \state{Tamilnadu}, \country{India}}}
-
-%%==================================%%
-%% Sample for unstructured abstract %%
-%%==================================%%
-
-\abstract{\textbf{Context.} Retrieval-augmented generation (RAG) is
+\begin{abstract}
+\textbf{Context.} Retrieval-augmented generation (RAG) is
 widely assumed to improve LLM-generated unit tests, but evaluations
 rely on surface metrics and single models, leaving defect-detection
 capability untested. \textbf{Objective.} We quantify whether
@@ -68,31 +78,22 @@ is controlled ($r = +0.079$). Annotators ranked Iterative Critique
 highest on all three rubric dimensions, yet ratings do not predict
 kill rate ($r = +0.18$, $p = 0.30$). \textbf{Conclusion.} Model
 selection, not retrieval design, determines defect detection, and
-human-perceived quality is a separate construct from it.}
+human-perceived quality is a separate construct from it.
+\end{abstract}
 
-\keywords{Unit-test generation, mutation testing, retrieval-augmented generation, Large language models, search-based software testing}
-
-
-% ─────────────────────────────────────────────────────────────────────
-% HIGHLIGHTS (Elsevier requires 3-5 bullets, max 85 characters each
-% INCLUDING SPACES — the submission system enforces this limit).
-% Character counts are given per line so the limit can be re-checked
-% after any edit.
-% ─────────────────────────────────────────────────────────────────────
-\begin{center}\small
-\begin{minipage}{0.95\textwidth}
-\textbf{Highlights}
-\begin{itemize}\setlength{\itemsep}{2pt}
+\begin{highlightslist}
 \item RAG method choice has no effect on mutation kill rate across four LLMs
 \item Model choice moves defect detection 21.7x further than method choice
 \item Semantic retrieval beats a random-chunk placebo by 0.3 percentage points
 \item A faithfulness-kill-rate correlation of -0.91 is a model confound
 \item Annotators prefer tests whose defect detection is no better
-\end{itemize}
-\end{minipage}
-\end{center}
+\end{highlightslist}
 
-\maketitle
+\begin{keyword}
+Unit-test generation \sep mutation testing \sep retrieval-augmented generation \sep Large language models \sep search-based software testing
+\end{keyword}
+
+\end{frontmatter}
 
 \section{Introduction}\label{sec:introduction}
 Automated unit-test generation has been a target of empirical
@@ -2110,7 +2111,7 @@ direction concerns the \emph{human-evaluation rubric}: a future
 replication should run a rubric-calibration session before
 annotation and increase the rater pool to five or more.
 
-\bmhead{Declarations}
+\section*{Declarations}
 
 \paragraph{Funding.}
 This research did not receive any specific grant from funding
@@ -2203,7 +2204,8 @@ available, open-source code and datasets under their respective
 licenses. No private, sensitive, or personally-identifying data
 were used at any stage of the study.
 
-\bibliography{sn-bibliography}
+\bibliographystyle{elsarticle-harv}
+\bibliography{references}
 
 \appendix
 
