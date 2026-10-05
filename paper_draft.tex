@@ -987,15 +987,11 @@ combination of the four generation techniques and four models was
 run, giving a fully crossed $4 \times 4$ design. Model sizes are
 total parameters; qwen3-coder is a mixture-of-experts model with
 3.3B parameters active per token.}\label{tab:factors}
-% Replacing \begin{tabular}{@{}ll@{}} with tabularx.
-% @{}l is for narrow left-aligned column (Factor).
-% X is for a left-aligned wrapping column (Levels) that fills the remaining space.
 \begin{tabularx}{\textwidth}{@{}lX@{}}
 \toprule
 \textbf{Factor} & \textbf{Levels} \\
 \midrule
 Technique & Plain LLM, Random RAG, Simple RAG, Iterative Critique RAG \\
-% Cleaned and corrected the list of models into a single line for proper wrapping.
 Model & \texttt{llama3.2:latest} (3B, dense),
  \texttt{phi4:14b} (14B, dense),
  \texttt{qwen3.5:9b} (9B, dense),
@@ -1705,8 +1701,6 @@ our data support it.
 \centering
 \caption{Technique effect on boundary kill rate by source benchmark. No scope reaches significance.}
 \label{tab:perbench}
-% tabularx fits the table exactly to the text width
-% l = left aligned, c = centered, X = text-wrapping column
 \begin{tabularx}{\textwidth}{@{} l c c X X @{}}
 \toprule
 Scope & $n$ & ANOVA technique $F(p)$ & Tukey IC vs Plain LLM & Mixed-LM IC vs Plain LLM \\
