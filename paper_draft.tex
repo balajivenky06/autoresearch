@@ -10,7 +10,7 @@
 %% submission without losing anything.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\documentclass[preprint,12pt,authoryear]{elsarticle}
+\documentclass[review,12pt]{elsarticle}
 
 \usepackage{graphicx}
 \usepackage{multirow}
@@ -468,8 +468,8 @@ statements from method bodies, evaluated against Java open-source
 projects. \citet{tufano2022assert} scaled this approach with a BART-based
 encoder-decoder for assert generation, reporting improved accuracy
 over prior sequence models; the training data came from
-\citet{tufano2022}'s Methods2Test, a corpus of focal methods mapped
-to their test cases, which is a dataset contribution rather than a
+Methods2Test \citep{tufano2022}, a corpus of focal methods mapped to
+their test cases, which is a dataset contribution rather than a
 model.
 
 The arrival of decoder-only frontier LLMs (Codex, GPT-3.5, GPT-4)
@@ -655,9 +655,9 @@ kind of operator-level analysis we conduct in
 \subsection{Search-based software testing}\label{sec:related-sbst}
 
 Search-based software testing has been the dominant paradigm for
-automated test-suite generation since \citet{mcminn2004}'s survey
-and \citet{harman2010}'s empirical comparison of search-based
-versus random testing. \emph{EvoSuite} \citep{fraser2011,fraser2013}
+automated test-suite generation since the survey of
+\citet{mcminn2004} and the empirical comparison of search-based
+against random testing by \citet{harman2010}. \emph{EvoSuite} \citep{fraser2011,fraser2013}
 is the canonical SBST tool for Java, combining genetic-algorithm
 test-case search with dynamic symbolic execution. EvoSuite has been
 validated repeatedly on industrial codebases \citep{almasi2017} and
@@ -2859,8 +2859,10 @@ annotation and increase the rater pool to five or more.
 This research did not receive any specific grant from funding
 agencies in the public, commercial, or not-for-profit sectors.
 
-\paragraph{Conflict of interest.}
-The authors declare that they have no conflict of interest.
+\paragraph{Declaration of competing interest.}
+The authors declare that they have no known competing financial
+interests or personal relationships that could have appeared to
+influence the work reported in this paper.
 
 \paragraph{Ethics approval.}
 The human-evaluation study did not require formal IRB review under
@@ -2922,11 +2924,13 @@ submission (\texttt{check\_paper\_consistency.py},
 \texttt{verify\_citations.py})—is released under the MIT license at
 the same URL.
 
-\paragraph{Author contributions.}
-\textbf{BV}: Conceptualization, Methodology, Software,
-Investigation, Formal analysis, Writing—original draft.
-\textbf{AM}, \textbf{GS}: Supervision, Writing—review \&
-editing.
+\paragraph{CRediT authorship contribution statement.}
+\textbf{Balaji Venktesh:} Conceptualization, Methodology, Software,
+Investigation, Formal analysis, Data curation, Visualization,
+Writing -- original draft.
+\textbf{Amsaprabhaa M:} Conceptualization, Supervision,
+Writing -- review \& editing.
+\textbf{Gireesh Sundaram:} Validation, Writing -- review \& editing.
 
 \paragraph{Declaration of generative AI and AI-assisted
 technologies in the writing process.}
@@ -2959,7 +2963,7 @@ available, open-source code and datasets under their respective
 licenses. No private, sensitive, or personally-identifying data
 were used at any stage of the study.
 
-\bibliographystyle{elsarticle-harv}
+\bibliographystyle{elsarticle-num-names}
 \bibliography{references}
 
 \appendix
