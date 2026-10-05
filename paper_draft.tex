@@ -62,17 +62,17 @@ rely on surface metrics and single models, leaving defect-detection
 capability untested. \textbf{Objective.} We quantify whether
 retrieval augmentation improves the \emph{defect-detection} capability
 of generated tests, and whether any such effect transfers across
-LLMs. \textbf{Technique.} We ran a $4 \times 4$ factorial experiment---
-four generation techniques (Plain LLM, Random RAG, Simple RAG, Iterative
-Critique) by four open-weight LLMs (3B--30B parameters)---over 100
-HumanEval and MBPP functions, yielding 1{,}443 valid observations and
+LLMs. \textbf{Technique.} We ran a $4 \times 4$ factorial experiment
+crossing four generation techniques (Plain LLM, Random RAG, Simple
+RAG, Iterative Critique) with four open-weight LLMs of 3B to 30B
+parameters, over 100 HumanEval and MBPP functions, yielding 1{,}443 valid observations and
 9{,}660 mutants, analysed with Type-III ANOVA and mixed-effects
 regression. We added a three-annotator blinded human evaluation and a
 Pynguin baseline matched on the same functions. \textbf{Results.}
 Technique choice has no detectable effect: the spread across all four
 techniques is 0.011 in mean kill rate against 0.232 across models
 ($21.7\times$), and no pair separates in any scope. Semantic retrieval
-beats a random-chunk placebo by 0.3 percentage points. An apparent
+beats a random-chunk placebo by only 0.3 percentage points. An apparent
 faithfulness--kill-rate correlation ($r = -0.907$) vanishes once model
 is controlled ($r = +0.079$). Annotators ranked Iterative Critique
 highest on all three rubric dimensions, significantly so on two once
@@ -908,7 +908,7 @@ referenced here is in the project repository and is reproducible
 from the persisted result TSV and annotation CSVs.
 
 Figure~\ref{fig:methodology} summarizes the end-to-end experimental
-pipeline: a 100-function input dataset feeds a $4 \times 4$ generation matrix (4 techniques $\times$ 4 LLMs, 1,600 cells in total), whose outputs are then evaluated through three parallel
+pipeline: a 100-function input dataset feeds a $4 \times 4$ generation matrix (4 techniques $\times$ 4 LLMs, 1{,}600 cells in total), whose outputs are then evaluated through three parallel
 tracks—mutation testing (\S\ref{sec:methods-mutation}, the
 primary defect-detection metric), human annotation
 (\S\ref{sec:methods-humaneval}, the developer-perceived quality
@@ -920,9 +920,10 @@ three tracks feed into the same statistical analysis pipeline
 \subsection{How the design answers the research
 questions}\label{sec:methods-rqmap}
 
-The six questions posed in \S\ref{sec:intro-rqs} are restated here
-alongside the apparatus that answers each, so that the design can be
-read without turning back to the introduction.
+The six questions posed in \S\ref{sec:intro-rqs} are restated in
+Table~\ref{tab:methodrqmap} alongside the apparatus that answers
+each, so that the design can be read without turning back to the
+introduction.
 
 \begin{table}[htbp]
 \centering
@@ -1320,10 +1321,13 @@ documented in our replication package for transparency.
 what each is intended to establish.
 
 
-The 4,800-cell experimental design is unbalanced (sample sizes
-vary across cells after filtering), and the kill-rate distribution
-is heavily concentrated at the 0.0 and 1.0 extremes on capable
-models, producing a strong ceiling effect. We therefore use a
+The $4 \times 4 \times 100$ design yields 1{,}600 generated
+suites, of which 1{,}443 survive the original-code filter. It is
+therefore unbalanced---per-cell $n$ ranges from 50 to 100
+(\S\ref{sec:results-attrition})---and the kill-rate distribution is
+heavily concentrated at the extremes, with 73.2\% of per-suite kill
+rates sitting at exactly 1.0 on the three stronger models. Both
+properties constrain which tests are appropriate. We therefore use a
 multi-test strategy.
 
 \paragraph{Per-sample rank tests.}
@@ -2337,52 +2341,70 @@ Plain LLM (LLM, avg.) & 0.898 & 134 & 574 / 764 \\
 \centering
 \includegraphics[width=\linewidth]{pynguin_vs_llm_kill_rate.png}
 \caption{Mutation kill rate: Pynguin vs LLM techniques (averaged
-across 4 models). LLM rows are averaged across the four LLMs;
-Pynguin is a single 40-function row.}
+across the four LLMs). All arms are matched on the 34 functions for
+which Pynguin produced a valid suite, so the bars describe the same
+population of source problems. Every LLM technique exceeds Pynguin
+(Mann--Whitney $p < 0.001$ in each case).}
 \label{fig:pynguin-overall}
 \end{figure}
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{pynguin_vs_llm_per_operator.png}
-\caption{Per-operator kill rate: Pynguin vs LLM techniques. The
-LLM-vs-Pynguin gap concentrates on the comparison and boundary operator families
-(Pynguin 0.33 vs IC 0.96).}
+\caption{Per-operator mutation kill rate, Pynguin against the LLM
+techniques, matched on the 34 functions Pynguin could handle. The
+LLM advantage concentrates on comparison (Pynguin 0.250 vs Iterative
+Critique 0.917) and boundary (0.554 vs 0.817); Pynguin leads on
+arithmetic and negate-boolean.}
 \label{fig:pynguin-peroperator}
 \end{figure}
 
-\emph{Pynguin trails the worst LLM technique (Plain LLM, 0.849) by
-6.2 percentage points and the best LLM technique (Iterative Critique,
-0.957) by 17 points.} First, \emph{Pynguin's filter-pass rate
-($34/40 = 85\%$) is higher than any LLM cell's} typical pass rate
-(29/30 = 97\% for Plain LLM, dropping to 19/30 = 63\% for IC on the
-40-function human-eval subset). Pynguin's search-based assertion
-synthesis derives oracles from observed return values and does not
-over-specify. Second, \emph{the LLM-vs-Pynguin gap is concentrated
-on comparison mutators} (Table~\ref{tab:pynguin-peroperator}). On
-the \verb|== <-> !=|, \verb|< <-> >=|, \verb|> <-> <=| family,
-Pynguin kills only 33\% while Iterative Critique kills 96\%—
-a 63-point gap.
+\emph{Pynguin trails the weakest LLM technique (Plain LLM, 0.898)
+by 11.1 percentage points and the strongest (Iterative Critique,
+0.922) by 13.5.} Two observations qualify that headline.
+
+First, \emph{Pynguin is the more reliable generator}: it produced a
+usable suite for 34 of the 40 functions attempted (85\%), whereas on
+those same 34 functions the LLM techniques yield suites that survive
+the original-code filter at rates ranging from 99\% for Plain LLM
+(134 of a possible 136 technique--model pairs) down to 67\% for
+Iterative Critique (91 of 136). Pynguin's assertions are derived from
+observed return values and therefore cannot over-specify; a
+generated assertion that is almost right is the dominant failure mode
+on the LLM side (\S\ref{sec:results-attrition}).
+
+Second, \emph{the LLM advantage is concentrated on two operator
+families, not spread across all five}
+(Table~\ref{tab:pynguin-peroperator}). On the comparison family
+---\verb|== <-> !=|, \verb|< <-> >=|, \verb|> <-> <=|---Pynguin kills
+25\% against Iterative Critique's 92\%, a 67-point gap, and on
+boundary mutators 55\% against 82\%. On arithmetic and
+negate-boolean, Pynguin \emph{leads} every LLM technique. The pooled
+LLM win is therefore carried entirely by the families in which an
+oracle must encode a relational or boundary intention rather than a
+recorded value.
 
 \begin{table}[htbp]
 \centering
-\caption{Per-operator mutation kill rate for the LLM techniques
-(averaged over the four models) against Pynguin, matched on the 34
-functions for which Pynguin produced a valid suite. The higher of
-the two paradigms in each row is set in bold: Pynguin leads on the
-value-derived families, the LLM techniques on the relational and
-boundary ones.}
+\caption{Per-operator mutation kill rate for each LLM technique
+(pooled over the four models) against Pynguin, all matched on the 34
+functions for which Pynguin produced a valid suite. The winning
+paradigm in each row is set in bold, and the final column gives the
+best LLM technique minus Pynguin. Pynguin leads on the value-derived
+families---arithmetic and negate-boolean---while the LLM techniques
+lead on the two that require a relational or boundary judgement,
+by 0.263 on boundary and 0.667 on comparison.}
 \label{tab:pynguin-peroperator}
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{@{}lcccccc@{}}
 \toprule
-Operator & Plain LLM & Random RAG & Simple RAG & \textbf{IC} & \textbf{Pynguin} & IC$-$Pynguin gap \\
+Operator & Plain LLM & Random RAG & Simple RAG & Iterative Critique & Pynguin & Best LLM $-$ Pynguin \\
 \midrule
-Arithmetic & 0.59 & 0.66 & 0.69 & 0.87 & 0.88 & $-0.01$ \\
-Boundary & 0.59 & 0.66 & 0.72 & 0.89 & 0.61 & $+0.28$ \\
-\textbf{Comparison} & 0.77 & 0.75 & 0.76 & \textbf{0.96} & \textbf{0.33} & \textbf{+0.63 (largest)} \\
-Negate bool & 0.88 & 0.86 & 0.91 & 0.98 & 1.00 & $-0.02$ \\
-Return None & 0.90 & 0.89 & 0.90 & 0.96 & 0.85 & $+0.11$ \\
+Arithmetic & 0.731 & 0.759 & 0.792 & 0.809 & \textbf{0.850} & $-0.041$ \\
+Boundary & 0.702 & 0.737 & 0.782 & \textbf{0.817} & 0.554 & $+0.263$ \\
+Comparison & 0.884 & 0.862 & 0.885 & \textbf{0.917} & 0.250 & $+0.667$ \\
+Negate bool & 0.893 & 0.865 & 0.917 & 0.917 & \textbf{1.000} & $-0.083$ \\
+Return None & \textbf{0.947} & 0.945 & 0.935 & 0.930 & 0.864 & $+0.084$ \\
 \bottomrule
 \end{tabular}
 \end{table}
