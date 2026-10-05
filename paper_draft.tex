@@ -142,19 +142,19 @@ tasks, and they differ in what they retrieve and how often:
 
 \begin{itemize}
 \item \emph{Simple RAG} performs a single top-$k$ retrieval pass and
-  prepends the result. Its strength is that it is cheap---one
-  embedding lookup---and its weakness is that the retrieval is blind
-  to what the model subsequently does with it.
+ prepends the result. Its strength is that it is cheap---one
+ embedding lookup---and its weakness is that the retrieval is blind
+ to what the model subsequently does with it.
 \item \emph{Iterative-Critique RAG} drafts, then critiques and
-  refines across several rounds. It can repair an unusable first
-  draft, at a cost of several extra inference calls per function; the
-  known risk is that a critique loop drifts toward over-specific
-  assertions that do not hold.
+ refines across several rounds. It can repair an unusable first
+ draft, at a cost of several extra inference calls per function; the
+ known risk is that a critique loop drifts toward over-specific
+ assertions that do not hold.
 \item \emph{Random RAG} is not a technique but an \emph{ablation}:
-  chunks are drawn at random from the same corpus, so the contrast
-  against Simple RAG isolates the contribution of retrieval
-  \emph{relevance} from that of simply having more context in the
-  prompt. Studies that omit this arm cannot separate the two.
+ chunks are drawn at random from the same corpus, so the contrast
+ against Simple RAG isolates the contribution of retrieval
+ \emph{relevance} from that of simply having more context in the
+ prompt. Studies that omit this arm cannot separate the two.
 \end{itemize}
 
 \noindent Retrieval has been evaluated on adjacent code tasks such as
@@ -233,22 +233,22 @@ objectives:
 
 \begin{description}
 \item[\textbf{O1}.] To \emph{quantify} the effect of retrieval
-  augmentation on mutation kill rate relative to unaugmented
-  prompting, and to bound that effect with a stated level of
-  statistical power rather than reporting significance alone.
+ augmentation on mutation kill rate relative to unaugmented
+ prompting, and to bound that effect with a stated level of
+ statistical power rather than reporting significance alone.
 \item[\textbf{O2}.] To \emph{separate} the contribution of retrieval
-  \emph{relevance} from the contribution of additional prompt
-  context, by including a random-retrieval condition identical to
-  semantic retrieval in every respect except ranking.
+ \emph{relevance} from the contribution of additional prompt
+ context, by including a random-retrieval condition identical to
+ semantic retrieval in every respect except ranking.
 \item[\textbf{O3}.] To \emph{test the transferability} of any technique
-  ordering across language models of differing capability, and to
-  establish whether conclusions drawn on one model may be
-  generalised to others.
+ ordering across language models of differing capability, and to
+ establish whether conclusions drawn on one model may be
+ generalised to others.
 \item[\textbf{O4}.] To \emph{compare} mutation-based defect detection
-  against two independent quality signals measured on the same
-  generated suites---blinded human ratings and a search-based
-  generator baseline---and to determine whether the three signals
-  agree.
+ against two independent quality signals measured on the same
+ generated suites---blinded human ratings and a search-based
+ generator baseline---and to determine whether the three signals
+ agree.
 \end{description}
 
 \noindent Objectives O1--O4 map onto the research questions below as
@@ -262,27 +262,27 @@ around the three gaps identified above:
 
 \begin{description}
 \item[\textbf{RQ1}.] Does retrieval-augmented LLM test generation
-  produce tests with higher mutation kill rate than plain
-  (un-augmented) LLM generation, across four open-weight LLMs
-  spanning 3B--30B parameters?
+ produce tests with higher mutation kill rate than plain
+ (un-augmented) LLM generation, across four open-weight LLMs
+ spanning 3B--30B parameters?
 \item[\textbf{RQ2}.] Is the technique effect on mutation kill rate
-  \emph{statistically significant} after controlling for
-  source-sample difficulty and LLM choice, and does it concentrate
-  on specific mutation operators or source benchmarks?
+ \emph{statistically significant} after controlling for
+ source-sample difficulty and LLM choice, and does it concentrate
+ on specific mutation operators or source benchmarks?
 \item[\textbf{RQ3}.] Do \emph{technique rankings generalize across
-  LLMs}, or does the best technique depend on the underlying LLM's
-  capability tier?
+ LLMs}, or does the best technique depend on the underlying LLM's
+ capability tier?
 \item[\textbf{RQ4}.] Does the \emph{token-overlap faithfulness}
-  between generated tests and retrieved documentation predict
-  mutation kill rate? Does \emph{semantic faithfulness} (an
-  LLM-judge metric) predict it differently?
+ between generated tests and retrieved documentation predict
+ mutation kill rate? Does \emph{semantic faithfulness} (an
+ LLM-judge metric) predict it differently?
 \item[\textbf{RQ5}.] Do \emph{human annotators} rank the four
-  generation techniques differently on test idiom quality, correctness
-  and completeness---and does their ranking agree with the
-  mutation-testing ranking of the same suites?
+ generation techniques differently on test idiom quality, correctness
+ and completeness, and does their ranking agree with the
+ mutation-testing ranking of the same suites?
 \item[\textbf{RQ6}.] How do LLM-based test generators \emph{compare
-  against search-based test generation} (Pynguin) on the same
-  matched functions, under a fixed search budget?
+ against search-based test generation} (Pynguin) on the same
+ matched functions, under a fixed search budget?
 \end{description}
 
 \subsection{Contributions}\label{sec:intro-contrib}
@@ -292,76 +292,76 @@ LLM-based unit-test generation:
 
 \begin{enumerate}
 \item \textbf{A cross-LLM mutation-testing study} of
-  plain-vs-RAG test generation, with a random-retrieval control. We evaluate four techniques (Plain LLM,
-  Random RAG, Simple RAG, Iterative Critique) across four
-  open-weight LLMs spanning 3B--30B parameters and dense vs
-  mixture-of-experts architectures, on a 100-function subset of HumanEval + MBPP. To our knowledge, no prior study has reported
-  this 4$\times$4 mutation-testing matrix at this sample scale.
+ plain-vs-RAG test generation, with a random-retrieval control. We evaluate four techniques (Plain LLM,
+ Random RAG, Simple RAG, Iterative Critique) across four
+ open-weight LLMs spanning 3B--30B parameters and dense vs
+ mixture-of-experts architectures, on a 100-function subset of HumanEval + MBPP. To our knowledge, no prior study has reported
+ this 4$\times$4 mutation-testing matrix at this sample scale.
 
 \item \textbf{Statistically rigorous analysis} using Type-III ANOVA
-  on the per-sample data, mixed-effects regression with
-  \texttt{sample\_idx} as a random intercept, Tukey HSD post-hoc
-  comparisons, and per-operator and per-benchmark decompositions.
-  \emph{We report a well-powered null:} no technique pair separates in
-  any scope---pooled, per-benchmark, or per-operator---while the
-  model factor is overwhelming ($F = 108.5$, $p < 10^{-60}$). We
-  additionally report a decontaminated replication that rules out
-  benchmark memorisation as the source of the null
-  (\S\ref{sec:results-contamination}), a matched-subset replication
-  controlling for differential test-filter attrition
-  (\S\ref{sec:results-attrition}), and a power analysis bounding the
-  effect we could have missed to roughly three percentage points
-  (\S\ref{sec:limitations-conclusion}).
+ on the per-sample data, mixed-effects regression with
+ \texttt{sample\_idx} as a random intercept, Tukey HSD post-hoc
+ comparisons, and per-operator and per-benchmark decompositions.
+ \emph{We report a well-powered null:} no technique pair separates in
+ any scope---pooled, per-benchmark, or per-operator---while the
+ model factor is overwhelming ($F = 108.5$, $p < 10^{-60}$). We
+ additionally report a decontaminated replication that rules out
+ benchmark memorisation as the source of the null
+ (\S\ref{sec:results-contamination}), a matched-subset replication
+ controlling for differential test-filter attrition
+ (\S\ref{sec:results-attrition}), and a power analysis bounding the
+ effect we could have missed to roughly three percentage points
+ (\S\ref{sec:limitations-conclusion}).
 
 \item \textbf{A multi-annotator human evaluation reporting formal
-  agreement statistics.} To our knowledge this is the first human
-  evaluation of \emph{RAG-based} test generation to report
-  inter-rater agreement rather than pooled means alone. Three
-  independent annotators rated 40 stratified
-  (function, generated\_tests) pairs blinded to technique and model.
-    \emph{Iterative Critique RAG ranked highest on all three rubric
-  dimensions} (test idiom quality, correctness, completeness),
-  significantly on two of them under a mixed-effects model
-  controlling for model choice and annotator. This
-  \emph{contradicts} the mutation-testing result rather than
-  replicating it, and the two
-  signals are uncorrelated at the suite level ($r = +0.18$,
-  $p = 0.30$)---evidence that human-perceived test quality and
-  defect-detection capability are separate constructs, and that
-  studies reporting only one of them are not interchangeable.
+ agreement statistics.} To our knowledge this is the first human
+ evaluation of \emph{RAG-based} test generation to report
+ inter-rater agreement rather than pooled means alone. Three
+ independent annotators rated 40 stratified
+ (function, generated\_tests) pairs blinded to technique and model.
+ \emph{Iterative Critique RAG ranked highest on all three rubric
+ dimensions} (test idiom quality, correctness, completeness),
+ significantly on two of them under a mixed-effects model
+ controlling for model choice and annotator. This
+ \emph{contradicts} the mutation-testing result rather than
+ replicating it, and the two
+ signals are uncorrelated at the suite level ($r = +0.18$,
+ $p = 0.30$): evidence that human-perceived test quality and
+ defect-detection capability are separate constructs, and that
+ studies reporting only one of them are not interchangeable.
 
 \item \textbf{A per-operator LLM-vs-SBST comparison on matched
-  Python functions.} Head-to-head LLM-vs-Pynguin comparison on
-  mutation score is not itself new---\citet{dakhel2024mutation} and
-  \citet{straubinger2025debug} both report one. What we add is the
-  operator-level decomposition on a matched function set, which
-  turns ``which paradigm is better'' into ``which defect families
-  does each catch''. We benchmark our LLM techniques against
-  Pynguin 0.45.0 on the same 40 functions used in the human
-  evaluation, with a 60-second per-function search budget. Matched on
-  the 34 functions Pynguin could handle, LLM techniques outperform it
-  overall ($0.898$--$0.922$ vs $0.787$, Mann--Whitney $p < 0.001$),
-  but the advantage is confined to the relational and boundary
-  operator families (comparison $0.917$ vs $0.250$; boundary $0.817$
-  vs $0.554$); on arithmetic and negate-boolean operators Pynguin
-  \emph{leads} every LLM technique ($0.850$ vs $0.809$ and $1.000$ vs
-  $0.917$). The two approaches are therefore
-  complementary along a specific axis---value-sensitive versus
-  relational operator families---which is a sharper design brief for
-  a hybrid generator than general complementarity.
+ Python functions.} Head-to-head LLM-vs-Pynguin comparison on
+ mutation score is not itself new---\citet{dakhel2024mutation} and
+ \citet{straubinger2025debug} both report one. What we add is the
+ operator-level decomposition on a matched function set, which
+ turns ``which paradigm is better'' into ``which defect families
+ does each catch''. We benchmark our LLM techniques against
+ Pynguin 0.45.0 on the same 40 functions used in the human
+ evaluation, with a 60-second per-function search budget. Matched on
+ the 34 functions Pynguin could handle, LLM techniques outperform it
+ overall ($0.898$--$0.922$ vs $0.787$, Mann--Whitney $p < 0.001$),
+ but the advantage is confined to the relational and boundary
+ operator families (comparison $0.917$ vs $0.250$; boundary $0.817$
+ vs $0.554$); on arithmetic and negate-boolean operators Pynguin
+ \emph{leads} every LLM technique ($0.850$ vs $0.809$ and $1.000$ vs
+ $0.917$). The two approaches are therefore
+ complementary along a specific axis---value-sensitive versus
+ relational operator families---which is a sharper design brief for
+ a hybrid generator than general complementarity.
 
 \item \textbf{A methodological caution} about RAG retrieval
-  quality: \emph{token-overlap faithfulness is a property of the
-  model, not of the retrieval technique} ($R^2 = 0.889$ by model
-  against $0.118$ by technique, $p = 0.605$). Pooled across the 11 RAG
-  cells it correlates with mutation kill rate at $r = -0.907$
-  ($p < 0.001$), which reads as a strong finding and is not one: the
-  partial correlation controlling for model is $r = +0.079$
-  ($p = 0.818$) and the within-model correlations are positive. In a
-  cross-model design where one factor explains almost all outcome
-  variance, any covariate tracking that factor will correlate with
-  the outcome; we recommend reporting the partial correlation
-  alongside the pooled one as a matter of course.
+ quality: \emph{token-overlap faithfulness is a property of the
+ model, not of the retrieval technique} ($R^2 = 0.889$ by model
+ against $0.118$ by technique, $p = 0.605$). Pooled across the 11 RAG
+ cells it correlates with mutation kill rate at $r = -0.907$
+ ($p < 0.001$), which reads as a strong finding and is not one: the
+ partial correlation controlling for model is $r = +0.079$
+ ($p = 0.818$) and the within-model correlations are positive. In a
+ cross-model design where one factor explains almost all outcome
+ variance, any covariate tracking that factor will correlate with
+ the outcome; we recommend reporting the partial correlation
+ alongside the pooled one as a matter of course.
 \end{enumerate}
 
 A sixth methodological contribution: we release a
@@ -676,7 +676,7 @@ generation baselines.
 are recent and limited. \citet{lemieux2023codamosa} is the closest
 analog: it combines SBST with LLM prompts and reports improvements
 over each approach alone, demonstrating complementarity in coverage
-metrics.  Our findings extend the complementarity
+metrics. Our findings extend the complementarity
 observation from coverage to mutation kill rate in Python, and we
 identify the operator family (comparison) where the complementarity
 is sharpest. To our knowledge, no prior study reports a head-to-head
@@ -685,57 +685,57 @@ Python functions, which is what we provide in
 \S\ref{sec:results-pynguin}.
 
 \subsection{Human evaluation of generated code and
-  tests}\label{sec:related-humaneval}
-  
-  Human evaluation of LLM-generated code (and tests) is less mature
-  than the literature on automated metrics. \citet{vaithilingam2022}
-  at CHI established the foundational observation that developers'
-  \emph{expectations} of LLM code-generation tools diverge sharply
-  from their lived \emph{experience}, finding that perceived
-  usefulness depends heavily on readability and naming conventions
-  even when objective correctness is similar. \citet{liang2024copilot}
-  extended this observation to a large scale with a 410-developer survey
-  of Copilot users at ICSE 2024, identifying readability and integration
-  into the developer's existing workflow as the dominant
+ tests}\label{sec:related-humaneval}
+ 
+ Human evaluation of LLM-generated code (and tests) is less mature
+ than the literature on automated metrics. \citet{vaithilingam2022}
+ at CHI established the foundational observation that developers'
+ \emph{expectations} of LLM code-generation tools diverge sharply
+ from their lived \emph{experience}, finding that perceived
+ usefulness depends heavily on readability and naming conventions
+ even when objective correctness is similar. \citet{liang2024copilot}
+ extended this observation to a large scale with a 410-developer survey
+ of Copilot users at ICSE 2024, identifying readability and integration
+ into the developer's existing workflow as the dominant
  quality dimensions—more important to participants than raw
-  correctness in many cases. \citet{mozannar2024chi} at CHI 2024
+ correctness in many cases. \citet{mozannar2024chi} at CHI 2024
  complements these survey results with a behavioral-trace study of
-  how developers actually invoke and edit Copilot's suggestions in
-  practice. Together, these three studies establish that
-  \emph{human-perceived quality} and \emph{automated-metric quality}
-  measure related but non-identical constructs—an observation
+ how developers actually invoke and edit Copilot's suggestions in
+ practice. Together, these three studies establish that
+ \emph{human-perceived quality} and \emph{automated-metric quality}
+ measure related but non-identical constructs—an observation
  consistent with what we report in
-  \S\ref{sec:discussion-moe}, where qwen3-coder achieves a higher
-  mutation kill rate than qwen3, but our annotators rate qwen3.5
-  higher on all three rubric dimensions.
-  
-  \paragraph{Human evaluation specifically for LLM-generated unit
-  tests}
-  is sparser than the broader code-generation literature.
-  \citet{siddiq2024junit} reports an empirical evaluation of
-  LLM-generated JUnit tests on multiple dimensions
-  (compilability, correctness, coverage) but does not include a
-  multi-annotator human rating component with formal inter-rater
-  agreement statistics. \citet{wang2026mutationstudy} includes a small
-  annotation study alongside their automated mutation-testing
-  benchmark but, similarly, does not report Cohen's $\kappa$ or
-  Krippendorff's $\alpha$ across multiple raters. To our knowledge,
-  no prior study reports the kind of three-annotator behaviorally
+ \S\ref{sec:discussion-moe}, where qwen3-coder achieves a higher
+ mutation kill rate than qwen3, but our annotators rate qwen3.5
+ higher on all three rubric dimensions.
+ 
+ \paragraph{Human evaluation specifically for LLM-generated unit
+ tests}
+ is sparser than the broader code-generation literature.
+ \citet{siddiq2024junit} reports an empirical evaluation of
+ LLM-generated JUnit tests on multiple dimensions
+ (compilability, correctness, coverage) but does not include a
+ multi-annotator human rating component with formal inter-rater
+ agreement statistics. \citet{wang2026mutationstudy} includes a small
+ annotation study alongside their automated mutation-testing
+ benchmark but, similarly, does not report Cohen's $\kappa$ or
+ Krippendorff's $\alpha$ across multiple raters. To our knowledge,
+ no prior study reports the kind of three-annotator behaviorally
  anchored 0–5 rubric evaluation of RAG-augmented test generation
-  that we present in \S\ref{sec:results-humaneval}.
-  
-  \paragraph{Rating-scale methodology.}
-  The behaviorally-anchored rating scale (BARS) methodology we use
-  in our rubric was introduced by \citet{smith1963} in
-  industrial-psychology research and has been adapted for many
-  software-engineering contexts since. \citet{landis1977} provides
-  the canonical interpretation thresholds for Cohen's $\kappa$ that
-  we use to assess inter-rater agreement in
-  \S\ref{sec:results-humaneval}: $\kappa < 0.20$ slight,
-  $\kappa \in [0.21, 0.40]$ fair, $\kappa \in [0.41, 0.60]$ moderate,
-  $\kappa \in [0.61, 0.80]$ substantial, $\kappa \geq 0.81$ almost
-  perfect. \citet{krippendorff2018} defines the ordinal-$\alpha$
-  variant of inter-rater agreement we use as the primary three-rater
+ that we present in \S\ref{sec:results-humaneval}.
+ 
+ \paragraph{Rating-scale methodology.}
+ The behaviorally-anchored rating scale (BARS) methodology we use
+ in our rubric was introduced by \citet{smith1963} in
+ industrial-psychology research and has been adapted for many
+ software-engineering contexts since. \citet{landis1977} provides
+ the canonical interpretation thresholds for Cohen's $\kappa$ that
+ we use to assess inter-rater agreement in
+ \S\ref{sec:results-humaneval}: $\kappa < 0.20$ slight,
+ $\kappa \in [0.21, 0.40]$ fair, $\kappa \in [0.41, 0.60]$ moderate,
+ $\kappa \in [0.61, 0.80]$ substantial, $\kappa \geq 0.81$ almost
+ perfect. \citet{krippendorff2018} defines the ordinal-$\alpha$
+ variant of inter-rater agreement we use as the primary three-rater
  statistic since Cohen's $\kappa$ is defined only pairwise.
 
 \subsection{Empirical SE methodology}\label{sec:related-method}
@@ -760,35 +760,35 @@ sub-literatures. Relative to each:
 
 \begin{itemize}
 \item \textbf{LLM-based test generation
-  (\S\ref{sec:related-llmtg})}: we are the first to report a
-  cross-LLM (4 open-weight models, 3B–30B parameters)
-  mutation-testing-based evaluation of four RAG-augmentation variants
-  on Python unit-test generation.
+ (\S\ref{sec:related-llmtg})}: we are the first to report a
+ cross-LLM (4 open-weight models, 3B–30B parameters)
+ mutation-testing-based evaluation of four RAG-augmentation variants
+ on Python unit-test generation.
 \item \textbf{RAG for code (\S\ref{sec:related-rag})}: we show that
-  lexical retrieval-faithfulness is a model-level rather than a
-  technique-level property (\S\ref{sec:results-faithfulness}), and that
-  the strong negative faithfulness--kill-rate correlation this
-  produces at the cell level is an artifact of the model factor. We
-  are not aware of prior work in this setting that reports the
-  partial correlation alongside the pooled one.
+ lexical retrieval-faithfulness is a model-level rather than a
+ technique-level property (\S\ref{sec:results-faithfulness}), and that
+ the strong negative faithfulness--kill-rate correlation this
+ produces at the cell level is an artifact of the model factor. We
+ are not aware of prior work in this setting that reports the
+ partial correlation alongside the pooled one.
 \item \textbf{Mutation testing (\S\ref{sec:related-mutation})}: our
-  per-operator and per-benchmark decompositions show that the technique
-  effect is absent in every scope, and locate the discriminative
-  variance in the model factor and in source-problem difficulty
-  instead. We are not aware of a prior cross-model mutation study
-  that reports a null of this kind at this scale, nor one that pairs
-  it with a human-evaluation signal pointing the other way.
+ per-operator and per-benchmark decompositions show that the technique
+ effect is absent in every scope, and locate the discriminative
+ variance in the model factor and in source-problem difficulty
+ instead. We are not aware of a prior cross-model mutation study
+ that reports a null of this kind at this scale, nor one that pairs
+ it with a human-evaluation signal pointing the other way.
 \item \textbf{SBST (\S\ref{sec:related-sbst})}: prior work already
-  benchmarks LLM test generation against Pynguin on mutation score
-  \citep{dakhel2024mutation,straubinger2025debug}. Our contribution
-  is the \emph{per-operator} decomposition on a matched function
-  set, with identical evaluation pipelines for both outputs, which
-  identifies a complementarity axis rather than a winner.
+ benchmarks LLM test generation against Pynguin on mutation score
+ \citep{dakhel2024mutation,straubinger2025debug}. Our contribution
+ is the \emph{per-operator} decomposition on a matched function
+ set, with identical evaluation pipelines for both outputs, which
+ identifies a complementarity axis rather than a winner.
 \item \textbf{Human evaluation (\S\ref{sec:related-humaneval})}: our
-  three-annotator behaviorally-anchored 0–5 rubric study on 40
-  stratified samples is, to our knowledge, the first human
-  evaluation of RAG-based test generation that reports formal
-  inter-rater agreement statistics.
+ three-annotator behaviorally-anchored 0–5 rubric study on 40
+ stratified samples is, to our knowledge, the first human
+ evaluation of RAG-based test generation that reports formal
+ inter-rater agreement statistics.
 \end{itemize}
 
 \subsection{Research gap}\label{sec:related-gap}
@@ -813,16 +813,16 @@ metric. The present work is set in bold in the final row.}\label{tab:positioning
 \toprule
 Study & Lang. & Technique studied & LLMs & Plain & Mut. \\
 \midrule
-\citet{schafer2024}            & JS      & doc-example prompt + repair & 3 & no  & no  \\
-\citet{dakhel2024mutation}     & Python  & mutant-augmented prompt     & 2 & yes & yes \\
-\citet{foster2025ach}          & Kotlin  & LLM mutants + hardening     & ind.\ & no  & yes \\
-\citet{straubinger2025debug}   & Python  & scientific-debugging loop   & 1 & yes & yes \\
-\citet{bouafif2025primg}       & Solidity& mutant prioritisation       & 1 & no  & yes \\
-\citet{wang2026mutgen}         & Java    & mutation feedback in prompt & 1 & yes & yes \\
-\citet{wang2026mutationstudy}  & Java    & LLM \emph{mutant} generation& many & n/a & yes \\
-\citet{konstantinou2026newer}  & Java    & 4 pipelines vs plain prompt & 3 & yes & yes \\
-\citet{shin2026ragtest}        & Python  & RAG, 3 knowledge sources    & 4 & yes & no  \\
-\citet{zhang2026refrag}        & Java    & reference-based retrieval   & 1 & no  & no  \\
+\citet{schafer2024} & JS & doc-example prompt + repair & 3 & no & no \\
+\citet{dakhel2024mutation} & Python & mutant-augmented prompt & 2 & yes & yes \\
+\citet{foster2025ach} & Kotlin & LLM mutants + hardening & ind.\ & no & yes \\
+\citet{straubinger2025debug} & Python & scientific-debugging loop & 1 & yes & yes \\
+\citet{bouafif2025primg} & Solidity& mutant prioritisation & 1 & no & yes \\
+\citet{wang2026mutgen} & Java & mutation feedback in prompt & 1 & yes & yes \\
+\citet{wang2026mutationstudy} & Java & LLM \emph{mutant} generation& many & n/a & yes \\
+\citet{konstantinou2026newer} & Java & 4 pipelines vs plain prompt & 3 & yes & yes \\
+\citet{shin2026ragtest} & Python & RAG, 3 knowledge sources & 4 & yes & no \\
+\citet{zhang2026refrag} & Java & reference-based retrieval & 1 & no & no \\
 \midrule
 \textbf{This work} & Python & \textbf{4 RAG variants + placebo} & \textbf{4} & \textbf{yes} & \textbf{yes} \\
 \bottomrule
@@ -854,45 +854,45 @@ Against that backdrop, three specific gaps motivate this study.
 
 \begin{enumerate}
 \item \textbf{No cross-LLM mutation-testing evaluation of RAG
-  variants, and no retrieval placebo.} The two studies closest to
-  ours each cover half the question: \citet{shin2026ragtest} vary
-  retrieval across four LLMs but measure correctness and coverage
-  rather than defect detection, and \citet{konstantinou2026newer}
-  measure mutation score across three LLMs but vary
-  prompt-engineering pipelines rather than retrieval. Neither
-  includes a \emph{random-retrieval control}. Without one, ``RAG did
-  not help'' cannot be separated from ``the extra context tokens did
-  not help'', because a semantic retriever and a random chunk
-  sampler differ only in ranking. We report both, and the gap
-  between them is 0.3 percentage points
-  (\S\ref{sec:results-killrate}). Our model pool is also
-  deliberately different: every study in Table~\ref{tab:positioning}
-  that reports model counts uses frontier or near-frontier models,
-  whereas we evaluate open-weight models from 3B to 30B parameters,
-  the range a team can actually self-host.
+ variants, and no retrieval placebo.} The two studies closest to
+ ours each cover half the question: \citet{shin2026ragtest} vary
+ retrieval across four LLMs but measure correctness and coverage
+ rather than defect detection, and \citet{konstantinou2026newer}
+ measure mutation score across three LLMs but vary
+ prompt-engineering pipelines rather than retrieval. Neither
+ includes a \emph{random-retrieval control}. Without one, ``RAG did
+ not help'' cannot be separated from ``the extra context tokens did
+ not help'', because a semantic retriever and a random chunk
+ sampler differ only in ranking. We report both, and the gap
+ between them is 0.3 percentage points
+ (\S\ref{sec:results-killrate}). Our model pool is also
+ deliberately different: every study in Table~\ref{tab:positioning}
+ that reports model counts uses frontier or near-frontier models,
+ whereas we evaluate open-weight models from 3B to 30B parameters,
+ the range a team can actually self-host.
 \item \textbf{No multi-annotator human evaluation of RAG-based test
-  generation under a behaviourally-anchored rubric.}
-  \citet{zhang2026refrag} assess maintainability and
-  understandability analytically, and \citet{foster2025ach} report
-  engineer acceptance rates for an industrial deployment, but
-  neither elicits blinded per-suite ratings from independent
-  annotators. Prior human studies of LLM-generated code evaluate
-  general Copilot suggestions
-  \citep{vaithilingam2022,liang2024copilot} rather than the question
-  of whether retrieval augmentation yields tests developers judge
-  better. Pairing that signal with mutation testing on the same
-  suites is what exposes the dissociation we report in
-  \S\ref{sec:results-humaneval}.
+ generation under a behaviourally-anchored rubric.}
+ \citet{zhang2026refrag} assess maintainability and
+ understandability analytically, and \citet{foster2025ach} report
+ engineer acceptance rates for an industrial deployment, but
+ neither elicits blinded per-suite ratings from independent
+ annotators. Prior human studies of LLM-generated code evaluate
+ general Copilot suggestions
+ \citep{vaithilingam2022,liang2024copilot} rather than the question
+ of whether retrieval augmentation yields tests developers judge
+ better. Pairing that signal with mutation testing on the same
+ suites is what exposes the dissociation we report in
+ \S\ref{sec:results-humaneval}.
 \item \textbf{No per-operator LLM-vs-SBST comparison on matched
-  Python functions.} \citet{straubinger2025debug} do compare an
-  LLM approach against Pynguin on Python with mutation score, so the
-  head-to-head itself is no longer novel. What is missing is the
-  \emph{operator-level} decomposition on a matched function set:
-  which defect families each paradigm catches, and therefore how
-  work should be divided between them. We find the answer is not
-  ``LLMs are better'' but a clean split---SBST leads on the
-  value-derived families, LLMs on the relational ones
-  (\S\ref{sec:results-pynguin}).
+ Python functions.} \citet{straubinger2025debug} do compare an
+ LLM approach against Pynguin on Python with mutation score, so the
+ head-to-head itself is no longer novel. What is missing is the
+ \emph{operator-level} decomposition on a matched function set:
+ which defect families each paradigm catches, and therefore how
+ work should be divided between them. We find the answer is not
+ ``LLMs are better'' but a clean split---SBST leads on the
+ value-derived families, LLMs on the relational ones
+ (\S\ref{sec:results-pynguin}).
 \end{enumerate}
 
 \noindent The remainder of this paper addresses all three through a
@@ -936,23 +936,23 @@ Each Results subsection carries the same tag.}\label{tab:methodrqmap}
 RQ & Apparatus & Described in \\
 \midrule
 RQ1 & $4\times4$ factorial generation matrix; mutation kill rate as
-      the response; Random RAG as a relevance placebo &
-      \S\ref{sec:methods-factors}, \S\ref{sec:methods-kb},
-      \S\ref{sec:methods-mutation} \\
+ the response; Random RAG as a relevance placebo &
+ \S\ref{sec:methods-factors}, \S\ref{sec:methods-kb},
+ \S\ref{sec:methods-mutation} \\
 RQ2 & Type-III ANOVA with \texttt{sample\_idx}; Tukey HSD;
-      mixed-effects regression; per-operator and per-benchmark
-      decompositions & \S\ref{sec:methods-stats} \\
+ mixed-effects regression; per-operator and per-benchmark
+ decompositions & \S\ref{sec:methods-stats} \\
 RQ3 & Pairwise Spearman rank correlation of the technique ordering
-      between every pair of models & \S\ref{sec:methods-stats} \\
+ between every pair of models & \S\ref{sec:methods-stats} \\
 RQ4 & Token-overlap and LLM-judge faithfulness, correlated with kill
-      rate both pooled and partialled on model &
-      \S\ref{sec:methods-faithfulness} \\
+ rate both pooled and partialled on model &
+ \S\ref{sec:methods-faithfulness} \\
 RQ5 & Three-annotator blinded rating under a behaviourally-anchored
-      rubric; agreement statistics; mixed-effects model &
-      \S\ref{sec:methods-humaneval} \\
+ rubric; agreement statistics; mixed-effects model &
+ \S\ref{sec:methods-humaneval} \\
 RQ6 & Pynguin 0.45.0 under a fixed budget, evaluated through the
-      identical mutation pipeline on matched functions &
-      \S\ref{sec:methods-pynguin} \\
+ identical mutation pipeline on matched functions &
+ \S\ref{sec:methods-pynguin} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -997,9 +997,9 @@ total parameters; qwen3-coder is a mixture-of-experts model with
 Technique & Plain LLM, Random RAG, Simple RAG, Iterative Critique RAG \\
 % Cleaned and corrected the list of models into a single line for proper wrapping.
 Model & \texttt{llama3.2:latest} (3B, dense),
-        \texttt{phi4:14b} (14B, dense),
-        \texttt{qwen3.5:9b} (9B, dense),
-        \texttt{qwen3-coder:30b} (30B-A3.3B, MoE) \\
+ \texttt{phi4:14b} (14B, dense),
+ \texttt{qwen3.5:9b} (9B, dense),
+ \texttt{qwen3-coder:30b} (30B-A3.3B, MoE) \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -1075,17 +1075,17 @@ Percentages are of the 964 indexed chunks; the total row is set in bold.}\label{
 Source & Chunks & \% \\
 \midrule
 \texttt{docs.python.org} --- \texttt{unittest.mock} & 235 & 24.4 \\
-\texttt{docs.python.org} --- \texttt{unittest}      & 210 & 21.8 \\
-\texttt{docs.pytest.org} --- fixtures               & 131 & 13.6 \\
-Real Python --- mock library                        & 123 & 12.8 \\
-Real Python --- pytest testing                      & 104 & 10.8 \\
-\texttt{docs.pytest.org} --- assertions             &  43 &  4.5 \\
-\texttt{docs.pytest.org} --- monkeypatch            &  33 &  3.4 \\
-\texttt{docs.pytest.org} --- parametrize            &  22 &  2.3 \\
-GeeksforGeeks --- unittest                          &  20 &  2.1 \\
-\texttt{docs.pytest.org} --- getting started        &  19 &  2.0 \\
-\texttt{docs.pytest.org} --- \texttt{tmp\_path}     &  13 &  1.3 \\
-Hypothesis --- quickstart                           &  11 &  1.1 \\
+\texttt{docs.python.org} --- \texttt{unittest} & 210 & 21.8 \\
+\texttt{docs.pytest.org} --- fixtures & 131 & 13.6 \\
+Real Python --- mock library & 123 & 12.8 \\
+Real Python --- pytest testing & 104 & 10.8 \\
+\texttt{docs.pytest.org} --- assertions & 43 & 4.5 \\
+\texttt{docs.pytest.org} --- monkeypatch & 33 & 3.4 \\
+\texttt{docs.pytest.org} --- parametrize & 22 & 2.3 \\
+GeeksforGeeks --- unittest & 20 & 2.1 \\
+\texttt{docs.pytest.org} --- getting started & 19 & 2.0 \\
+\texttt{docs.pytest.org} --- \texttt{tmp\_path} & 13 & 1.3 \\
+Hypothesis --- quickstart & 11 & 1.1 \\
 \midrule
 \textbf{Total} & \textbf{964} & \textbf{100.0} \\
 \bottomrule
@@ -1100,7 +1100,7 @@ window boundary is not lost from every retrievable unit. This yields
 \textbf{964 chunks}, which are embedded with
 \texttt{sentence-transformers/all-MiniLM-L6-v2} (384 dimensions) and
 held in an in-memory NumPy matrix. Retrieval is exact cosine
-similarity against that matrix---there is no approximate index, so
+similarity against that matrix: there is no approximate index, so
 ranking is deterministic given the query.
 
 \paragraph{Querying.} The query is not the bare function. It is a
@@ -1121,13 +1121,13 @@ actually supplies. Corpus sample 0 is MBPP/67:
 
 \begin{verbatim}
 def bell_number(n):
-    bell = [[0 for i in range(n+1)] for j in range(n+1)]
-    bell[0][0] = 1
-    for i in range(1, n+1):
-        bell[i][0] = bell[i-1][i-1]
-        for j in range(1, i+1):
-            bell[i][j] = bell[i-1][j-1] + bell[i][j-1]
-    return bell[n][0]
+ bell = [[0 for i in range(n+1)] for j in range(n+1)]
+ bell[0][0] = 1
+ for i in range(1, n+1):
+ bell[i][0] = bell[i-1][i-1]
+ for j in range(1, i+1):
+ bell[i][j] = bell[i-1][j-1] + bell[i][j-1]
+ return bell[n][0]
 \end{verbatim}
 
 \noindent The query is the task prefix plus the first 300 characters
@@ -1159,7 +1159,7 @@ $-0.065$--$0.636$), so the ranking among the top chunks is decided by
 differences of a few hundredths; this is why a random draw from the
 same corpus is not an obviously worse prompt than the ranked one.
 Second, \emph{three of the five chunks come from the Hypothesis
-quickstart}, which is 1.1\% of the index---the retriever is behaving
+quickstart}, which is 1.1\% of the index: the retriever is behaving
 sensibly, pulling property-based-testing material for a numeric
 function, but what it supplies is generic testing idiom rather than
 anything specific to Bell numbers. Nothing in the retrieved context
@@ -1175,7 +1175,7 @@ does not in fact guard against. The retrieved idiom shaped the
 instrumented retrieval with a \emph{noise rate}: the fraction of
 returned chunks scoring below a cosine threshold of 0.3, intended as a
 signal for ``the retriever found nothing relevant''. It is identically
-zero for every query in the study---no retrieved chunk ever scored
+zero for every query in the study: no retrieved chunk ever scored
 below the threshold. We report this rather than discarding it because
 it bounds one explanation of our null: the retriever is not returning
 obvious garbage. Whether the above-threshold material is
@@ -1190,7 +1190,7 @@ shuffled into a deterministic order. For the mutation-testing
 study, we ran each (technique $\times$ model) combination on all 100 samples, yielding 1{,}600 cells in total ($4 \times 4 \times 100$). After dropping samples whose
 LLM-generated test suites failed the original-code filter
 (\S\ref{sec:methods-mutation}),
-$N_{\text{valid}} = 1{,}443$ cells remained for analysis. The mix of source benchmarks in the 100 sampled functions is 65 MBPP and 35 HumanEval problems---a property of
+$N_{\text{valid}} = 1{,}443$ cells remained for analysis. The mix of source benchmarks in the 100 sampled functions is 65 MBPP and 35 HumanEval problems: a property of
 the seed-42 shuffle that we exploit in
 \S\ref{sec:results-perbenchmark} to compare per-benchmark
 significance.
@@ -1299,8 +1299,9 @@ original function (no test can ever kill it). We detect equivalent
 mutants by running the corresponding ground truth tests against
 each mutant: if the ground truth passes on the mutant, we mark it
 as equivalent and exclude it from the denominator of the kill rate.
-Approximately 5--15\% of mutants per cell are detected as equivalent
-under this rule.
+This rule marks 619 of the 9{,}660 generated mutants as
+equivalent, 6.4\% overall, ranging from 3.7\% to 9.1\% across the
+sixteen cells.
 
 \paragraph{Mutant execution against the original suite.}
 Some LLMs—most prominently phi4–14b—prepend a re-definition of
@@ -1382,7 +1383,7 @@ fixed English stop-word list are discarded, leaving identifiers,
 keywords and prose terms. Writing $G$ and $C$ for the resulting token
 \emph{sets} of the generated suite and the retrieved context,
 \[
-  \mathrm{faithfulness} \;=\; \frac{|G \cap C|}{|G|}.
+ \mathrm{faithfulness} \;=\; \frac{|G \cap C|}{|G|}.
 \]
 The measure is set-based rather than frequency-weighted, so repeating
 a term does not raise the score, and it is asymmetric by
@@ -1522,7 +1523,7 @@ answers it.
 Three subsections (\S\ref{sec:results-contamination},
 \S\ref{sec:results-attrition} and the power analysis in
 \S\ref{sec:limitations-conclusion}) answer no research question
-directly---they exist to test whether the answers to RQ1 and RQ2
+directly: they exist to test whether the answers to RQ1 and RQ2
 survive the two most plausible alternative explanations for a null,
 memorisation and differential attrition.
 
@@ -1537,24 +1538,24 @@ opener. Full statistics are given in the sections named.}\label{tab:rqmap}
 RQ & Section & Answer in brief \\
 \midrule
 RQ1 & \S\ref{sec:results-killrate} &
-  No. The spread across all four techniques is 0.011 against 0.232
-  across models. \\
+ No. The spread across all four techniques is 0.011 against 0.232
+ across models. \\
 RQ2 & \S\ref{sec:results-stats}, \S\ref{sec:results-peroperator} &
-  No. $F = 0.21$, $p = 0.890$; no pair separates in any scope, and
-  no operator family separates them either. \\
+ No. $F = 0.21$, $p = 0.890$; no pair separates in any scope, and
+ no operator family separates them either. \\
 RQ3 & \S\ref{sec:results-generalisability} &
-  No. The best technique differs on three of four models; only the
-  easiest operator family clears $\rho \geq 0.8$. \\
+ No. The best technique differs on three of four models; only the
+ easiest operator family clears $\rho \geq 0.8$. \\
 RQ4 & \S\ref{sec:results-faithfulness} &
-  No. The pooled association ($r = -0.907$) is a model confound and
-  vanishes under control ($r = +0.079$). \\
+ No. The pooled association ($r = -0.907$) is a model confound and
+ vanishes under control ($r = +0.079$). \\
 RQ5 & \S\ref{sec:results-humaneval} &
-  Yes to the first half, no to the second. Annotators rank Iterative
-  Critique highest on all three dimensions; that ranking does not
-  agree with the mutation ranking. \\
+ Yes to the first half, no to the second. Annotators rank Iterative
+ Critique highest on all three dimensions; that ranking does not
+ agree with the mutation ranking. \\
 RQ6 & \S\ref{sec:results-pynguin} &
-  LLM techniques lead overall, but the advantage is confined to the
-  relational and boundary operator families. \\
+ LLM techniques lead overall, but the advantage is confined to the
+ relational and boundary operator families. \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1594,7 +1595,7 @@ qwen3.5 (9B dense) 0.950. The 0.232-point swing from llama3.2 to
 qwen3.5 is an order of magnitude larger than the within-model swing
 across techniques, which averages 0.029 and never exceeds 0.047.
 Second, \emph{RAG-based techniques outperform Plain LLM on three of the
-four models}---but no single RAG variant does so consistently. The
+four models}, but no single RAG variant does so consistently. The
 best technique is Simple RAG on phi4 (0.916) and Random RAG on both
 qwen models (0.943 and 0.960), while on llama3.2 Plain LLM has the
 highest mean (0.744), for reasons we return to in
@@ -1635,9 +1636,9 @@ bold; the technique factor is not significant.}\label{tab:anova-overall}
 \toprule
 Factor & $F$ & $p$ \\
 \midrule
-C(method)               & 0.21 & 0.890 \\
-\textbf{C(model)}       & \textbf{108.54} & $\boldsymbol{<} \boldsymbol{0.001}$ \\
-\textbf{C(sample\_idx)} & \textbf{9.96}  & $\boldsymbol{<} \boldsymbol{0.001}$ \\
+C(method) & 0.21 & 0.890 \\
+\textbf{C(model)} & \textbf{108.54} & $\boldsymbol{<} \boldsymbol{0.001}$ \\
+\textbf{C(sample\_idx)} & \textbf{9.96} & $\boldsymbol{<} \boldsymbol{0.001}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1682,7 +1683,7 @@ scope, and the mixed-effects model agrees in all three
 The largest raw contrast is Iterative Critique over Plain LLM on
 MBPP ($\Delta = -0.090$, i.e.\ 9.0 percentage points in IC's
 favour), which is both the direction and roughly the magnitude a
-reader would expect from the refinement loop---but at
+reader would expect from the refinement loop, but at
 $p_{\mathrm{adj}} = 0.216$ it is indistinguishable from sampling
 noise at this corpus size. Figure~\ref{fig:boundary-heatmap} shows
 the $4 \times 4$ boundary matrix: within-row spread is wider than on
@@ -1711,8 +1712,8 @@ our data support it.
 Scope & $n$ & ANOVA technique $F(p)$ & Tukey IC vs Plain LLM & Mixed-LM IC vs Plain LLM \\
 \midrule
 HumanEval only & 403 & 0.49 (0.691) & $\Delta=-0.017$, \newline $p_{\mathrm{adj}}=0.968$ & $\beta=-0.000$, \newline $p=0.991$ \\
-MBPP only      & 521 & 0.94 (0.421) & $\Delta=-0.090$, \newline $p_{\mathrm{adj}}=0.216$ & $\beta=-0.053$, \newline $p=0.109$ \\
-Pooled         & 924 & 0.61 (0.606) & $\Delta=-0.058$, \newline $p_{\mathrm{adj}}=0.240$ & $\beta=-0.027$, \newline $p=0.217$ \\
+MBPP only & 521 & 0.94 (0.421) & $\Delta=-0.090$, \newline $p_{\mathrm{adj}}=0.216$ & $\beta=-0.053$, \newline $p=0.109$ \\
+Pooled & 924 & 0.61 (0.606) & $\Delta=-0.058$, \newline $p_{\mathrm{adj}}=0.240$ & $\beta=-0.027$, \newline $p=0.217$ \\
 \bottomrule
 \end{tabularx}
 \end{table}
@@ -1766,12 +1767,12 @@ clears the threshold. The one metric that does is set in bold.}
 \toprule
 Metric & min $\rho$ & mean $\rho$ & Verdict \\
 \midrule
-Overall kill rate            & $-0.80$ & $-0.03$ & Does NOT generalize \\
-kill\_arithmetic             & $-1.00$ & $-0.17$ & Does NOT generalize (perfect inversion in one pair) \\
-kill\_boundary               & $-0.60$ & $+0.10$ & Does NOT generalize \\
-kill\_comparison             & $-0.80$ & $+0.09$ & Does NOT generalize \\
-kill\_negate\_bool           & $-0.40$ & $+0.23$ & Does NOT generalize \\
-\textbf{kill\_return\_none}  & $\boldsymbol{+0.80}$ & $\boldsymbol{+0.90}$ & \textbf{Generalizes} \\
+Overall kill rate & $-0.80$ & $-0.03$ & Does NOT generalize \\
+kill\_arithmetic & $-1.00$ & $-0.17$ & Does NOT generalize (perfect inversion in one pair) \\
+kill\_boundary & $-0.60$ & $+0.10$ & Does NOT generalize \\
+kill\_comparison & $-0.80$ & $+0.09$ & Does NOT generalize \\
+kill\_negate\_bool & $-0.40$ & $+0.23$ & Does NOT generalize \\
+\textbf{kill\_return\_none} & $\boldsymbol{+0.80}$ & $\boldsymbol{+0.90}$ & \textbf{Generalizes} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -1837,9 +1838,9 @@ four models. Two orderings are decided in the fourth decimal place
 \toprule
 Technique & llama3.2 & phi4 & qwen3.5 & qwen3-coder \\
 \midrule
-Plain LLM          & \textbf{1} & 4 & 4 & 4 \\
-Random RAG         & 3 & 3 & \textbf{1} & \textbf{1} \\
-Simple RAG         & 2 & \textbf{1} & 2 & 3 \\
+Plain LLM & \textbf{1} & 4 & 4 & 4 \\
+Random RAG & 3 & 3 & \textbf{1} & \textbf{1} \\
+Simple RAG & 2 & \textbf{1} & 2 & 3 \\
 Iterative Critique & 4 & 2 & 3 & 2 \\
 \bottomrule
 \end{tabular}
@@ -1900,7 +1901,7 @@ transformation itself: renaming \texttt{has\_close\_elements} to a
 neutral identifier removes a semantic hint that a model might
 otherwise use to produce a plausible-but-wrong test, so marginally
 more generated suites survive the original-code filter. What we can
-rule out is the strong contamination hypothesis---that our kill rates
+rule out is the strong contamination hypothesis: that our kill rates
 are inflated by recall and would collapse on unseen problems. What we
 cannot rule out is recall keyed on the problem \emph{description},
 which our transformation leaves untouched.
@@ -1927,9 +1928,9 @@ the most heavily filtered technique on every model.}\label{tab:attrition}
 \toprule
 Technique & llama3.2 & phi4 & qwen3.5 & qwen3-coder \\
 \midrule
-Plain LLM          & 95 & 100 & 100 & 100 \\
-Random RAG         & 80 & 96  & 99  & 99  \\
-Simple RAG         & 87 & 94  & 96  & 100 \\
+Plain LLM & 95 & 100 & 100 & 100 \\
+Random RAG & 80 & 96 & 99 & 99 \\
+Simple RAG & 87 & 94 & 96 & 100 \\
 \textbf{Iterative Critique} & \textbf{50} & \textbf{71} & \textbf{77} & \textbf{99} \\
 \bottomrule
 \end{tabular}
@@ -1958,7 +1959,7 @@ qwen3-coder).
 
 \emph{The technique effect remains absent on the matched subset.} Mean
 kill rates are Plain LLM 0.895, Random RAG 0.906, Simple RAG 0.896,
-Iterative Critique 0.897---a spread of 0.011, against 0.016 on the
+Iterative Critique 0.897: a spread of 0.011, against 0.016 on the
 full corpus. Matching removes the apparent reordering (Iterative
 Critique moves from last to second) without producing a technique
 effect, which is the expected signature of attrition acting as
@@ -1969,7 +1970,7 @@ a robustness check rather than a separate finding.
 
 \subsection{Per-operator analysis}\label{sec:results-peroperator}
 
-\paragraph{\textnormal{\textbf{RQ2}, continued --- does the technique effect concentrate on a defect family?}}
+\paragraph{\textnormal{\textbf{RQ2}, continued : does the technique effect concentrate on a defect family?}}
 \emph{Answer: no.} No technique leads on more than two of the five
 operator families, and no gap exceeds nine percentage points.
 
@@ -1985,11 +1986,11 @@ across the four LLMs.
 \toprule
 Operator & Plain LLM & Random RAG & Simple RAG & Iterative Critique \\
 \midrule
-Arithmetic    & 0.700 & 0.724 & 0.713 & \textbf{0.727} \\
-Boundary      & 0.727 & 0.719 & 0.734 & \textbf{0.766} \\
-Comparison    & 0.856 & 0.846 & \textbf{0.858} & 0.844 \\
-Negate bool   & 0.811 & 0.819 & \textbf{0.862} & 0.778 \\
-Return None   & 0.892 & 0.909 & \textbf{0.923} & 0.877 \\
+Arithmetic & 0.700 & 0.724 & 0.713 & \textbf{0.727} \\
+Boundary & 0.727 & 0.719 & 0.734 & \textbf{0.766} \\
+Comparison & 0.856 & 0.846 & \textbf{0.858} & 0.844 \\
+Negate bool & 0.811 & 0.819 & \textbf{0.862} & 0.778 \\
+Return None & 0.892 & 0.909 & \textbf{0.923} & 0.877 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2044,7 +2045,7 @@ control.}\label{tab:faithfulness}
 \toprule
 Predictor & Pooled $r$ & $p$ & Partial $r \mid$ model & $p$ \\
 \midrule
-\verb|avg_noise_rate|             & \texttt{nan} & \texttt{nan} & \texttt{nan} & \texttt{nan} \\
+\verb|avg_noise_rate| & \texttt{nan} & \texttt{nan} & \texttt{nan} & \texttt{nan} \\
 \texttt{avg\_faithfulness} (token overlap) & $-0.907$ & $<0.001$ & $\mathbf{+0.079}$ & $\mathbf{0.818}$ \\
 \verb|avg_llm_judge_faithfulness| & $-0.493$ & 0.124 & $+0.298$ & 0.374 \\
 \bottomrule
@@ -2124,9 +2125,9 @@ dimension, averaged over three annotators and 40 blinded suites
 Technique & Test idiom & Correctness & Completeness \\
 \midrule
 \textbf{Iterative Critique} & \textbf{4.06} & \textbf{4.15} & \textbf{4.58} \\
-Random RAG                  & 3.79 & 3.73 & 3.85 \\
-Simple RAG                  & 3.56 & 3.85 & 3.74 \\
-Plain LLM                   & 3.22 & 3.82 & 3.63 \\
+Random RAG & 3.79 & 3.73 & 3.85 \\
+Simple RAG & 3.56 & 3.85 & 3.74 \\
+Plain LLM & 3.22 & 3.82 & 3.63 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2206,7 +2207,7 @@ absorbed rather than treated as disagreement about the techniques. The
 honest summary is that \emph{the ordering is supported on idiom and
 completeness and unsupported on correctness}, and that a replication
 should calibrate annotators on shared anchor examples before
-rating---which we did not do, and which is the most likely source of
+rating, which we did not do, and which is the most likely source of
 the scale divergence.
 
 \begin{table}[t]
@@ -2221,8 +2222,8 @@ in bold.}\label{tab:humaneval-kappa}
 Pair & Test idiom & Correctness & Completeness \\
 \midrule
 \textbf{GS $\leftrightarrow$ BV} & \textbf{$+0.32$} & \textbf{$+0.46$} & \textbf{$+0.37$} \\
-GS $\leftrightarrow$ SA          & $+0.005$ & $-0.218$ & $+0.211$ \\
-SA $\leftrightarrow$ BV          & $-0.001$ & $-0.308$ & $+0.155$ \\
+GS $\leftrightarrow$ SA & $+0.005$ & $-0.218$ & $+0.211$ \\
+SA $\leftrightarrow$ BV & $-0.001$ & $-0.308$ & $+0.155$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2287,10 +2288,10 @@ form of the dissociation reported in
 \toprule
 Model & Idiom & Correctness & Completeness & Kill rate \\
 \midrule
-qwen3.5:9b      & \textbf{3.97} & \textbf{4.03} & \textbf{4.27} & 0.975 \\
-qwen3-coder:30b & 3.62          & 3.67          & 3.75          & \textbf{0.986} \\
-phi4:14b        & 3.58          & 3.97          & 3.94          & 0.973 \\
-llama3.2:latest & 3.53          & 3.83          & 3.87          & 0.972 \\
+qwen3.5:9b & \textbf{3.97} & \textbf{4.03} & \textbf{4.27} & 0.975 \\
+qwen3-coder:30b & 3.62 & 3.67 & 3.75 & \textbf{0.986} \\
+phi4:14b & 3.58 & 3.97 & 3.94 & 0.973 \\
+llama3.2:latest & 3.53 & 3.83 & 3.87 & 0.972 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -2416,40 +2417,40 @@ Five findings appear robust to the limitations cataloged in
 
 \begin{enumerate}
 \item \emph{Mutation kill rate scales with LLM capability, not with
-  RAG-technique choice.} Moving from llama3.2 to qwen3.5 raises mean
-  kill rate by 0.232; the entire spread across the four generation
-  techniques is 0.011, and Iterative Critique sits 0.002 \emph{below}
-  unaugmented prompting. Model choice moves the metric
-  $21.7\times$ as far as technique choice. Spreads here are computed over
-  the 16 cell means, giving each (technique, model) cell equal weight;
-  because cell sizes differ after the test filter
-  (\S\ref{sec:results-attrition}), the observation-weighted estimate
-  differs and is reported alongside it in
-  \S\ref{sec:results-stats-overall}.
+ RAG-technique choice.} Moving from llama3.2 to qwen3.5 raises mean
+ kill rate by 0.232; the entire spread across the four generation
+ techniques is 0.011, and Iterative Critique sits 0.002 \emph{below}
+ unaugmented prompting. Model choice moves the metric
+ $21.7\times$ as far as technique choice. Spreads here are computed over
+ the 16 cell means, giving each (technique, model) cell equal weight;
+ because cell sizes differ after the test filter
+ (\S\ref{sec:results-attrition}), the observation-weighted estimate
+ differs and is reported alongside it in
+ \S\ref{sec:results-stats-overall}.
 \item \emph{Technique rankings do not generalize across LLMs.} The best
-  technique differs on three of four models and Iterative Critique
-  leads on none. The only metric clearing $\rho \geq 0.8$ is
-  return-None kill rate (mean $\rho = +0.90$), the operator family
-  all techniques kill easily.
+ technique differs on three of four models and Iterative Critique
+ leads on none. The only metric clearing $\rho \geq 0.8$ is
+ return-None kill rate (mean $\rho = +0.90$), the operator family
+ all techniques kill easily.
 \item \emph{Retrieval faithfulness is a property of the model, not
-  of the retrieval technique} ($R^2 = 0.889$ by model vs $0.118$ by
-  technique). An apparent strong negative correlation between
-  faithfulness and kill rate ($r = -0.907$) is entirely confounded
-  by model and vanishes under control ($r = +0.079$, $p = 0.818$).
+ of the retrieval technique} ($R^2 = 0.889$ by model vs $0.118$ by
+ technique). An apparent strong negative correlation between
+ faithfulness and kill rate ($r = -0.907$) is entirely confounded
+ by model and vanishes under control ($r = +0.079$, $p = 0.818$).
 \item \emph{Three independent annotators ranked Iterative Critique
-  highest on all three quality dimensions.} Controlling for model
-  with annotator as a random intercept, the advantage over Plain LLM
-  is $\beta = +0.869$ ($p = 0.0001$) on idiom and $\beta = +0.987$
-  ($p < 0.0001$) on completeness; correctness shows the same ordering
-  but is not significant ($\beta = +0.368$, $p = 0.176$). This
-  \emph{contradicts} the mutation-testing result, and the two signals
-  are uncorrelated at the suite level ($r = +0.18$, $p = 0.30$).
-  Inter-rater agreement is poor in absolute level
-  (\S\ref{sec:results-humaneval}), so the ordering rests on the
-  model-controlled estimate rather than on raw means.
+ highest on all three quality dimensions.} Controlling for model
+ with annotator as a random intercept, the advantage over Plain LLM
+ is $\beta = +0.869$ ($p = 0.0001$) on idiom and $\beta = +0.987$
+ ($p < 0.0001$) on completeness; correctness shows the same ordering
+ but is not significant ($\beta = +0.368$, $p = 0.176$). This
+ \emph{contradicts} the mutation-testing result, and the two signals
+ are uncorrelated at the suite level ($r = +0.18$, $p = 0.30$).
+ Inter-rater agreement is poor in absolute level
+ (\S\ref{sec:results-humaneval}), so the ordering rests on the
+ model-controlled estimate rather than on raw means.
 \item \emph{LLM techniques outperform Pynguin's SBST on mutation kill
-  rate} under a 60-second budget, with the gap concentrated on
-  comparison-operator mutators.
+ rate} under a 60-second budget, with the gap concentrated on
+ comparison-operator mutators.
 \end{enumerate}
 
 \section{Discussion}\label{sec:discussion}
@@ -2467,7 +2468,7 @@ kills a boundary mutation that drops the last element; a test of the
 form \verb|assert isinstance(result, list) and len(result) == 3|
 does not. Iterative Critique's refinement loop drives generated
 tests toward the former category, which is consistent with its
-leading the field on arithmetic and boundary mutants---by 2.7 and
+leading the field on arithmetic and boundary mutants: by 2.7 and
 3.9 percentage points respectively.
 
 What stops this becoming a technique effect is that the same shift
@@ -2478,7 +2479,7 @@ there it is last, by 8.4 and 4.6 points. The gains and losses are of
 the same order and they cancel. A reader expecting refinement to
 help should therefore expect it to help on the mutants that need
 precision and hurt on the mutants that need breadth, with a null in
-the pooled metric---which is what we observe. We consider this a
+the pooled metric, which is what we observe. We consider this a
 more informative reading of the null than attributing it to
 insufficient power, since the power analysis
 (\S\ref{sec:limitations-conclusion}) rules out effects larger than
@@ -2500,7 +2501,7 @@ functions on llama3.2 against Plain LLM's 95, so the two techniques'
 means are computed over different and differently-difficult
 subsets. This is why Plain LLM attains the highest mean on
 llama3.2 despite being the weakest technique on the other three
-models---it is the technique whose surviving subset is least filtered.
+models: it is the technique whose surviving subset is least filtered.
 The matched-subset analysis (\S\ref{sec:results-attrition})
 confirms the direction: restricting to the 273 function-model
 units where all four techniques produced a valid suite leaves a technique
@@ -2538,7 +2539,7 @@ designs.}\label{sec:discussion-faithfulness}
 The faithfulness analysis (\S\ref{sec:results-faithfulness}) is the
 clearest methodological lesson in our data, and it is a negative
 one. Pooled over eleven cells, token-overlap faithfulness predicts
-kill rate at $r = -0.907$---a correlation strong enough to carry a
+kill rate at $r = -0.907$: a correlation strong enough to carry a
 contribution, and one we initially reported as such. It is an
 artifact of aggregation. Faithfulness is a model-level trait
 ($R^2 = 0.889$ by model against $0.118$ by technique): weaker models
@@ -2607,68 +2608,68 @@ pays off at this scale.
 
 \begin{enumerate}
 \item \textbf{Spend the budget on model selection, not retrieval
-  engineering.} Model choice moved defect detection $21.7\times$
-  further than technique choice. A team choosing between a larger model
-  and a more sophisticated RAG pipeline, at equal cost, should take
-  the model.
+ engineering.} Model choice moved defect detection $21.7\times$
+ further than technique choice. A team choosing between a larger model
+ and a more sophisticated RAG pipeline, at equal cost, should take
+ the model.
 \item \textbf{Do not assume a documentation knowledge base earns its
-  keep---measure it against a random-retrieval control.} Semantic
-  ranking over our testing-documentation corpus beat random chunks
-  from the same corpus by 0.3 percentage points. Retrieval that
-  cannot beat its own placebo is adding latency and tokens for
-  nothing. The control costs one extra experimental arm and is the
-  only way to tell the two apart.
+ keep: measure it against a random-retrieval control.} Semantic
+ ranking over our testing-documentation corpus beat random chunks
+ from the same corpus by 0.3 percentage points. Retrieval that
+ cannot beat its own placebo is adding latency and tokens for
+ nothing. The control costs one extra experimental arm and is the
+ only way to tell the two apart.
 \item \textbf{Do not treat developer-perceived quality as a proxy for
-  defect detection.} Our annotators consistently preferred Iterative
-  Critique's tests---significantly so on idiom and completeness---and
-  those tests detect no more defects than unaugmented prompting.
-  Teams optimising a review-based or rubric-based quality signal
-  should expect it not to move fault detection, and should measure
-  both.
+ defect detection.} Our annotators consistently preferred Iterative
+ Critique's tests---significantly so on idiom and completeness---and
+ those tests detect no more defects than unaugmented prompting.
+ Teams optimising a review-based or rubric-based quality signal
+ should expect it not to move fault detection, and should measure
+ both.
 \item \textbf{Divide work between SBST and LLM generators by operator
-  family, not wholesale.} Pynguin led every LLM technique on arithmetic
-  (0.850 vs 0.809) and negate-boolean (1.000 vs 0.917) mutants, while
-  LLMs led decisively on comparison (0.917 vs 0.250) and boundary
-  (0.817 vs 0.554). A hybrid should route by the kind of oracle
-  required, not run both and merge.
+ family, not wholesale.} Pynguin led every LLM technique on arithmetic
+ (0.850 vs 0.809) and negate-boolean (1.000 vs 0.917) mutants, while
+ LLMs led decisively on comparison (0.917 vs 0.250) and boundary
+ (0.817 vs 0.554). A hybrid should route by the kind of oracle
+ required, not run both and merge.
 \item \textbf{Account for test-filter attrition when comparing
-  techniques.} Iterative Critique produced a usable suite for only 50 of
-  100 functions on our weakest model, against Plain LLM's 95.
-  Comparing mean quality across techniques without reporting yield
-  compares different populations of functions.
+ techniques.} Iterative Critique produced a usable suite for only 50 of
+ 100 functions on our weakest model, against Plain LLM's 95.
+ Comparing mean quality across techniques without reporting yield
+ compares different populations of functions.
 \end{enumerate}
 
 \subsection{For researchers}\label{sec:implications-research}
 
 \begin{enumerate}
 \item \textbf{Report the partial correlation alongside the pooled one
-  in cross-model designs.} Our faithfulness result is a cautionary
-  case: a pooled $r = -0.907$ ($p < 0.001$) became $r = +0.079$
-  ($p = 0.818$) under control for model. Where one factor explains
-  99.5\% of outcome variance, any covariate tracking that factor will
-  correlate with the outcome at $|r| > 0.8$. Cell-level correlation
-  over a $4 \times 4$ matrix cannot distinguish that from a finding.
+ in cross-model designs.} Our faithfulness result is a cautionary
+ case: a pooled $r = -0.907$ ($p < 0.001$) became $r = +0.079$
+ ($p = 0.818$) under control for model. Where one factor explains
+ 99.5\% of outcome variance, any covariate tracking that factor will
+ correlate with the outcome at $|r| > 0.8$. Cell-level correlation
+ over a $4 \times 4$ matrix cannot distinguish that from a finding.
 \item \textbf{Include an unaugmented and a placebo condition.} Much
-  of the RAG-for-code literature compares a proposed retrieval design
-  against a weaker retrieval design. Without a no-retrieval arm the
-  question ``does retrieval help?'' is not asked, and without a
-  random-retrieval arm ``does \emph{relevance} help?'' is not
-  separable from ``do extra tokens help?''.
+ of the RAG-for-code literature compares a proposed retrieval design
+ against a weaker retrieval design. Without a no-retrieval arm the
+ question ``does retrieval help?'' is not asked, and without a
+ random-retrieval arm ``does \emph{relevance} help?'' is not
+ separable from ``do extra tokens help?''.
 \item \textbf{Treat the model factor as a first-class experimental
-  variable.} Technique rankings in our data do not transfer: the best
-  technique differs on three of four models, and only the kill rate of
-  the easiest operator family clears a $\rho \geq 0.8$ agreement
-  threshold across all model pairs. A technique validated on one
-  model should not be reported as a general result.
+ variable.} Technique rankings in our data do not transfer: the best
+ technique differs on three of four models, and only the kill rate of
+ the easiest operator family clears a $\rho \geq 0.8$ agreement
+ threshold across all model pairs. A technique validated on one
+ model should not be reported as a general result.
 \item \textbf{Report kill rate distributions, not only means.}
-  73.2\% of our per-sample kill rates sit at exactly 1.0. On a
-  ceiling that high, mean differences are driven by a small tail, and
-  parametric comparisons of means overstate what the data can
-  resolve.
+ 73.2\% of our per-sample kill rates sit at exactly 1.0. On a
+ ceiling that high, mean differences are driven by a small tail, and
+ parametric comparisons of means overstate what the data can
+ resolve.
 \item \textbf{Publish nulls in this area.} Two independent 2026
-  studies reach compatible conclusions by other routes
-  (\S\ref{sec:related-gap}). The cumulative signal is only visible
-  because those nulls were reported.
+ studies reach compatible conclusions by other routes
+ (\S\ref{sec:related-gap}). The cumulative signal is only visible
+ because those nulls were reported.
 \end{enumerate}
 
 \section{Threats to Validity}\label{sec:limitations}
@@ -2701,7 +2702,7 @@ and the rank ordering of the four techniques is consistent across all
 three annotators in two of the three dimensions despite their
 scale-usage divergence. Methodologically, we read this as evidence
 that \emph{rigorous LLM-test-quality evaluation requires a
-rubric-calibration training session before annotation}---a finding
+rubric-calibration training session before annotation}: a finding
 that future work in this area should treat as a default protocol
 requirement, not an optional refinement. We recommend a
 multi-pass calibration protocol (annotators rate a shared training
@@ -2722,7 +2723,7 @@ for this asymmetry. The first is that IC's refinement loop produces
 more behaviorally-specific assertions that, when off by a small
 margin (e.g., expecting \texttt{[1, 2, 3]} but the function returns
 \texttt{[1, 2, 3, 0]}), fail the filter rather than fail on a
-mutant---in which case the filter is selecting the most precise IC
+mutant: in which case the filter is selecting the most precise IC
 tests for inclusion. The second is that IC's critique-and-refine
 loop is genuinely more hallucination-prone (the model invents
 constraints not present in the docstring) and the filter is
