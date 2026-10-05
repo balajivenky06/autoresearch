@@ -167,12 +167,52 @@ def layer1(tsv: dict, rep: dict) -> None:
 # ──────────────────────────────────────────────────────────────────────
 # Layer 2 — manuscript tables vs TSV
 # ──────────────────────────────────────────────────────────────────────
+
+def _check_figure_freshness(tex: str) -> None:
+    """Every included figure must be newer than the results it derives from.
+
+    The manuscript's numbers are gated against results_mutation.tsv, but a
+    figure is an opaque artefact: if it is not regenerated after the data
+    changes it will keep displaying superseded values and nothing in the text
+    will disagree with it. This check is the substitute for parsing a PNG.
+    """
+    results = Path("results_mutation.tsv")
+    if not results.exists():
+        warn("L2", "results_mutation.tsv not found; figure freshness unchecked")
+        return
+    data_mtime = results.stat().st_mtime
+    figdir = Path("plots_mutation")
+    # Schematics carry no measured values, so their age means nothing.
+    SCHEMATIC = {"methodology_overview.png"}
+    stale, missing = [], []
+    for name in sorted(set(re.findall(r"\\includegraphics\[[^\]]*\]\{([^}]*)\}", tex))):
+        if name in SCHEMATIC:
+            continue
+        f = figdir / name
+        if not f.exists():
+            missing.append(name)
+        elif f.stat().st_mtime < data_mtime:
+            stale.append((name, (data_mtime - f.stat().st_mtime) / 86400))
+    for name in missing:
+        fail("L2", f"figure file missing: plots_mutation/{name}")
+    for name, days in stale:
+        fail("L2", f"figure older than results_mutation.tsv by {days:.1f} days: "
+                   f"{name} — regenerate it")
+
+
 def layer2(tsv: dict, tex: str) -> None:
-    # 2a. main 4x4 kill-rate matrix
+    # 2a. The 4x4 matrix moved from a body table into the annotated heatmap
+    # (fig:heatmap) so the manuscript stops carrying the same 16 numbers
+    # twice. A figure's numbers cannot be parsed out of a PNG, so what is
+    # checked instead is that every figure the manuscript includes is NEWER
+    # than the results file it is derived from. Staleness is the failure mode
+    # that actually bit this project: kill_rate_heatmap.png and the Pynguin
+    # figures both shipped numbers from a superseded run.
+    _check_figure_freshness(tex)
+
+    # 2a-legacy. If a body kill-rate table is reintroduced, check it too.
     rows = tex_table(tex, "tab:killrate-matrix")
-    if not rows:
-        warn("L2", "tab:killrate-matrix not found in .tex")
-    else:
+    if rows:
         for cells in rows:
             method = re.sub(r"\\textbf\{([^}]*)\}", r"\1", cells[0]).strip()
             if method not in METHOD_ROW_ORDER:

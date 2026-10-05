@@ -365,6 +365,132 @@ def fig_pynguin_peroperator(out: Path) -> None:
     save(fig, out)
 
 
+
+# ──────────────────────────────────────────────────────────────────────
+# 5. human evaluation — three figures, regenerated from the annotator CSVs
+# ──────────────────────────────────────────────────────────────────────
+# The originals dated from before the corpus was corrected. The correlation
+# panel also carried an internal contradiction — a title saying n=40 over
+# panels saying n=37 — and parked its legend on top of a data point, which
+# the SQJ reviewer flagged. All three are rebuilt here on the validated
+# palette so the human-evaluation figures match the rest of the paper.
+DIMS = [("human_test_idiom", "Test idiom"),
+        ("human_correctness", "Correctness"),
+        ("human_completeness", "Completeness")]
+METHOD_ORDER = ["plain_llm", "random_rag", "simple_rag", "iterative_critique"]
+METHOD_NAME = {"plain_llm": "Plain LLM", "random_rag": "Random RAG",
+               "simple_rag": "Simple RAG", "iterative_critique": "Iterative Critique"}
+MCOLOR = dict(zip(METHOD_ORDER, CAT4))
+
+
+def _ratings():
+    import glob, os
+    meta = pd.read_csv("human_eval_pairs.meta.csv")
+    d = pd.concat([pd.read_csv(f).assign(annotator=os.path.basename(f)[:-4])
+                   for f in sorted(glob.glob("human_eval_annotations/*.csv"))])
+    return d.merge(meta, on="sample_id")
+
+
+def fig_humaneval_ranking(out: Path) -> None:
+    d = _ratings()
+    fig, ax = plt.subplots(figsize=(8.6, 4.4))
+    style(ax, grid_axis="y")
+    x = np.arange(len(DIMS)); w = 0.2
+    for i, m in enumerate(METHOD_ORDER):
+        vals = [d[d.method == m][c].mean() for c, _ in DIMS]
+        ax.bar(x + (i - 1.5) * w, vals, width=w - 0.02, color=MCOLOR[m],
+               label=METHOD_NAME[m], zorder=3)
+        for xx, v in zip(x + (i - 1.5) * w, vals):
+            ax.text(xx, v + 0.06, f"{v:.2f}", ha="center", fontsize=8.2, color=INK_2)
+    ax.set_xticks(x, [lab for _, lab in DIMS], fontsize=10)
+    ax.set_ylim(0, 5.4); ax.set_yticks([0, 1, 2, 3, 4, 5])
+    ax.set_ylabel("mean rating (0–5)", color=INK_2, fontsize=10)
+    ax.legend(frameon=False, fontsize=9, ncol=4, labelcolor=INK_2,
+              loc="upper center", bbox_to_anchor=(0.5, 1.02))
+    fig.suptitle("Annotators rank Iterative Critique highest on every dimension",
+                 color=INK, fontsize=13, x=0.012, ha="left", y=0.985)
+    fig.text(0.012, 0.915,
+             "Mean of three annotators over 40 blinded pairs. The advantage over "
+             "Plain LLM is significant on idiom\nand completeness once model and "
+             "annotator are controlled for; correctness is not.",
+             color=INK_2, fontsize=9.6, ha="left", va="top")
+    fig.subplots_adjust(top=0.74, left=0.09, right=0.97, bottom=0.11)
+    save(fig, out)
+
+
+def fig_annotator_bias(out: Path) -> None:
+    d = _ratings()
+    raters = sorted(d.annotator.unique())
+    fig, ax = plt.subplots(figsize=(8.0, 4.2))
+    style(ax, grid_axis="y")
+    x = np.arange(len(DIMS)); w = 0.24
+    for i, r in enumerate(raters):
+        vals = [d[d.annotator == r][c].mean() for c, _ in DIMS]
+        ax.bar(x + (i - 1) * w, vals, width=w - 0.02, color=CAT4[i],
+               label=r, zorder=3)
+        for xx, v in zip(x + (i - 1) * w, vals):
+            ax.text(xx, v + 0.07, f"{v:.2f}", ha="center", fontsize=8.4, color=INK_2)
+    ax.set_xticks(x, [lab for _, lab in DIMS], fontsize=10)
+    ax.set_ylim(0, 5.4); ax.set_yticks([0, 1, 2, 3, 4, 5])
+    ax.set_ylabel("mean rating (0–5)", color=INK_2, fontsize=10)
+    ax.legend(frameon=False, fontsize=9.5, ncol=3, labelcolor=INK_2,
+              loc="upper center", bbox_to_anchor=(0.5, 1.02), title=None)
+    fig.suptitle("One annotator uses the scale about a point lower throughout",
+                 color=INK, fontsize=13, x=0.012, ha="left", y=0.985)
+    fig.text(0.012, 0.915,
+             "A constant per-rater offset drives Krippendorff's alpha toward zero "
+             "while leaving the ordering\nover techniques largely shared. The "
+             "mixed-effects model absorbs it as a random intercept.",
+             color=INK_2, fontsize=9.6, ha="left", va="top")
+    fig.subplots_adjust(top=0.74, left=0.09, right=0.97, bottom=0.11)
+    save(fig, out)
+
+
+def fig_humaneval_correlations(out: Path) -> None:
+    from mutation_statistical_tests import load_per_sample_kill_rates
+    from scipy import stats as st
+    NORM = {"llama3.2_latest": "llama3.2:latest", "phi4_14b": "phi4:14b",
+            "qwen3.5_9b": "qwen3.5:9b", "qwen3-coder_30b": "qwen3-coder:30b"}
+    cur = load_per_sample_kill_rates()
+    cur["model"] = cur.model.map(lambda m: NORM.get(m, m))
+    d = _ratings().merge(
+        cur[["method", "model", "sample_idx", "kill_rate"]].rename(
+            columns={"kill_rate": "kr"}),
+        on=["method", "model", "sample_idx"], how="left")
+    agg = {"kr": ("kr", "first"), "method": ("method", "first")}
+    agg.update({c: (c, "mean") for c, _ in DIMS})
+    per = d.groupby("sample_id").agg(**agg).dropna(subset=["kr"])
+    n = len(per)
+
+    fig, axes = plt.subplots(1, 3, figsize=(12.4, 4.3), sharey=True)
+    for ax, (col, lab) in zip(axes, DIMS):
+        style(ax)
+        for m in METHOD_ORDER:
+            g = per[per.method == m]
+            ax.scatter(g[col], g.kr, s=74, color=MCOLOR[m], edgecolor=SURFACE,
+                       linewidth=1.6, zorder=4, label=METHOD_NAME[m])
+        r, pv = st.pearsonr(per[col], per.kr)
+        ax.set_title(lab, color=INK, fontsize=11.5, pad=22, loc="left")
+        ax.text(0, 1.012, f"$r$ = {r:+.3f}   $p$ = {pv:.3f}", transform=ax.transAxes,
+                color=INK_2, fontsize=9.6, va="bottom")
+        ax.set_xlabel("mean human rating (0–5)", color=INK_2, fontsize=10)
+        ax.set_xlim(-0.2, 5.4)
+    axes[0].set_ylabel("mutation kill rate", color=INK_2, fontsize=10)
+    # legend goes BELOW the axes: the reviewer flagged it covering data
+    axes[1].legend(frameon=False, fontsize=9.5, ncol=4, labelcolor=INK_2,
+                   loc="upper center", bbox_to_anchor=(0.5, -0.19))
+    fig.suptitle("Human ratings do not predict defect detection",
+                 color=INK, fontsize=13, x=0.012, ha="left", y=0.985)
+    fig.text(0.012, 0.915,
+             f"One point per rated suite, averaged over three annotators "
+             f"(n = {n}; three of the 40 rated suites carry no\nkill rate because "
+             "they fail the original-code filter). No dimension reaches "
+             "significance.",
+             color=INK_2, fontsize=9.6, ha="left", va="top")
+    fig.subplots_adjust(top=0.72, left=0.07, right=0.98, bottom=0.26)
+    save(fig, out)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--outdir", default="plots_mutation")
@@ -377,7 +503,10 @@ def main() -> int:
     fig_rank_stability(out / "mutation_rank_stability.png")
     fig_pynguin_overall(out / "pynguin_vs_llm_kill_rate.png")
     fig_pynguin_peroperator(out / "pynguin_vs_llm_per_operator.png")
-    print("\n5 figures regenerated from the 100-function results.")
+    fig_humaneval_ranking(out / "human_eval_method_ranking.png")
+    fig_annotator_bias(out / "human_eval_annotator_bias.png")
+    fig_humaneval_correlations(out / "human_eval_correlations.png")
+    print("\n8 figures regenerated from the 100-function results.")
     return 0
 
 

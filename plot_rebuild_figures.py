@@ -181,11 +181,29 @@ def fig_heatmap(cell, metric_cell, out: Path, title: str, note: str):
     ax.tick_params(colors=INK_2, length=0)
     for s in ax.spines.values():
         s.set_visible(False)
+    # Marginal means, printed outside the grid. These carry the finding —
+    # the row margin barely moves, the column margin spans 0.23 — and
+    # folding them in here is what lets the equivalent body table go.
+    rowmu = np.nanmean(M, axis=1)
+    colmu = np.nanmean(M, axis=0)
+    for i, v in enumerate(rowmu):
+        ax.text(len(MODELS) - 0.35, i, f"{v:.3f}", ha="left", va="center",
+                fontsize=9.5, fontfamily="monospace", color=INK)
+    for j, v in enumerate(colmu):
+        ax.text(j, len(METHODS) - 0.42, f"{v:.3f}", ha="center", va="top",
+                fontsize=9.5, fontfamily="monospace", color=INK)
+    ax.text(len(MODELS) - 0.35, -0.72, "mean", ha="left", va="center",
+            fontsize=8.5, color=INK_2)
+    ax.text(-0.62, len(METHODS) - 0.42, "mean", ha="right", va="top",
+            fontsize=8.5, color=INK_2)
+    ax.set_xlim(-0.5, len(MODELS) + 0.35)
+    ax.set_ylim(len(METHODS) + 0.15, -0.5)
+
     ax.set_title(title, fontsize=11, color=INK, pad=10, loc="left")
-    cb = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.02)
+    cb = fig.colorbar(im, ax=ax, fraction=0.025, pad=0.10)
     cb.outline.set_visible(False)
     cb.ax.tick_params(colors=INK_2, labelsize=8, length=2)
-    fig.text(0.0, -0.10, note, ha="left", fontsize=8.5, color=INK_2)
+    fig.text(0.0, -0.14, note, ha="left", fontsize=8.5, color=INK_2)
     save(fig, out)
 
 
