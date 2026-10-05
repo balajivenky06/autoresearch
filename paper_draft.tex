@@ -12,7 +12,8 @@
 
 \documentclass[review,12pt]{elsarticle}
 
-\usepackage{graphicx}
+%% graphicx and natbib are loaded by elsarticle.cls; loading them again
+%% risks an option clash, so they are not repeated here.
 \usepackage{multirow}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{xcolor}
@@ -23,13 +24,11 @@
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
 
-% elsarticle does not define a `highlights' environment in every
-% release, so the manuscript defines its own. The Highlights are
-% submitted separately via highlights.txt in any case; this block
-% exists so reviewers see them in the PDF.
-\newenvironment{highlightslist}%
-  {\section*{Highlights}\begin{itemize}}%
-  {\end{itemize}}
+%% Line numbers for the review version. The `review' class option sets
+%% 1.5 line spacing but does not number lines; elsarticle's own template
+%% directs authors to add lineno and call \linenumbers for that.
+\usepackage{lineno}
+\linenumbers
 
 \graphicspath{{./plots_mutation/}}
 \journal{Information and Software Technology}
@@ -51,9 +50,17 @@ Test Generators: A Cross-Model Empirical Study}
 \ead{gireesh23610036@snuchennai.edu.in}
 \cortext[cor1]{Corresponding author}
 
+%% AUTHOR ACTION: the Guide for Authors asks for the FULL postal
+%% address of each affiliation. Fill addressline= and postcode= below
+%% with the campus street address and PIN; they are deliberately left
+%% blank rather than guessed.
 \affiliation[snu]{organization={Department of Computer Science and
-    Engineering, Shiv Nadar University},
-  city={Chennai}, state={Tamil Nadu}, country={India}}
+                    Engineering, Shiv Nadar University},
+            addressline={},
+            city={Chennai},
+            postcode={},
+            state={Tamil Nadu},
+            country={India}}
 
 \begin{abstract}
 \textbf{Context.} Retrieval-augmented generation (RAG) is
@@ -82,13 +89,13 @@ selection, not retrieval design, determines defect detection, and
 human-perceived quality is a separate construct from it.
 \end{abstract}
 
-\begin{highlightslist}
+\begin{highlights}
 \item RAG technique choice has no effect on mutation kill rate across four LLMs
 \item Model choice moves defect detection 21.7x further than technique choice
 \item Semantic retrieval beats a random-chunk placebo by 0.3 percentage points
 \item A faithfulness-kill-rate correlation of -0.91 is a model confound
 \item Annotators prefer tests whose defect detection is no better
-\end{highlightslist}
+\end{highlights}
 
 \begin{keyword}
 Unit-test generation \sep mutation testing \sep retrieval-augmented generation \sep Large language models \sep search-based software testing
