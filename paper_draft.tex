@@ -62,15 +62,15 @@ rely on surface metrics and single models, leaving defect-detection
 capability untested. \textbf{Objective.} We quantify whether
 retrieval augmentation improves the \emph{defect-detection} capability
 of generated tests, and whether any such effect transfers across
-LLMs. \textbf{Method.} We ran a $4 \times 4$ factorial experiment---
-four generation methods (Plain LLM, Random RAG, Simple RAG, Iterative
+LLMs. \textbf{Technique.} We ran a $4 \times 4$ factorial experiment---
+four generation techniques (Plain LLM, Random RAG, Simple RAG, Iterative
 Critique) by four open-weight LLMs (3B--30B parameters)---over 100
 HumanEval and MBPP functions, yielding 1{,}443 valid observations and
 9{,}660 mutants, analysed with Type-III ANOVA and mixed-effects
 regression. We added a three-annotator blinded human evaluation and a
 Pynguin baseline matched on the same functions. \textbf{Results.}
-Method choice has no detectable effect: the spread across all four
-methods is 0.011 in mean kill rate against 0.232 across models
+Technique choice has no detectable effect: the spread across all four
+techniques is 0.011 in mean kill rate against 0.232 across models
 ($21.7\times$), and no pair separates in any scope. Semantic retrieval
 beats a random-chunk placebo by 0.3 percentage points. An apparent
 faithfulness--kill-rate correlation ($r = -0.907$) vanishes once model
@@ -83,8 +83,8 @@ human-perceived quality is a separate construct from it.
 \end{abstract}
 
 \begin{highlightslist}
-\item RAG method choice has no effect on mutation kill rate across four LLMs
-\item Model choice moves defect detection 21.7x further than method choice
+\item RAG technique choice has no effect on mutation kill rate across four LLMs
+\item Model choice moves defect detection 21.7x further than technique choice
 \item Semantic retrieval beats a random-chunk placebo by 0.3 percentage points
 \item A faithfulness-kill-rate correlation of -0.91 is a model confound
 \item Annotators prefer tests whose defect detection is no better
@@ -198,7 +198,7 @@ the best RAG variant under that LLM. This methodology answers
 ``which RAG variant is best?'' but not ``which RAG variant is best
 \emph{conditional on the underlying LLM}?''. As we demonstrate in
 \S\ref{sec:results-generalisability}, the answer to the conditional
-question is non-trivial: \emph{method rankings do not generalize
+question is non-trivial: \emph{technique rankings do not generalize
 across LLMs}. Iterative-Critique RAG wins on three of the four
 open-weight LLMs we test (llama3.2 3B, phi4 14B, qwen3-coder 30B-MoE)
 but loses to Simple RAG on the strongest dense model in our pool
@@ -217,7 +217,7 @@ developer-perceived quality (we observe exactly this in
 kill rate but low on human ratings). Second, \emph{a head-to-head
 comparison against an established baseline tool}—
 typically search-based test generation, the prior dominant paradigm. Without
-such a baseline, claims about LLM-method ranking are difficult to
+such a baseline, claims about LLM-technique ranking are difficult to
 interpret. The present paper closes all three gaps: it uses
 mutation-kill rate as the primary metric, conducts a three-annotator
 human evaluation, and benchmarks against the Pynguin search-based
@@ -240,7 +240,7 @@ objectives:
   \emph{relevance} from the contribution of additional prompt
   context, by including a random-retrieval condition identical to
   semantic retrieval in every respect except ranking.
-\item[\textbf{O3}.] To \emph{test the transferability} of any method
+\item[\textbf{O3}.] To \emph{test the transferability} of any technique
   ordering across language models of differing capability, and to
   establish whether conclusions drawn on one model may be
   generalised to others.
@@ -265,19 +265,19 @@ around the three gaps identified above:
   produce tests with higher mutation kill rate than plain
   (un-augmented) LLM generation, across four open-weight LLMs
   spanning 3B--30B parameters?
-\item[\textbf{RQ2}.] Is the method effect on mutation kill rate
+\item[\textbf{RQ2}.] Is the technique effect on mutation kill rate
   \emph{statistically significant} after controlling for
   source-sample difficulty and LLM choice, and does it concentrate
   on specific mutation operators or source benchmarks?
-\item[\textbf{RQ3}.] Do \emph{method rankings generalize across
-  LLMs}, or does the best method depend on the underlying LLM's
+\item[\textbf{RQ3}.] Do \emph{technique rankings generalize across
+  LLMs}, or does the best technique depend on the underlying LLM's
   capability tier?
 \item[\textbf{RQ4}.] Does the \emph{token-overlap faithfulness}
   between generated tests and retrieved documentation predict
   mutation kill rate? Does \emph{semantic faithfulness} (an
   LLM-judge metric) predict it differently?
 \item[\textbf{RQ5}.] Do \emph{human annotators} rank the four
-  generation methods differently on test idiom quality, correctness
+  generation techniques differently on test idiom quality, correctness
   and completeness---and does their ranking agree with the
   mutation-testing ranking of the same suites?
 \item[\textbf{RQ6}.] How do LLM-based test generators \emph{compare
@@ -292,7 +292,7 @@ LLM-based unit-test generation:
 
 \begin{enumerate}
 \item \textbf{A cross-LLM mutation-testing study} of
-  plain-vs-RAG test generation, with a random-retrieval control. We evaluate four methods (Plain LLM,
+  plain-vs-RAG test generation, with a random-retrieval control. We evaluate four techniques (Plain LLM,
   Random RAG, Simple RAG, Iterative Critique) across four
   open-weight LLMs spanning 3B--30B parameters and dense vs
   mixture-of-experts architectures, on a 100-function subset of HumanEval + MBPP. To our knowledge, no prior study has reported
@@ -302,7 +302,7 @@ LLM-based unit-test generation:
   on the per-sample data, mixed-effects regression with
   \texttt{sample\_idx} as a random intercept, Tukey HSD post-hoc
   comparisons, and per-operator and per-benchmark decompositions.
-  \emph{We report a well-powered null:} no method pair separates in
+  \emph{We report a well-powered null:} no technique pair separates in
   any scope---pooled, per-benchmark, or per-operator---while the
   model factor is overwhelming ($F = 108.5$, $p < 10^{-60}$). We
   additionally report a decontaminated replication that rules out
@@ -318,7 +318,7 @@ LLM-based unit-test generation:
   evaluation of \emph{RAG-based} test generation to report
   inter-rater agreement rather than pooled means alone. Three
   independent annotators rated 40 stratified
-  (function, generated\_tests) pairs blinded to method and model.
+  (function, generated\_tests) pairs blinded to technique and model.
     \emph{Iterative Critique RAG ranked highest on all three rubric
   dimensions} (test idiom quality, correctness, completeness),
   significantly on two of them under a mixed-effects model
@@ -336,15 +336,15 @@ LLM-based unit-test generation:
   \citet{straubinger2025debug} both report one. What we add is the
   operator-level decomposition on a matched function set, which
   turns ``which paradigm is better'' into ``which defect families
-  does each catch''. We benchmark our LLM methods against
+  does each catch''. We benchmark our LLM techniques against
   Pynguin 0.45.0 on the same 40 functions used in the human
   evaluation, with a 60-second per-function search budget. Matched on
-  the 34 functions Pynguin could handle, LLM methods outperform it
+  the 34 functions Pynguin could handle, LLM techniques outperform it
   overall ($0.898$--$0.922$ vs $0.787$, Mann--Whitney $p < 0.001$),
   but the advantage is confined to the relational and boundary
   operator families (comparison $0.917$ vs $0.250$; boundary $0.817$
   vs $0.554$); on arithmetic and negate-boolean operators Pynguin
-  \emph{leads} every LLM method ($0.850$ vs $0.809$ and $1.000$ vs
+  \emph{leads} every LLM technique ($0.850$ vs $0.809$ and $1.000$ vs
   $0.917$). The two approaches are therefore
   complementary along a specific axis---value-sensitive versus
   relational operator families---which is a sharper design brief for
@@ -352,8 +352,8 @@ LLM-based unit-test generation:
 
 \item \textbf{A methodological caution} about RAG retrieval
   quality: \emph{token-overlap faithfulness is a property of the
-  model, not of the retrieval method} ($R^2 = 0.889$ by model
-  against $0.118$ by method, $p = 0.605$). Pooled across the 11 RAG
+  model, not of the retrieval technique} ($R^2 = 0.889$ by model
+  against $0.118$ by technique, $p = 0.605$). Pooled across the 11 RAG
   cells it correlates with mutation kill rate at $r = -0.907$
   ($p < 0.001$), which reads as a strong finding and is not one: the
   partial correlation controlling for model is $r = +0.079$
@@ -523,7 +523,7 @@ tests of related methods}, decomposing the retrieval target along
 the Given--When--Then structure of a unit test, and report gains in
 correctness, completeness and maintainability over ChatUniTest,
 TestPilot, default-RAG prompting and EvoSuite on 1{,}515 Java
-methods. The two results bound the question our study sits inside:
+techniques. The two results bound the question our study sits inside:
 generic document retrieval appears to add little, while
 task-specific structural retrieval appears to add a great deal. Our
 knowledge base is of the first kind, and our null should be read as
@@ -562,8 +562,8 @@ related methods rather than documentation, decomposing the retrieval
 target along the Given--When--Then structure of a unit test, and
 report gains in correctness, completeness and maintainability over
 ChatUniTest, TestPilot, default-RAG prompting and EvoSuite on 1{,}515
-Java methods. Neither evaluates defect detection. We are not aware of
-a study that reports a cross-method, cross-LLM \emph{mutation-testing}
+Java techniques. Neither evaluates defect detection. We are not aware of
+a study that reports a cross-technique, cross-LLM \emph{mutation-testing}
 matrix for retrieval-augmented test generation, which is the gap this
 paper addresses.
 
@@ -608,7 +608,7 @@ real-bug detection against 41.6\% for rule-based operators.
 Our use of mutation testing is evaluative, not generative. No
 surviving mutant ever enters a prompt in our pipeline; the mutation
 analysis runs strictly downstream of generation, which is what makes
-the kill rate an unbiased comparison across methods that never saw
+the kill rate an unbiased comparison across techniques that never saw
 it. We use rule-based AST operators rather than LLM-generated
 mutants for the same reason---\citet{wang2026mutationstudy} show the
 latter are more realistic, but they would introduce a second
@@ -642,7 +642,7 @@ large production codebases.
 
 \paragraph{Mutation testing for LLM test generation}
 It has been used occasionally in recent work, but no prior study reports
-the kind of cross-method cross-LLM mutation-kill-rate matrix that
+the kind of cross-technique, cross-LLM mutation-kill-rate matrix that
 we provide here. The closest comparison is
 \citet{wang2026mutationstudy}, which reports the mutation kill rate as one
 of several evaluation metrics in a benchmark of LLMs-generated tests;
@@ -680,7 +680,7 @@ metrics.  Our findings extend the complementarity
 observation from coverage to mutation kill rate in Python, and we
 identify the operator family (comparison) where the complementarity
 is sharpest. To our knowledge, no prior study reports a head-to-head
-LLM-method vs.\ Pynguin mutation-kill-rate comparison on matched
+LLM-technique vs.\ Pynguin mutation-kill-rate comparison on matched
 Python functions, which is what we provide in
 \S\ref{sec:results-pynguin}.
 
@@ -751,7 +751,7 @@ $\geq 0.8$ for cross-condition generalization is sourced from
 \citet{zar1984} and is the threshold adopted by
 \citet{jureczko2015} for defect-prediction-model generalization
 across projects, which is the SE literature's nearest analog to
-our cross-LLM-method-ranking question.
+our cross-LLM technique-ranking question.
 
 \subsection{Positioning of the present work}\label{sec:related-positioning}
 
@@ -766,13 +766,13 @@ sub-literatures. Relative to each:
   on Python unit-test generation.
 \item \textbf{RAG for code (\S\ref{sec:related-rag})}: we show that
   lexical retrieval-faithfulness is a model-level rather than a
-  method-level property (\S\ref{sec:results-faithfulness}), and that
+  technique-level property (\S\ref{sec:results-faithfulness}), and that
   the strong negative faithfulness--kill-rate correlation this
   produces at the cell level is an artifact of the model factor. We
   are not aware of prior work in this setting that reports the
   partial correlation alongside the pooled one.
 \item \textbf{Mutation testing (\S\ref{sec:related-mutation})}: our
-  per-operator and per-benchmark decompositions show that the method
+  per-operator and per-benchmark decompositions show that the technique
   effect is absent in every scope, and locate the discriminative
   variance in the model factor and in source-problem difficulty
   instead. We are not aware of a prior cross-model mutation study
@@ -941,7 +941,7 @@ RQ1 & $4\times4$ factorial generation matrix; mutation kill rate as
 RQ2 & Type-III ANOVA with \texttt{sample\_idx}; Tukey HSD;
       mixed-effects regression; per-operator and per-benchmark
       decompositions & \S\ref{sec:methods-stats} \\
-RQ3 & Pairwise Spearman rank correlation of the method ordering
+RQ3 & Pairwise Spearman rank correlation of the technique ordering
       between every pair of models & \S\ref{sec:methods-stats} \\
 RQ4 & Token-overlap and LLM-judge faithfulness, correlated with kill
       rate both pooled and partialled on model &
@@ -974,7 +974,7 @@ to the statistical analyses (bottom).}
 under test and the levels it takes.
 
 
-We compare \emph{four unit-test generation methods} drawn from the
+We compare \emph{four unit-test generation techniques} drawn from the
 RAG-for-code-generation literature, evaluated across \emph{four
 open-weight language models} that span 3B to 30B parameters and
 dense vs mixture-of-experts architectures (Table~\ref{tab:factors}).
@@ -993,7 +993,7 @@ total parameters; qwen3-coder is a mixture-of-experts model with
 \toprule
 \textbf{Factor} & \textbf{Levels} \\
 \midrule
-Method & Plain LLM, Random RAG, Simple RAG, Iterative Critique RAG \\
+Technique & Plain LLM, Random RAG, Simple RAG, Iterative Critique RAG \\
 % Cleaned and corrected the list of models into a single line for proper wrapping.
 Model & \texttt{llama3.2:latest} (3B, dense),
         \texttt{phi4:14b} (14B, dense),
@@ -1003,7 +1003,7 @@ Model & \texttt{llama3.2:latest} (3B, dense),
 \end{tabularx}
 \end{table}
 
-\paragraph{Methods.}
+\paragraph{Techniques.}
 \emph{Plain LLM} prompts the model directly with the function under
 test and instructions to generate unit tests, with no retrieval.
 \emph{Random RAG} augments the prompt with five randomly-selected
@@ -1031,7 +1031,7 @@ model (qwen3.5 9B), and a state-of-the-art code-specialized
 mixture-of-experts model (qwen3-coder 30B with 3.3B active
 parameters). All models were queried with a temperature of 0.2 and
 a 600-second per-run budget. We did not fine-tune any model; the
-goal is to characterize how each generation method \emph{uses} a
+goal is to characterize how each generation technique \emph{uses} a
 given off-the-shelf LLM.
 
 \subsection{The retrieval knowledge base}\label{sec:methods-kb}
@@ -1327,10 +1327,10 @@ models, producing a strong ceiling effect. We therefore use a
 multi-test strategy.
 
 \paragraph{Per-sample rank tests.}
-We compute Kruskal–Wallis omnibus tests across the four methods
+We compute Kruskal–Wallis omnibus tests across the four techniques
 within each model and pooled across models, followed by pairwise
 Mann–Whitney U tests with Bonferroni correction across the six
-method pairs ($\alpha = 0.05/6 \approx 0.0083$). For paired
+technique pairs ($\alpha = 0.05/6 \approx 0.0083$). For paired
 designs, we additionally compute Friedman omnibus tests and pairwise
 Wilcoxon signed-rank tests with the same Bonferroni correction.
 Effect sizes are reported as Cohen's $d$ for unpaired comparisons
@@ -1340,14 +1340,14 @@ and Cohen's $d_z$ for paired comparisons.
 We additionally fit a Type-III ANOVA with 
 \texttt{kill\_rate $\sim$ C(method) + C(model) + C(sample\_idx)} using all 
 valid observations, followed by Tukey HSD post-hoc comparisons on 
-the method factor. We complement this with a \emph{linear 
+the technique factor. We complement this with a \emph{linear 
 mixed-effects model} treating \texttt{sample\_idx} as a random 
 intercept and \texttt{model} and \texttt{method} as fixed effects, 
 fit via restricted maximum likelihood (statsmodels MixedLM, lbfgs 
 solver). This is the appropriate test for our nested design 
---- same source samples across methods within a model---and gains substantial 
+--- same source samples across techniques within a model---and gains substantial 
 power over the rank tests because it does not require complete 
-cases across all four methods.
+cases across all four techniques.
 
 \paragraph{Per-operator decomposition.}
 Because the overall kill rate hits a 1.0 ceiling on the strongest
@@ -1361,7 +1361,7 @@ the ANOVA + Mixed-LM separately within each benchmark.
 
 \paragraph{Cross-model generalizability.}
 We compute the Spearman rank correlation $\rho$ between
-method-rankings across each pair of models for the overall kill
+technique-rankings across each pair of models for the overall kill
 rate and for each per-operator kill rate. A finding ``generalizes''
 if min $\rho \geq 0.8$ across all model pairs.
 
@@ -1437,9 +1437,9 @@ developer-perceived quality signal, we designed a three-dimension, behaviourally
 \paragraph{Sample selection.}
 We drew 40 stratified \texttt{(function, generated\_tests)} pairs
 from the mutation-testing checkpoints, balanced across the 16
-(method $\times$ model) cells and across the HumanEval/MBPP source
+(technique $\times$ model) cells and across the HumanEval/MBPP source
 split (23 MBPP + 17 HumanEval pairs in the final worksheet).
-Method and model identifiers were stripped from the worksheet so
+Technique and model identifiers were stripped from the worksheet so
 annotators could not infer which generator produced each test
 suite; the private mapping is preserved in a separate metadata
 file kept off-version-control.
@@ -1489,9 +1489,9 @@ $\geq 0.6$ substantial.
 the identical evaluation pipeline.
 
 
-To ground our LLM-method results against the prior dominant paradigm
+To ground our LLM-technique results against the prior dominant paradigm
 in automated unit-test generation, we benchmarked our LLM-based
-methods against \emph{Pynguin 0.45.0} \citep{lukasczyk2022}. We
+techniques against \emph{Pynguin 0.45.0} \citep{lukasczyk2022}. We
 selected Pynguin because: (i) it is Python-native, like our
 generators (in contrast to EvoSuite, which targets Java); (ii) it
 is open-source and reproducible (in contrast to GitHub Copilot's
@@ -1533,13 +1533,13 @@ opener. Full statistics are given in the sections named.}\label{tab:rqmap}
 RQ & Section & Answer in brief \\
 \midrule
 RQ1 & \S\ref{sec:results-killrate} &
-  No. The spread across all four methods is 0.011 against 0.232
+  No. The spread across all four techniques is 0.011 against 0.232
   across models. \\
 RQ2 & \S\ref{sec:results-stats}, \S\ref{sec:results-peroperator} &
   No. $F = 0.21$, $p = 0.890$; no pair separates in any scope, and
   no operator family separates them either. \\
 RQ3 & \S\ref{sec:results-generalisability} &
-  No. The best method differs on three of four models; only the
+  No. The best technique differs on three of four models; only the
   easiest operator family clears $\rho \geq 0.8$. \\
 RQ4 & \S\ref{sec:results-faithfulness} &
   No. The pooled association ($r = -0.907$) is a model confound and
@@ -1549,7 +1549,7 @@ RQ5 & \S\ref{sec:results-humaneval} &
   Critique highest on all three dimensions; that ranking does not
   agree with the mutation ranking. \\
 RQ6 & \S\ref{sec:results-pynguin} &
-  LLM methods lead overall, but the advantage is confined to the
+  LLM techniques lead overall, but the advantage is confined to the
   relational and boundary operator families. \\
 \bottomrule
 \end{tabular}
@@ -1558,10 +1558,10 @@ RQ6 & \S\ref{sec:results-pynguin} &
 We organize the findings around the six research questions
 introduced in \S\ref{sec:intro-rqs}.
 
-\subsection{Mutation kill rates across methods and models}
+\subsection{Mutation kill rates across techniques and models}
 
 \paragraph{\textnormal{\textbf{RQ1} --- Does retrieval augmentation raise the mutation kill rate?}}
-\emph{Answer: no.} The four methods span 0.011 in mean kill rate
+\emph{Answer: no.} The four techniques span 0.011 in mean kill rate
 while the four models span 0.232.
 
 \label{sec:results-killrate}
@@ -1577,21 +1577,21 @@ Appendix~\ref{app:percell}).
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{kill_rate_heatmap.png}
-\caption{Mutation kill rate by method $\times$ LLM. Mean kill rate
+\caption{Mutation kill rate by technique $\times$ LLM. Mean kill rate
 scales with LLM capability (column means 0.72--0.95) and barely
-moves with method choice (within-column spread 0.017--0.047).}
+moves with technique choice (within-column spread 0.017--0.047).}
 \label{fig:heatmap}
 \end{figure}
 
 Two patterns are immediately visible. First, \emph{kill rate scales
-with LLM capability}: averaged across methods, llama3.2 (3B)
+with LLM capability}: averaged across techniques, llama3.2 (3B)
 achieves 0.718, phi4 (14B) 0.908, qwen3-coder (30B-MoE) 0.932, and
 qwen3.5 (9B dense) 0.950. The 0.232-point swing from llama3.2 to
 qwen3.5 is an order of magnitude larger than the within-model swing
-across methods, which averages 0.029 and never exceeds 0.047.
-Second, \emph{RAG-based methods outperform Plain LLM on three of the
+across techniques, which averages 0.029 and never exceeds 0.047.
+Second, \emph{RAG-based techniques outperform Plain LLM on three of the
 four models}---but no single RAG variant does so consistently. The
-best method is Simple RAG on phi4 (0.916) and Random RAG on both
+best technique is Simple RAG on phi4 (0.916) and Random RAG on both
 qwen models (0.943 and 0.960), while on llama3.2 Plain LLM has the
 highest mean (0.744), for reasons we return to in
 \S\ref{sec:results-generalisability}. Iterative Critique has the
@@ -1602,8 +1602,8 @@ generated (582 killed, 41 equivalent).
 
 \subsection{Statistical significance}\label{sec:results-stats}
 
-\paragraph{\textnormal{\textbf{RQ2} --- Is the method effect significant once sample difficulty and model are controlled, and does it concentrate anywhere?}}
-\emph{Answer: no, and no.} The method factor is not significant in
+\paragraph{\textnormal{\textbf{RQ2} --- Is the technique effect significant once sample difficulty and model are controlled, and does it concentrate anywhere?}}
+\emph{Answer: no, and no.} The technique factor is not significant in
 any scope, and the per-benchmark and per-operator decompositions
 (\S\ref{sec:results-perbenchmark}, \S\ref{sec:results-peroperator})
 locate no family in which it becomes so.
@@ -1612,12 +1612,12 @@ locate no family in which it becomes so.
 \subsubsection{Overall kill rate}\label{sec:results-stats-overall}
 
 Despite the descriptive ordering in
-Figure~\ref{fig:heatmap}, \emph{the method effect on the
+Figure~\ref{fig:heatmap}, \emph{the technique effect on the
 overall kill rate is not statistically significant} after
 controlling for model and source sample. A Type-III ANOVA on
 \verb|kill_rate ~ C(method) + C(model) + C(sample_idx)|
-($n = 1{,}443$ valid observations) reports method $F = 0.209$, $p = 0.890$ (Table~\ref{tab:anova-overall}). The Tukey
-HSD post-hoc identifies zero significant method pairs at
+($n = 1{,}443$ valid observations) reports technique $F = 0.209$, $p = 0.890$ (Table~\ref{tab:anova-overall}). The Tukey
+HSD post-hoc identifies zero significant technique pairs at
 $\alpha = 0.05$; the widest pair (Iterative Critique vs Plain LLM, $\Delta = -0.016$) is nowhere near the threshold ($p_{\text{adj}} = 0.838$). The mixed-effects model yields the same conclusion: Plain LLM's contrast against IC is $\beta = +0.001$, $p = 0.972$.
 
 \begin{table}[t]
@@ -1626,7 +1626,7 @@ $\alpha = 0.05$; the widest pair (Iterative Critique vs Plain LLM, $\Delta = -0.
 $n = 1{,}443$ valid per-sample observations.
 \texttt{sample\_idx} identifies the source function and absorbs
 problem difficulty. Significant factors ($p < 0.001$) are set in
-bold; the method factor is not significant.}\label{tab:anova-overall}
+bold; the technique factor is not significant.}\label{tab:anova-overall}
 \begin{tabular}{@{}lrr@{}}
 \toprule
 Factor & $F$ & $p$ \\
@@ -1639,17 +1639,17 @@ C(method)               & 0.21 & 0.890 \\
 \end{table}
 
 \emph{LLM choice and source-problem difficulty explain substantially
-more of the variance in kill rate than RAG-method choice does.}
+more of the variance in kill rate than RAG-technique choice does.}
 
 \paragraph{How the spreads are computed.} Because the test filter
 leaves cells of unequal size (\S\ref{sec:results-attrition}), the
-method and model spreads depend on the estimator, and we state ours.
+technique and model spreads depend on the estimator, and we state ours.
 Our headline figures average the 16 cell means with equal weight:
-method spread 0.011, model spread 0.232, ratio $21.7\times$. This is
+technique spread 0.011, model spread 0.232, ratio $21.7\times$. This is
 the appropriate estimator for an unbalanced design, because a
-method that loses more suites on the weakest model would otherwise
+technique that loses more suites on the weakest model would otherwise
 have its mean computed over a disproportionately easy subset.
-Weighting instead by observation count gives method spread 0.016,
+Weighting instead by observation count gives technique spread 0.016,
 model spread 0.228 and a ratio of $14.7\times$. The two differ
 because Iterative Critique contributes 50 of its 297 observations
 from llama3.2 against Plain LLM's 95 of 395, so the weighted mean
@@ -1663,12 +1663,12 @@ We return to this finding in \S\ref{sec:discussion-llm-dominates}.
 
 \subsubsection{Per-benchmark decomposition}\label{sec:results-perbenchmark}
 
-\emph{The method effect on boundary kill rate is null on both
+\emph{The technique effect on boundary kill rate is null on both
 source benchmarks.} We decomposed the analysis by source benchmark
 because MBPP problems lean more heavily on numeric range and
 off-by-one conditions than HumanEval problems do, which gave us an
 a priori reason to expect the boundary operator family to separate
-methods on MBPP if it separated them anywhere. It does not. On MBPP
+techniques on MBPP if it separated them anywhere. It does not. On MBPP
 ($n = 521$) the ANOVA reports $F = 0.94$, $p = 0.421$; on HumanEval
 ($n = 403$), $F = 0.49$, $p = 0.691$; pooled ($n = 924$),
 $F = 0.61$, $p = 0.606$. No Tukey pair survives correction in any
@@ -1683,9 +1683,9 @@ $p_{\mathrm{adj}} = 0.216$ it is indistinguishable from sampling
 noise at this corpus size. Figure~\ref{fig:boundary-heatmap} shows
 the $4 \times 4$ boundary matrix: within-row spread is wider than on
 the overall kill rate (Figure~\ref{fig:heatmap}), so boundary
-remains the operator family with the most between-method movement on
+remains the operator family with the most between-technique movement on
 our suite, but the movement is not systematic with respect to
-method.
+technique.
 
 \paragraph{A note on an earlier version of this analysis.}
 A pilot run of this study, on a 30-function subset, reported a
@@ -1698,13 +1698,13 @@ our data support it.
 
 \begin{table}[htbp]
 \centering
-\caption{Method effect on boundary kill rate by source benchmark. No scope reaches significance.}
+\caption{Technique effect on boundary kill rate by source benchmark. No scope reaches significance.}
 \label{tab:perbench}
 % tabularx fits the table exactly to the text width
 % l = left aligned, c = centered, X = text-wrapping column
 \begin{tabularx}{\textwidth}{@{} l c c X X @{}}
 \toprule
-Scope & $n$ & ANOVA method $F(p)$ & Tukey IC vs Plain LLM & Mixed-LM IC vs Plain LLM \\
+Scope & $n$ & ANOVA technique $F(p)$ & Tukey IC vs Plain LLM & Mixed-LM IC vs Plain LLM \\
 \midrule
 HumanEval only & 403 & 0.49 (0.691) & $\Delta=-0.017$, \newline $p_{\mathrm{adj}}=0.968$ & $\beta=-0.000$, \newline $p=0.991$ \\
 MBPP only      & 521 & 0.94 (0.421) & $\Delta=-0.090$, \newline $p_{\mathrm{adj}}=0.216$ & $\beta=-0.053$, \newline $p=0.109$ \\
@@ -1718,9 +1718,9 @@ Pooled         & 924 & 0.61 (0.606) & $\Delta=-0.058$, \newline $p_{\mathrm{adj}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{kill_rate_boundary_heatmap.png}
-\caption{Boundary mutation kill rate by method $\times$ LLM.
+\caption{Boundary mutation kill rate by technique $\times$ LLM.
 Iterative Critique has the highest boundary rate on three of the
-four models, but the method factor is not significant on either
+four models, but the technique factor is not significant on either
 source benchmark (Table~\ref{tab:perbench}).}
 \label{fig:boundary-heatmap}
 \end{figure}
@@ -1733,13 +1733,13 @@ it an effect.
 
 \subsection{Cross-model generalizability}
 
-\paragraph{\textnormal{\textbf{RQ3} --- Do method rankings transfer across LLMs?}}
-\emph{Answer: no.} The best method differs on three of the four
+\paragraph{\textnormal{\textbf{RQ3} --- Do technique rankings transfer across LLMs?}}
+\emph{Answer: no.} The best technique differs on three of the four
 models, and Iterative Critique leads on none.
 
 \label{sec:results-generalisability}
 
-A central question is whether the method ordering observed in one
+A central question is whether the technique ordering observed in one
 LLM transfers to others. Table~\ref{tab:generalisability} reports
 the minimum and mean off-diagonal Spearman $\rho$ for the overall
 kill rate and per-operator kill rates. We treat a metric as
@@ -1787,8 +1787,8 @@ llama3.2--qwen3-coder pair inverts almost perfectly
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{mutation_rank_stability.png}
-\caption{Method ranking trajectories across the four LLMs. The
-top-ranked method differs on three of the four models and Iterative
+\caption{Technique ranking trajectories across the four LLMs. The
+top-ranked technique differs on three of the four models and Iterative
 Critique is never rank 1; the trajectories cross repeatedly, which
 is the visual form of the near-zero mean rank correlation in
 Table~\ref{tab:generalisability}.}
@@ -1800,24 +1800,24 @@ strict $\rho \geq 0.8$ threshold, and it is the least informative
 one.} Return-None kill rate is stable (min $\rho = +0.80$, mean
 $+0.90$); every other metric, including the overall kill rate (min
 $-0.80$, mean $-0.03$), fails. Overall kill rate contains a
-near-perfect inversion: the method ordering on one model pair runs
+near-perfect inversion: the technique ordering on one model pair runs
 backwards relative to another. Return-None is also the operator
-family every method kills easily
+family every technique kills easily
 (\S\ref{sec:results-peroperator}, means 0.877--0.923), so the
-ordering that replicates is the ordering over which the methods
+ordering that replicates is the ordering over which the techniques
 barely differ. Rank stability here is a symptom of a compressed
-range, not of a transferable method effect.
+range, not of a transferable technique effect.
 
 The underlying rank table (Table~\ref{tab:rank-table}) makes the
-non-generalization concrete: the best method is a \emph{different}
-method on three of the four models---Plain LLM on llama3.2, Simple
+non-generalization concrete: the best technique is a \emph{different}
+technique on three of the four models---Plain LLM on llama3.2, Simple
 RAG on phi4, Random RAG on both qwen models---and Iterative Critique
 is rank 1 on none of them. Two of the sixteen cells are decided in
 the fourth decimal place (phi4: Random RAG 0.9092 vs Iterative
 Critique 0.9092; qwen3-coder: Simple RAG 0.9293 vs Iterative
 Critique 0.9293) and should be read as ties rather than orderings.
 Plain LLM's rank-1 position on llama3.2 is an artifact worth naming:
-it is the only method whose tests survive the original-code filter
+it is the only technique whose tests survive the original-code filter
 at a high rate on that model ($n = 95$ of 100, against $n = 50$ for
 Iterative Critique), so its mean is computed over an easier
 surviving subset (cf.\ Table~\ref{tab:attrition}).
@@ -1831,7 +1831,7 @@ four models. Two orderings are decided in the fourth decimal place
 (phi4 and qwen3-coder) and should be read as ties.}\label{tab:rank-table}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
-Method & llama3.2 & phi4 & qwen3.5 & qwen3-coder \\
+Technique & llama3.2 & phi4 & qwen3.5 & qwen3-coder \\
 \midrule
 Plain LLM          & \textbf{1} & 4 & 4 & 4 \\
 Random RAG         & 3 & 3 & \textbf{1} & \textbf{1} \\
@@ -1847,8 +1847,8 @@ HumanEval and MBPP were both published in 2021 and ship their
 reference solutions \emph{and} their canonical test suites. Every
 model in our pool has a training cutoff after that date. A model may
 therefore be reciting a memorised suite rather than reasoning about
-the function, and if methods differ in how much they recite, the
-method factor is confounded with memorisation rather than
+the function, and if techniques differ in how much they recite, the
+technique factor is confounded with memorisation rather than
 measuring generation quality.
 
 \paragraph{Design.} We re-ran the full $4 \times 4$ sweep on a
@@ -1876,15 +1876,15 @@ and we state the consequence plainly in
 the problem description.
 
 \paragraph{Result.} \emph{Decontamination does not reduce kill rates,
-and does not change the method-level conclusion.} Kill rates move
+and does not change the technique-level conclusion.} Kill rates move
 slightly \emph{upward} under renaming---mean paired change
 $+0.0120$ across the 1{,}313 observations present in both arms, with
 13 of 16 cells improving---and the change is not significant
-(Wilcoxon signed-rank $p = 0.101$). Per-method means are Plain LLM
+(Wilcoxon signed-rank $p = 0.101$). Per-technique means are Plain LLM
 0.892, Random RAG 0.903, Simple RAG 0.893 and Iterative Critique
 0.901, a spread of \textbf{0.0108} against 0.0156 on the original
-corpus. The Type-III ANOVA on the decontaminated arm returns method
-$F = 0.072$, $p = 0.975$---a weaker method effect than the original
+corpus. The Type-III ANOVA on the decontaminated arm returns technique
+$F = 0.072$, $p = 0.975$---a weaker technique effect than the original
 null, not a stronger one---while the model factor remains
 overwhelming ($F = 82.9$, $p < 10^{-40}$).
 
@@ -1908,7 +1908,7 @@ Not every generated suite reaches the mutation stage. A suite that
 fails against the \emph{original, unmutated} function is discarded,
 because a suite that cannot pass on correct code cannot
 meaningfully be said to detect a defect in it. This filter does not
-fall evenly across methods, and the imbalance is large enough to
+fall evenly across techniques, and the imbalance is large enough to
 confound any naive comparison of cell means
 (Table~\ref{tab:attrition}).
 
@@ -1921,7 +1921,7 @@ detect a defect in it. The Iterative Critique row is set in bold as
 the most heavily filtered technique on every model.}\label{tab:attrition}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
-Method & llama3.2 & phi4 & qwen3.5 & qwen3-coder \\
+Technique & llama3.2 & phi4 & qwen3.5 & qwen3-coder \\
 \midrule
 Plain LLM          & 95 & 100 & 100 & 100 \\
 Random RAG         & 80 & 96  & 99  & 99  \\
@@ -1934,7 +1934,7 @@ Simple RAG         & 87 & 94  & 96  & 100 \\
 \emph{Iterative Critique loses half its suites on the weakest
 model.} Attrition rises monotonically as model capability falls, and
 within every model Iterative Critique is the most heavily filtered
-method: 50 of 100 on llama3.2 against Plain LLM's 95. The mechanism
+technique: 50 of 100 on llama3.2 against Plain LLM's 95. The mechanism
 is that the refinement loop produces more behaviorally specific
 assertions, and a specific assertion that is \emph{almost} right
 fails on the original function, taking the whole suite with it. A
@@ -1942,21 +1942,21 @@ broad structural assertion is more likely to be vacuously true and
 therefore to survive.
 
 This matters for interpretation in two directions. It inflates the
-surviving cells of the heavily-filtered methods, because what
+surviving cells of the heavily-filtered techniques, because what
 survives is the easier subset; and it means per-cell means are
 computed over different populations of functions. To separate the
-method effect from the attrition effect, we repeat the central
+technique effect from the attrition effect, we repeat the central
 analysis on the \emph{matched subset}: the functions for which all
-four methods produced a suite that passed the filter on the same
+four techniques produced a suite that passed the filter on the same
 model. This yields 273 function-model units (1{,}092 observations;
 38 functions on llama3.2, 64 on phi4, 73 on qwen3.5, 98 on
 qwen3-coder).
 
-\emph{The method effect remains absent on the matched subset.} Mean
+\emph{The technique effect remains absent on the matched subset.} Mean
 kill rates are Plain LLM 0.895, Random RAG 0.906, Simple RAG 0.896,
 Iterative Critique 0.897---a spread of 0.011, against 0.016 on the
 full corpus. Matching removes the apparent reordering (Iterative
-Critique moves from last to second) without producing a method
+Critique moves from last to second) without producing a technique
 effect, which is the expected signature of attrition acting as
 noise on the ranking rather than as a source of the null. We
 therefore report the full-corpus analysis as primary, with per-cell
@@ -1965,8 +1965,8 @@ a robustness check rather than a separate finding.
 
 \subsection{Per-operator analysis}\label{sec:results-peroperator}
 
-\paragraph{\textnormal{\textbf{RQ2}, continued --- does the method effect concentrate on a defect family?}}
-\emph{Answer: no.} No method leads on more than two of the five
+\paragraph{\textnormal{\textbf{RQ2}, continued --- does the technique effect concentrate on a defect family?}}
+\emph{Answer: no.} No technique leads on more than two of the five
 operator families, and no gap exceeds nine percentage points.
 
 
@@ -1975,7 +1975,7 @@ across the four LLMs.
 
 \begin{table}[t]
 \centering
-\caption{Per-operator kill rate by method (unweighted mean across the 4 LLMs). Best per row in bold; no row reaches significance under the per-operator ANOVA.}
+\caption{Per-operator kill rate by technique (unweighted mean across the 4 LLMs). Best per row in bold; no row reaches significance under the per-operator ANOVA.}
 \label{tab:peroperator}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
@@ -1990,7 +1990,7 @@ Return None   & 0.892 & 0.909 & \textbf{0.923} & 0.877 \\
 \end{tabular}
 \end{table}
 
-\emph{No method dominates across operator families.} Iterative
+\emph{No technique dominates across operator families.} Iterative
 Critique has the highest mean rate on the two operators that require
 numerically specific assertions---arithmetic (0.727 vs Plain LLM's
 0.700) and boundary (0.766 vs 0.727)---and the \emph{lowest} mean
@@ -2004,14 +2004,14 @@ refinement loop pushes tests toward value-specific assertions, which
 is what catches arithmetic and boundary mutants, at the cost of the
 broad structural assertions that cheaply catch negate-boolean and
 return-None mutants. Those last two families are easy to kill by any
-method (means 0.778--0.923 across all four), so Iterative Critique
+technique (means 0.778--0.923 across all four), so Iterative Critique
 trades a small gain on hard mutants for a small loss on easy ones,
 and the two cancel in the pooled kill rate. That cancellation is a
 more useful explanation of the null overall effect
 (\S\ref{sec:results-stats-overall}) than the sampling-noise reading.
 
 \subsection{Retrieval faithfulness is a model property, not a
-method property}\label{sec:results-faithfulness}
+technique property}\label{sec:results-faithfulness}
 
 \paragraph{\textnormal{\textbf{RQ4} --- Does faithfulness to retrieved context predict kill rate?}}
 \emph{Answer: no.} The strong pooled association is produced by
@@ -2019,10 +2019,10 @@ the model factor and does not survive controlling for it.
 
 
 Token-overlap faithfulness between generated tests and retrieved
-context varies by model, not by retrieval method. A one-way model on
+context varies by model, not by retrieval technique. A one-way model on
 the eleven RAG cells attributes $R^2 = 0.889$ of faithfulness
 variance to the LLM ($p = 0.001$) and $R^2 = 0.118$ to the
-generation method ($p = 0.605$): llama3.2 lifts vocabulary from the
+generation technique ($p = 0.605$): llama3.2 lifts vocabulary from the
 retrieved context at $\approx 0.18$ regardless of whether retrieval
 was semantic or random, while qwen3.5 sits at $\approx 0.07$.
 Table~\ref{tab:faithfulness} reports the pooled correlations of
@@ -2097,17 +2097,17 @@ transparency rather than as a result.
 
 \subsection{Human evaluation}\label{sec:results-humaneval}
 
-\paragraph{\textnormal{\textbf{RQ5} --- Do annotators rank the methods differently, and does their ranking agree with the mutation ranking?}}
+\paragraph{\textnormal{\textbf{RQ5} --- Do annotators rank the techniques differently, and does their ranking agree with the mutation ranking?}}
 \emph{Answer: yes, and no.} Annotators rank Iterative Critique
 highest on all three dimensions; the mutation data cannot distinguish
 it from unaugmented prompting.
 
 
 Three independent annotators rated 40 stratified
-\texttt{(function, generated\_tests)} pairs, blinded to the method and
+\texttt{(function, generated\_tests)} pairs, blinded to the technique and
 the model. Table~\ref{tab:humaneval-method} reports mean ratings by
-method; Figure~\ref{fig:humaneval-ranking} visualizes the
-per-method means.
+technique; Figure~\ref{fig:humaneval-ranking} visualizes the
+per-technique means.
 
 \begin{table}[t]
 \centering
@@ -2117,7 +2117,7 @@ dimension, averaged over three annotators and 40 blinded suites
 0--5 scale. The highest value in each column is set in bold.}\label{tab:humaneval-method}
 \begin{tabular}{@{}lccc@{}}
 \toprule
-Method & Test idiom & Correctness & Completeness \\
+Technique & Test idiom & Correctness & Completeness \\
 \midrule
 \textbf{Iterative Critique} & \textbf{4.06} & \textbf{4.15} & \textbf{4.58} \\
 Random RAG                  & 3.79 & 3.73 & 3.85 \\
@@ -2144,11 +2144,11 @@ three-annotator means, with the largest IC-vs-Plain-LLM gap on
 completeness (4.58 vs 3.63). Three properties of the design and the
 analysis are worth establishing before that ranking is relied on.
 
-\paragraph{Method is not confounded with model.} The 40 pairs were
+\paragraph{Technique is not confounded with model.} The 40 pairs were
 stratified over the $4 \times 4$ matrix, giving 1--3 pairs per cell
-(mean 2.5) and 9--11 pairs per method. A rating advantage could
-therefore in principle reflect a method's pairs having been drawn
-from stronger models. They were not: the method-by-model allocation
+(mean 2.5) and 9--11 pairs per technique. A rating advantage could
+therefore in principle reflect a technique's pairs having been drawn
+from stronger models. They were not: the technique-by-model allocation
 is balanced ($\chi^2 = 1.56$, $p = 0.997$).
 
 \paragraph{The effect is not an artifact of pseudo-replication.}
@@ -2160,7 +2160,7 @@ $p = 0.022$; completeness $H = 14.95$, $p = 0.002$; correctness
 remains non-significant ($H = 4.69$, $p = 0.196$).
 
 \paragraph{The effect survives controlling for model and annotator.}
-A mixed-effects model of rating on method and model, with annotator
+A mixed-effects model of rating on technique and model, with annotator
 as a random intercept, is the appropriate test and gives the
 strongest version of the result. Against Plain LLM, Iterative
 Critique scores $\beta = +0.869$ ($p = 0.0001$) on idiom and
@@ -2190,7 +2190,7 @@ this scale-usage bias.
 This matters for how the ranking should be read. Krippendorff's
 $\alpha$ measures agreement on \emph{absolute} ratings; a rater who
 applies the same ordering a scale-point lower throughout will score
-near zero on it while still agreeing about which method is better.
+near zero on it while still agreeing about which technique is better.
 That is what happened here. On completeness, all three annotators
 independently rank Iterative Critique first. On idiom and
 correctness, the two annotators who agree with each other do so as
@@ -2198,7 +2198,7 @@ well, while SA ranks Simple RAG and Plain LLM first respectively. We
 therefore do not claim unanimity, and the mixed-effects model above
 is the right basis for the ranking rather than the raw means: with
 annotator as a random intercept, a constant per-rater offset is
-absorbed rather than treated as disagreement about the methods. The
+absorbed rather than treated as disagreement about the techniques. The
 honest summary is that \emph{the ordering is supported on idiom and
 completeness and unsupported on correctness}, and that a replication
 should calibrate annotators on shared anchor examples before
@@ -2300,12 +2300,12 @@ Pynguin leads on arithmetic and negate-boolean.
 
 \label{sec:results-pynguin}
 
-To ground our LLM-method results against the prior dominant
+To ground our LLM-technique results against the prior dominant
 automated-test-generation paradigm, we ran Pynguin 0.45.0
 \citep{lukasczyk2022} on the same 40 functions used in the human
 evaluation. Pynguin produced a valid suite for 34 of them; all
 comparisons below are matched to those 34 functions, with the LLM
-methods restricted to exactly the same source problems so that the
+techniques restricted to exactly the same source problems so that the
 two generators are never scored on different populations. Table~\ref{tab:pynguin-overall} and
 Figure~\ref{fig:pynguin-overall} show the overall comparison;
 Figure~\ref{fig:pynguin-peroperator} shows the per-operator
@@ -2336,7 +2336,7 @@ Plain LLM (LLM, avg.) & 0.898 & 134 & 574 / 764 \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{pynguin_vs_llm_kill_rate.png}
-\caption{Mutation kill rate: Pynguin vs LLM methods (averaged
+\caption{Mutation kill rate: Pynguin vs LLM techniques (averaged
 across 4 models). LLM rows are averaged across the four LLMs;
 Pynguin is a single 40-function row.}
 \label{fig:pynguin-overall}
@@ -2345,14 +2345,14 @@ Pynguin is a single 40-function row.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{pynguin_vs_llm_per_operator.png}
-\caption{Per-operator kill rate: Pynguin vs LLM methods. The
+\caption{Per-operator kill rate: Pynguin vs LLM techniques. The
 LLM-vs-Pynguin gap concentrates on the comparison and boundary operator families
 (Pynguin 0.33 vs IC 0.96).}
 \label{fig:pynguin-peroperator}
 \end{figure}
 
-\emph{Pynguin trails the worst LLM method (Plain LLM, 0.849) by
-6.2 percentage points and the best LLM method (Iterative Critique,
+\emph{Pynguin trails the worst LLM technique (Plain LLM, 0.849) by
+6.2 percentage points and the best LLM technique (Iterative Critique,
 0.957) by 17 points.} First, \emph{Pynguin's filter-pass rate
 ($34/40 = 85\%$) is higher than any LLM cell's} typical pass rate
 (29/30 = 97\% for Plain LLM, dropping to 19/30 = 63\% for IC on the
@@ -2394,24 +2394,24 @@ Five findings appear robust to the limitations cataloged in
 
 \begin{enumerate}
 \item \emph{Mutation kill rate scales with LLM capability, not with
-  RAG-method choice.} Moving from llama3.2 to qwen3.5 raises mean
+  RAG-technique choice.} Moving from llama3.2 to qwen3.5 raises mean
   kill rate by 0.232; the entire spread across the four generation
-  methods is 0.011, and Iterative Critique sits 0.002 \emph{below}
+  techniques is 0.011, and Iterative Critique sits 0.002 \emph{below}
   unaugmented prompting. Model choice moves the metric
-  $21.7\times$ as far as method choice. Spreads here are computed over
-  the 16 cell means, giving each (method, model) cell equal weight;
+  $21.7\times$ as far as technique choice. Spreads here are computed over
+  the 16 cell means, giving each (technique, model) cell equal weight;
   because cell sizes differ after the test filter
   (\S\ref{sec:results-attrition}), the observation-weighted estimate
   differs and is reported alongside it in
   \S\ref{sec:results-stats-overall}.
-\item \emph{Method rankings do not generalize across LLMs.} The best
-  method differs on three of four models and Iterative Critique
+\item \emph{Technique rankings do not generalize across LLMs.} The best
+  technique differs on three of four models and Iterative Critique
   leads on none. The only metric clearing $\rho \geq 0.8$ is
   return-None kill rate (mean $\rho = +0.90$), the operator family
-  all methods kill easily.
+  all techniques kill easily.
 \item \emph{Retrieval faithfulness is a property of the model, not
-  of the retrieval method} ($R^2 = 0.889$ by model vs $0.118$ by
-  method). An apparent strong negative correlation between
+  of the retrieval technique} ($R^2 = 0.889$ by model vs $0.118$ by
+  technique). An apparent strong negative correlation between
   faithfulness and kill rate ($r = -0.907$) is entirely confounded
   by model and vanishes under control ($r = +0.079$, $p = 0.818$).
 \item \emph{Three independent annotators ranked Iterative Critique
@@ -2425,18 +2425,18 @@ Five findings appear robust to the limitations cataloged in
   Inter-rater agreement is poor in absolute level
   (\S\ref{sec:results-humaneval}), so the ordering rests on the
   model-controlled estimate rather than on raw means.
-\item \emph{LLM methods outperform Pynguin's SBST on mutation kill
+\item \emph{LLM techniques outperform Pynguin's SBST on mutation kill
   rate} under a 60-second budget, with the gap concentrated on
   comparison-operator mutators.
 \end{enumerate}
 
 \section{Discussion}\label{sec:discussion}
 
-\paragraph{Why does no method separate, even on the operators
+\paragraph{Why does no technique separate, even on the operators
 designed to separate them?}\label{sec:discussion-boundary}
 
 The operator-level pattern (\S\ref{sec:results-peroperator}) points
-at \emph{assertion specificity} as the axis on which the methods do
+at \emph{assertion specificity} as the axis on which the techniques do
 differ, even though the difference never reaches significance.
 Boundary mutators introduce small numeric perturbations that produce
 different return values but identical types and structural shapes. A
@@ -2448,7 +2448,7 @@ tests toward the former category, which is consistent with its
 leading the field on arithmetic and boundary mutants---by 2.7 and
 3.9 percentage points respectively.
 
-What stops this becoming a method effect is that the same shift
+What stops this becoming a technique effect is that the same shift
 costs it elsewhere. Value-specific assertions are narrow, and the
 negate-boolean and return-None families are killed cheaply by the
 broad structural assertions that Iterative Critique refines away;
@@ -2463,7 +2463,7 @@ insufficient power, since the power analysis
 roughly three percentage points and the observed per-operator
 movements sit just below that bound.
 
-\paragraph{Why does the method ordering not generalize across LLMs?}
+\paragraph{Why does the technique ordering not generalize across LLMs?}
 \label{sec:discussion-generalisability}
 
 Two mechanisms contribute, and both argue that the orderings are
@@ -2474,26 +2474,26 @@ Critique's refinement loop produces more behaviorally-specific
 assertions, and when an assertion is \emph{almost} right but not
 exactly right the filter drops the whole suite. The effect is
 severe and uneven: Iterative Critique retains only 50 of 100
-functions on llama3.2 against Plain LLM's 95, so the two methods'
+functions on llama3.2 against Plain LLM's 95, so the two techniques'
 means are computed over different and differently-difficult
 subsets. This is why Plain LLM attains the highest mean on
-llama3.2 despite being the weakest method on the other three
-models---it is the method whose surviving subset is least filtered.
+llama3.2 despite being the weakest technique on the other three
+models---it is the technique whose surviving subset is least filtered.
 The matched-subset analysis (\S\ref{sec:results-attrition})
 confirms the direction: restricting to the 273 function-model
-units where all four methods produced a valid suite leaves a method
+units where all four techniques produced a valid suite leaves a technique
 spread of 0.011, against 0.016 on the full corpus, so attrition
-shuffles the ordering without creating a method effect.
+shuffles the ordering without creating a technique effect.
 
 The second mechanism is \emph{a ceiling effect}. Across the whole
 corpus, 73.2\% of per-sample kill rates sit at exactly 1.0, and on
-the three stronger models the methods are compressed into a band of
+the three stronger models the techniques are compressed into a band of
 0.017--0.031. Rank orderings over a band that narrow are determined
 by a handful of functions; two of our sixteen cells are separated
 in the fourth decimal place
 (\S\ref{sec:results-generalisability}). \emph{Non-generalization
 here is better read as the absence of a stable ordering to
-generalize than as a method-by-model interaction.}
+generalize than as a technique-by-model interaction.}
 
 \paragraph{Divergence between human ratings and kill rate across the two qwen models.}
 \label{sec:discussion-moe}
@@ -2519,7 +2519,7 @@ one. Pooled over eleven cells, token-overlap faithfulness predicts
 kill rate at $r = -0.907$---a correlation strong enough to carry a
 contribution, and one we initially reported as such. It is an
 artifact of aggregation. Faithfulness is a model-level trait
-($R^2 = 0.889$ by model against $0.118$ by method): weaker models
+($R^2 = 0.889$ by model against $0.118$ by technique): weaker models
 echo more of the retrieved vocabulary back, which is the same thing
 as saying they template rather than reason. Kill rate is also a
 model-level trait, even more strongly
@@ -2549,13 +2549,13 @@ estimated within model.
 \label{sec:discussion-sbst}
 
 \emph{On arithmetic and negate-boolean operators Pynguin
-outperforms every LLM method}, including Iterative Critique (0.850
+outperforms every LLM technique}, including Iterative Critique (0.850
 vs 0.809 on arithmetic; 1.000 vs 0.917 on negate-boolean). The LLM
 advantage concentrates on the two operator families that require a
 relational or value-boundary judgement: comparison, where the gap is
 very large (0.917 vs 0.250), and boundary (0.817 vs 0.554). These
 two families carry the LLM lead in the pooled kill rate (0.898--0.922
-vs 0.787, Mann--Whitney $p < 0.001$ for every method against
+vs 0.787, Mann--Whitney $p < 0.001$ for every technique against
 Pynguin).
 \emph{Pynguin's behavioral oracles are derived from observed return
 values}, not from operator-level semantics, which explains both
@@ -2586,7 +2586,7 @@ pays off at this scale.
 \begin{enumerate}
 \item \textbf{Spend the budget on model selection, not retrieval
   engineering.} Model choice moved defect detection $21.7\times$
-  further than method choice. A team choosing between a larger model
+  further than technique choice. A team choosing between a larger model
   and a more sophisticated RAG pipeline, at equal cost, should take
   the model.
 \item \textbf{Do not assume a documentation knowledge base earns its
@@ -2604,15 +2604,15 @@ pays off at this scale.
   should expect it not to move fault detection, and should measure
   both.
 \item \textbf{Divide work between SBST and LLM generators by operator
-  family, not wholesale.} Pynguin led every LLM method on arithmetic
+  family, not wholesale.} Pynguin led every LLM technique on arithmetic
   (0.850 vs 0.809) and negate-boolean (1.000 vs 0.917) mutants, while
   LLMs led decisively on comparison (0.917 vs 0.250) and boundary
   (0.817 vs 0.554). A hybrid should route by the kind of oracle
   required, not run both and merge.
 \item \textbf{Account for test-filter attrition when comparing
-  methods.} Iterative Critique produced a usable suite for only 50 of
+  techniques.} Iterative Critique produced a usable suite for only 50 of
   100 functions on our weakest model, against Plain LLM's 95.
-  Comparing mean quality across methods without reporting yield
+  Comparing mean quality across techniques without reporting yield
   compares different populations of functions.
 \end{enumerate}
 
@@ -2633,8 +2633,8 @@ pays off at this scale.
   random-retrieval arm ``does \emph{relevance} help?'' is not
   separable from ``do extra tokens help?''.
 \item \textbf{Treat the model factor as a first-class experimental
-  variable.} Method rankings in our data do not transfer: the best
-  method differs on three of four models, and only the kill rate of
+  variable.} Technique rankings in our data do not transfer: the best
+  technique differs on three of four models, and only the kill rate of
   the easiest operator family clears a $\rho \geq 0.8$ agreement
   threshold across all model pairs. A technique validated on one
   model should not be reported as a general result.
@@ -2659,7 +2659,7 @@ We organize the limitations along Wohlin et al.'s
 \paragraph{Mutation kill rate is a proxy.}
 The five-operator set we adopt is the canonical subset from
 \emph{mutmut} and \emph{PIT}, but the kill-rate numbers should be
-read as relative comparisons between methods rather than absolute
+read as relative comparisons between techniques rather than absolute
 ground-truth defect-detection rates.
 
 \paragraph{Human ratings have low absolute calibration; we treat
@@ -2673,9 +2673,9 @@ third annotator (SA) systematically used the lower half of the
 zero on test-idiom and correctness. We do not claim that the
 absolute mean ratings in Table~\ref{tab:humaneval-method} are a
 calibrated quality scale. Instead, we use the \emph{rank ordering
-of methods} as the human-evaluation signal: every annotator,
+of techniques} as the human-evaluation signal: every annotator,
 viewed individually, ranked Iterative Critique first on completeness,
-and the rank ordering of the four methods is consistent across all
+and the rank ordering of the four techniques is consistent across all
 three annotators in two of the three dimensions despite their
 scale-usage divergence. Methodologically, we read this as evidence
 that \emph{rigorous LLM-test-quality evaluation requires a
@@ -2720,12 +2720,12 @@ but did not rate shared practice examples before the study, and one
 of the three used the scale roughly a point lower than the other two
 throughout (\S\ref{sec:results-humaneval}). Krippendorff's $\alpha$
 is consequently near zero on two of the three dimensions even though
-the method ordering is largely shared. The mixed-effects model
+the technique ordering is largely shared. The mixed-effects model
 absorbs a constant per-rater offset, so the reported effects are not
 driven by this, but a replication should run a calibration round on
 shared anchors and report $\alpha$ after it. With 40 pairs over 16
 cells (1--3 per cell) the study is also small; it is adequate for the
-method contrast, which is what it was powered for, and not for
+technique contrast, which is what it was powered for, and not for
 per-model claims about perceived quality.
 
 \paragraph{Decontamination defeats signature recall, not
@@ -2754,7 +2754,7 @@ We do not evaluate class-level benchmarks (e.g., ClassEval) or
 real-world projects with complex dependency graphs.
 
 \paragraph{Pynguin time-budget.}
-We compared our LLM methods against Pynguin with a 60-second search
+We compared our LLM techniques against Pynguin with a 60-second search
 budget per function. A budget of 300–600 seconds (recommended in
 some Pynguin publications for harder functions) might close some
 of the gap.
@@ -2762,12 +2762,12 @@ of the gap.
 \subsection{Conclusion validity}\label{sec:limitations-conclusion}
 
 \paragraph{Null results and statistical power.}
-Our central method-level result is a null, so the relevant question
+Our central technique-level result is a null, so the relevant question
 is whether we could have detected a real effect. With $n = 1{,}443$
 observations across 16 cells and \texttt{sample\_idx} as a random
-intercept, the mixed-effects model resolves a method contrast of
+intercept, the mixed-effects model resolves a technique contrast of
 roughly 0.03 in mean kill rate at 80\% power. The largest observed
-contrast is 0.011. We can therefore rule out a method effect of
+contrast is 0.011. We can therefore rule out a technique effect of
 practical size; we cannot rule out one smaller than about three
 percentage points. A ceiling effect further limits resolution:
 73.2\% of per-sample kill rates sit at exactly 1.0, so the metric
@@ -2785,8 +2785,8 @@ $n = 100$. We mitigate this by reporting per-cell $n$ counts in
 every results table, by treating \texttt{sample\_idx} as a random
 intercept in the Mixed-LM analysis, and by repeating the central
 analysis on the matched subset of 273 function-model units where all
-four methods produced a valid suite for the same function on the
-same model (\S\ref{sec:results-attrition}); the method spread there
+four techniques produced a valid suite for the same function on the
+same model (\S\ref{sec:results-attrition}); the technique spread there
 is 0.011, against 0.016 on the full corpus.
 
 \paragraph{Kill-rate $\times$ human-correctness correlation.}
@@ -2801,13 +2801,13 @@ preliminary and did not survive replication.
 \section{Conclusion}\label{sec:conclusion}
 
 We presented a mutation-testing-based empirical evaluation of four
-LLMs-based unit-test generation methods across four open-weight
+LLMs-based unit-test generation techniques across four open-weight
 LLMs. The $4 \times 4$ matrix yielded 1{,}443 valid per-sample observations after filtering, drawn from a 100-function subset of HumanEval and MBPP. Five findings appear robust to the
 limitations identified: (i) the mutation kill rate scales with LLM
-capability and not with RAG-method choice, by a factor of 21.7;
-(ii) method rankings do not generalize across LLMs, and no method
+capability and not with RAG-technique choice, by a factor of 21.7;
+(ii) technique rankings do not generalize across LLMs, and no technique
 leads on more than two of the four; (iii) retrieval faithfulness is
-a model-level rather than a method-level property, and its apparent
+a model-level rather than a technique-level property, and its apparent
 association with kill rate is confounded by model; (iv) three
 independent annotators ranked Iterative Critique highest on all
 three quality dimensions, contradicting the mutation-testing
@@ -2823,7 +2823,7 @@ Three directions stand out as natural follow-ups. First, the
 coverage-driven assertions, then adding LLM-generated
 comparison-operator oracles on uncovered branches
 —should outperform either approach alone on the mutation-testing metric.
-Second, \emph{closed-weight LLM replication}: our null on method
+Second, \emph{closed-weight LLM replication}: our null on technique
 choice is established over a 3B--30B open-weight pool, and the
 question of whether it persists where the model factor is less
 dominant should be tested against GPT-4o, Claude Sonnet 4.6, and
@@ -2976,14 +2976,14 @@ SBST. We list the exact knobs to support replication.
   with an early-exit if the critic returns ``no issues''; both
   generator and critic share the same underlying model.
 \item \textbf{Time budget:} 600\,s wall-clock per
-  (method, model, sample); samples exceeding this budget are
+  (technique, model, sample); samples exceeding this budget are
   recorded as \emph{timeout} and excluded from per-cell means.
 \item \textbf{Pynguin baseline:} Pynguin 0.45.0 with the
   DYNAMOSA algorithm, 60\,s budget per function, branch and
   line coverage as fitness signals, a mutation budget of 100,
   and a population size of 50 (all defaults). Generated tests
   were then fed through the same five-operator mutation pipeline
-  used for the LLM methods.
+  used for the LLM techniques.
 \item \textbf{Mutation pipeline:} 5 AST-based operator families
   (arithmetic, boundary, comparison, negate\_bool,
   return\_none) applied per function, with a per function test
@@ -2991,9 +2991,9 @@ SBST. We list the exact knobs to support replication.
   \emph{original} (un-mutated) source.
 \end{itemize}
 
-\section{Method pseudocode}\label{app:pseudocode}
+\section{Technique pseudocode}\label{app:pseudocode}
 
-We summarize the four generation methods as compact
+We summarize the four generation techniques as compact
 pseudocode. \texttt{LLM} denotes a single
 \texttt{Ollama.chat} call, \texttt{retrieves} cosine-top-$k$ ($k=5$)
 retrieval over the in-memory index, and \texttt{filters}
@@ -3043,7 +3043,7 @@ def iterative_critique(function, signature, docstring, index,
 
 \section{Full per-cell mutation kill rate table}\label{app:percell}
 
-Table~\ref{tab:percell-app} lists every (method, model) cell in
+Table~\ref{tab:percell-app} lists every (technique, model) cell in
 the full 4\,$\times$\,4 generation matrix with per-operator kill
 rates, sample counts, and total mutants. Pynguin is reported on
 the matched 40-function subset and is included in the bottom
@@ -3064,7 +3064,7 @@ N\,=\,negate\_bool, R\,=\,return\_none. Derived from
 \setlength{\tabcolsep}{3pt}
 \begin{tabular}{@{}llcccccccc@{}}
 \toprule
-Method & Model & $n$ & Mean & A & B & C & N & R & Mutants \\
+Technique & Model & $n$ & Mean & A & B & C & N & R & Mutants \\
 \midrule
 Plain LLM & llama3.2:latest & 95 & 0.744 & 0.57 & 0.55 & 0.81 & 0.65 & 0.77 & 651 \\
 Plain LLM & phi4:14b & 100 & 0.897 & 0.71 & 0.75 & 0.86 & 0.83 & 0.89 & 666 \\
