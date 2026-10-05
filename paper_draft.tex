@@ -121,15 +121,18 @@ beyond inference time \citep{schafer2024,tufano2022}. Multiple recent studies ha
 LLM-generated tests against search-based baselines and reported
 competitive or superior effectiveness on standard benchmarks
 \citep{schafer2024,lemieux2023codamosa,dakhel2024mutation,
-straubinger2025debug,konstantinou2026newer}. The question that frames the present paper is no
-longer ``can LLM replace SBST?''—the empirical answer to that is
-``yes, on coverage metrics''—but rather: \emph{once we accept
-LLM-based test generation, which augmentation methodology produces
-the best tests, on which kinds of code, with which underlying LLM?}
+straubinger2025debug,konstantinou2026newer}. The question that frames the present paper is
+therefore no longer ``can LLMs replace search-based generation?''---
+the empirical answer to that is ``yes, on coverage metrics''---but
+what to do next, once LLM-based generation is accepted. The dominant
+answer in the recent literature is to \emph{augment} the prompt, and
+the dominant augmentation is retrieval. We introduce that idea first,
+then state the question this paper asks about it.
 
-\subsection{The retrieval-augmentation question}\label{sec:intro-rag}
-A natural augmentation for LLM test generators is
-\emph{retrieval-augmented generation} (RAG). The original RAG
+\subsection{Retrieval augmentation for test
+generation}\label{sec:intro-rag}
+The augmentation we study is \emph{retrieval-augmented generation}
+(RAG). The original RAG
 framework \citep{lewis2020} augments an LLM's prompt with passages
 retrieved from a knowledge base; in the test-generation context, the
 knowledge base is typically a curated set of testing tutorials,
@@ -160,8 +163,14 @@ retrieval-augmented code generation \citep{su2025evor,lu2022reacc}.
 For \emph{unit test generation specifically} the literature is
 thinner: \citet{shin2026ragtest} and \citet{zhang2026refrag} are the
 two closest studies, and neither measures defect detection
-(\S\ref{sec:related-rag}). That leaves three methodological gaps,
-which we address in this paper.
+(\S\ref{sec:related-rag}).
+
+\noindent With the technique space in view, the question this paper
+asks can be stated precisely: \emph{does augmenting the prompt with
+retrieved material make the resulting tests better at detecting
+defects, and does the answer hold across language models?} Three
+methodological gaps stand between the current literature and an
+answer, and we address each.
 
 \subsection{Three gaps in existing work}\label{sec:intro-gaps}
 
@@ -382,10 +391,74 @@ research. The replication package is described in the
 
 
 \section{Related Work}\label{sec:related}
-Our work intersects four literatures: LLM-based test generation,
-retrieval-augmented generation for code tasks, mutation-testing-based
-evaluation, and search-based software testing. We summarize each in
-turn and position our contribution at the intersection.
+We first fix the terminology used throughout
+(\S\ref{sec:related-background}), then survey the four literatures
+this work intersects---LLM-based test generation, retrieval-augmented
+generation for code, mutation-testing-based evaluation, and
+search-based software testing---and position our contribution at
+their intersection.
+
+\subsection{Background and terminology}\label{sec:related-background}
+
+This subsection fixes the terms used throughout. Readers familiar
+with mutation testing and retrieval augmentation may skip to
+\S\ref{sec:related-llmtg}.
+
+\paragraph{Mutation testing.} Introduced by \citet{demillo1978},
+mutation testing evaluates a test suite by injecting small,
+syntactically valid faults into the program under test and asking
+whether the suite notices. Each injected fault produces a
+\emph{mutant}. A mutant is \emph{killed} if the suite passes on the
+original program and fails on the mutant, and \emph{survives}
+otherwise. The \emph{mutation kill rate} (or mutation score) is the
+proportion of non-equivalent mutants killed, and is the response
+variable throughout this paper. A mutant is \emph{equivalent} when
+the injected change leaves observable behaviour unaltered---for
+instance replacing \verb|x < n| with \verb|x != n| inside a loop that
+increments \verb|x| by one---so that no test can kill it; equivalent
+mutants are excluded from the denominator, and detecting them is
+undecidable in general \citep{papadakis2019survey}. A
+\emph{mutation operator} is the rule that generates a class of
+mutants, such as replacing an arithmetic operator or perturbing a
+numeric boundary. Mutation testing is used here as an
+\emph{evaluation} metric; much recent work instead uses it
+\emph{generatively}, feeding surviving mutants back into the prompt
+(\S\ref{sec:related-mutation}).
+
+The metric earns its place by being a better proxy for fault
+detection than coverage. \citet{andrews2005} and \citet{just2014}
+showed that mutant detection correlates with real-fault detection
+more strongly than coverage does, which matters here because a suite
+can reach full statement coverage while asserting almost nothing.
+
+\paragraph{Search-based software testing (SBST).} The dominant
+pre-LLM paradigm treats test generation as an optimisation problem,
+evolving a population of candidate inputs against a coverage- or
+mutation-based fitness function \citep{mcminn2004,fraser2011}. We use
+Pynguin \citep{lukasczyk2022}, the standard Python implementation, as
+the prior-paradigm reference. SBST tools derive assertions from
+\emph{observed} return values, which is the source of the
+\emph{regression oracle problem}: the assertions encode what the
+program currently does, not what it should do.
+
+\paragraph{Retrieval-augmented generation.} RAG \citep{lewis2020}
+prepends material retrieved from a corpus to a model's prompt.
+Retrieval here is \emph{dense}: both the query and each corpus chunk
+are embedded into a vector space by a sentence encoder, and the
+chunks with the highest cosine similarity to the query are selected.
+The number retrieved is written $k$. \emph{Faithfulness} denotes how
+far the generated output reflects the retrieved material; we measure
+it both lexically and with a model judge
+(\S\ref{sec:methods-faithfulness}).
+
+\paragraph{Agreement statistics.} Where multiple annotators rate the
+same artefacts we report Cohen's $\kappa$ for pairs and
+Krippendorff's $\alpha$ \citep{krippendorff2018} across all three,
+both of which correct observed agreement for the agreement expected
+by chance. Values run from $-1$ to $1$; $\alpha \geq 0.4$ is the
+conventional floor for ``moderate'' agreement \citep{landis1977}. The
+\emph{ordinal} variant of $\alpha$, which we use, weights
+disagreements by how far apart the two ratings are on the scale.
 
 \subsection{LLM-based unit-test generation}\label{sec:related-llmtg}
 The use of large language models for unit-test synthesis predates
@@ -841,6 +914,45 @@ signal), and a Pynguin search-based test-generation baseline
 three tracks feed into the same statistical analysis pipeline
 (\S\ref{sec:methods-stats}).
 
+\subsection{How the design answers the research
+questions}\label{sec:methods-rqmap}
+
+The six questions posed in \S\ref{sec:intro-rqs} are restated here
+alongside the apparatus that answers each, so that the design can be
+read without turning back to the introduction.
+
+\begin{table}[htbp]
+\centering
+\caption{Mapping from research question to the methodological
+apparatus that answers it and the section describing that apparatus.
+Each Results subsection carries the same tag.}\label{tab:methodrqmap}
+\small
+\begin{tabular}{@{}lp{0.46\textwidth}l@{}}
+\toprule
+RQ & Apparatus & Described in \\
+\midrule
+RQ1 & $4\times4$ factorial generation matrix; mutation kill rate as
+      the response; Random RAG as a relevance placebo &
+      \S\ref{sec:methods-factors}, \S\ref{sec:methods-kb},
+      \S\ref{sec:methods-mutation} \\
+RQ2 & Type-III ANOVA with \texttt{sample\_idx}; Tukey HSD;
+      mixed-effects regression; per-operator and per-benchmark
+      decompositions & \S\ref{sec:methods-stats} \\
+RQ3 & Pairwise Spearman rank correlation of the method ordering
+      between every pair of models & \S\ref{sec:methods-stats} \\
+RQ4 & Token-overlap and LLM-judge faithfulness, correlated with kill
+      rate both pooled and partialled on model &
+      \S\ref{sec:methods-faithfulness} \\
+RQ5 & Three-annotator blinded rating under a behaviourally-anchored
+      rubric; agreement statistics; mixed-effects model &
+      \S\ref{sec:methods-humaneval} \\
+RQ6 & Pynguin 0.45.0 under a fixed budget, evaluated through the
+      identical mutation pipeline on matched functions &
+      \S\ref{sec:methods-pynguin} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{methodology_overview.png}
@@ -854,6 +966,10 @@ to the statistical analyses (bottom).}
 \end{figure}
 
 \subsection{Experimental factors}\label{sec:methods-factors}
+
+\emph{Apparatus for \textbf{RQ1}.} This subsection defines the factor
+under test and the levels it takes.
+
 
 We compare \emph{four unit-test generation methods} drawn from the
 RAG-for-code-generation literature, evaluated across \emph{four
@@ -912,6 +1028,10 @@ goal is to characterize how each generation method \emph{uses} a
 given off-the-shelf LLM.
 
 \subsection{The retrieval knowledge base}\label{sec:methods-kb}
+
+\emph{Apparatus for \textbf{RQ1} and \textbf{RQ4}.} The corpus all three
+retrieval conditions draw from, and the object the null is about.
+
 
 All three retrieval conditions draw from one corpus, built once and
 frozen for the whole study. Because our central result is a null about
@@ -1082,6 +1202,10 @@ extend our findings to the full benchmark.
 
 \subsection{Mutation testing}\label{sec:methods-mutation}
 
+\emph{Apparatus for \textbf{RQ1}, \textbf{RQ2} and \textbf{RQ6}.} The response
+variable: how mutants are generated, executed and classified.
+
+
 We adopt \emph{mutation testing} as our SE-relevant evaluation
 metric. A mutation operator introduces a small syntactic change to
 the function under test, producing a \emph{mutant}. A test suite
@@ -1091,6 +1215,47 @@ non-equivalent mutants killed is the \emph{mutation kill rate}—
 a behavioral defect-detection metric grounded in the test suite's
 ability to discriminate buggy code from correct code
 \citep{andrews2005,just2014}.
+
+\paragraph{The mutation harness.} Mutation analysis is performed by
+a purpose-built harness (\texttt{mutation\_testing.py}) rather than
+an off-the-shelf tool, and because every number in this paper depends
+on it we describe it in full and justify the choice.
+
+Existing Python mutation tools---MutPy, as used by
+\citet{dakhel2024mutation}, and mutmut---operate on \emph{modules} or
+\emph{packages}: they import the target, mutate it in place, and
+invoke a project test runner. Our unit of analysis is a single
+free-standing function paired with a single generated suite, with no
+surrounding project, no imports to resolve and no test-discovery
+configuration. Driving a module-oriented tool over 1{,}600 such pairs
+would have required synthesising a throwaway package per pair, which
+adds more machinery than it removes. The harness is correspondingly
+small: it mutates an abstract syntax tree in memory and runs
+\texttt{pytest} on the result.
+
+Generation proceeds by parsing the function under test with
+\texttt{ast}, walking the tree once per operator family, and emitting
+one mutant per applicable site. A candidate is discarded if it fails
+to unparse or if the unparsed source is textually identical to the
+original. Where a function admits more than
+\textbf{15} mutants, 15 are sampled with a fixed seed
+(\texttt{random.Random(42)}), so mutant selection is deterministic
+and reproducible; the cap bounds the cost of the sweep, which would
+otherwise be dominated by a handful of long functions.
+
+Each mutant is executed in an \emph{isolated subprocess} with a
+\textbf{10-second} timeout, writing the function and the suite to a
+temporary directory and invoking \texttt{pytest} there. The
+subprocess boundary matters: generated tests occasionally recurse
+without bound or open files, and in-process execution would take the
+sweep down with them. Each run returns exactly one of four outcomes
+---\emph{pass}, \emph{fail}, \emph{error} (collection or import
+failure) or \emph{timeout}---and the mutant is classified from the
+pair of outcomes on the original and mutated code, as set out below.
+A timeout on the mutant counts as a kill, on the grounds that a
+suite which hangs on the mutant but terminates on the original has
+detected a behavioural difference; this is the standard convention
+and we note it because it is a judgement call.
 
 \paragraph{Mutation operators.}
 We implement five operator families covering the canonical mutations
@@ -1142,6 +1307,10 @@ documented in our replication package for transparency.
 
 \subsection{Statistical methodology}\label{sec:methods-stats}
 
+\emph{Apparatus for \textbf{RQ2} and \textbf{RQ3}.} The inferential tests, and
+what each is intended to establish.
+
+
 The 4,800-cell experimental design is unbalanced (sample sizes
 vary across cells after filtering), and the kill-rate distribution
 is heavily concentrated at the 0.0 and 1.0 extremes on capable
@@ -1187,7 +1356,71 @@ method-rankings across each pair of models for the overall kill
 rate and for each per-operator kill rate. A finding ``generalizes''
 if min $\rho \geq 0.8$ across all model pairs.
 
+\subsection{Retrieval faithfulness}\label{sec:methods-faithfulness}
+
+\emph{Apparatus for \textbf{RQ4}.} Two measures of how far a generated
+suite reflects the material it was given.
+
+\paragraph{Token-overlap faithfulness.} The lexical measure is the
+fraction of a suite's content tokens that also occur in the retrieved
+context. Both strings are lowercased and tokenised on
+\verb|\b[a-zA-Z]\w*\b|; tokens of three characters or fewer and a
+fixed English stop-word list are discarded, leaving identifiers,
+keywords and prose terms. Writing $G$ and $C$ for the resulting token
+\emph{sets} of the generated suite and the retrieved context,
+\[
+  \mathrm{faithfulness} \;=\; \frac{|G \cap C|}{|G|}.
+\]
+The measure is set-based rather than frequency-weighted, so repeating
+a term does not raise the score, and it is asymmetric by
+construction: it asks what share of the generated text is accounted
+for by the context, not the reverse. It is undefined---and recorded
+as missing rather than zero---whenever no retrieval occurred, which
+is every Plain LLM cell. This is why the faithfulness analysis
+covers 11 RAG cells rather than all 16.
+
+\paragraph{Semantic faithfulness.} Token overlap cannot distinguish a
+suite that applies a retrieved idiom from one that merely echoes its
+vocabulary, so we pair it with an LLM judge. DeepSeek-Coder 6.7B,
+served locally through Ollama at temperature 0, is shown the
+retrieved context (first 2{,}000 characters), the function under test
+(first 500) and the generated suite (first 1{,}500), and asked for a
+single decimal in $[0,1]$ against a three-point verbal anchor:
+$1.0$ for tests that directly use patterns from the documentation,
+$0.5$ for partial alignment, $0.0$ for no grounding. The same judge
+and prompt were validated against human ratings in our companion
+study on docstring generation (Pearson $r = 0.925$, Spearman
+$\rho = 0.839$, $N = 51$). We report it as a secondary measure: it is
+a model judging model output, and we draw no conclusion from it that
+the lexical measure does not also support.
+
+\paragraph{Analysis.} Both measures are logged per cell by the
+generation harness and joined to the mutation results on
+(technique, model), giving $n = 11$ paired observations. We report
+the pooled Pearson and Spearman correlations against mean kill rate
+and---because the design varies a factor that dominates the
+response---the same correlations after partialling out the model,
+together with a mixed-effects model treating the LLM as a random
+intercept. \emph{The partial correlation is the estimate we
+interpret}; the pooled one is reported because it is what the
+standard cell-level analysis in this literature would produce, and
+the gap between them is the result
+(\S\ref{sec:results-faithfulness}).
+
+\paragraph{A limitation of the join.} Faithfulness is recorded as a
+cell mean by the generation harness, while kill rate is recorded per
+function by the mutation harness. The two therefore meet only at the
+cell level, and no function-level pairing is available. A
+within-model analysis across functions---which would be the stronger
+test---would require re-instrumenting generation to log faithfulness
+per function, and we state in \S\ref{sec:results-faithfulness} that
+our data cannot support a causal claim in either direction.
+
 \subsection{Human evaluation}\label{sec:methods-humaneval}
+
+\emph{Apparatus for \textbf{RQ5}.} The second, independent quality signal
+measured on the same generated suites.
+
 
 To complement the automated mutation-testing analysis with a
 developer-perceived quality signal, we designed a three-dimension, behaviourally-anchored rating scale and ran a three-annotator study against it. The rubric is our own; the behaviourally-anchored format follows \citet{smith1963}, and we interpret agreement using the thresholds of \citet{landis1977} with ordinal Krippendorff's $\alpha$ \citep{krippendorff2018} as the primary three-rater statistic.
@@ -1242,6 +1475,10 @@ Agreement targets follow \citet{landis1977}: $\geq 0.4$ moderate,
 $\geq 0.6$ substantial.
 
 \subsection{Tool comparison---Pynguin baseline}\label{sec:methods-pynguin}
+
+\emph{Apparatus for \textbf{RQ6}.} The prior-paradigm reference, put through
+the identical evaluation pipeline.
+
 
 To ground our LLM-method results against the prior dominant paradigm
 in automated unit-test generation, we benchmarked our LLM-based
