@@ -57,30 +57,31 @@ Unit Test Generators: A Cross-Model Empirical Study}
 \maketitle
 
 \begin{abstract}
-\textbf{Context.} Retrieval-augmented generation (RAG) is
-widely assumed to improve LLM-generated unit tests, but evaluations
-rely on surface metrics and single models, leaving defect-detection
-capability untested. \textbf{Objective.} We quantify whether
-retrieval augmentation improves the \emph{defect-detection} capability
-of generated tests, and whether any such effect transfers across
-LLMs. \textbf{Method.} We ran a $4 \times 4$ factorial experiment
-crossing four generation techniques (Plain LLM, Random RAG, Simple
-RAG, Iterative Critique) with four open-weight LLMs of 3B to 30B
-parameters, over 100 HumanEval and MBPP functions, yielding 1{,}443 valid observations and
-9{,}660 mutants, analysed with Type-III ANOVA and mixed-effects
-regression. We added a three-annotator blinded human evaluation and a
-Pynguin baseline matched on the same functions. \textbf{Results.}
-Technique choice has no detectable effect: the spread across all four
-techniques is 0.011 in mean kill rate against 0.232 across models
-($21.7\times$), and no pair separates in any scope. Semantic retrieval
-beats a random-chunk placebo by only 0.3 percentage points. An apparent
-faithfulness--kill-rate correlation ($r = -0.907$) vanishes once model
-is controlled ($r = +0.079$). Annotators ranked Iterative Critique
-highest on all three rubric dimensions, significantly so on two once
-model and annotator are controlled for, yet ratings do not predict
-kill rate ($r = +0.18$, $p = 0.30$). \textbf{Conclusions.} Model
-selection, not retrieval design, determines defect detection, and
-human-perceived quality is a separate construct from it.
+Retrieval-augmented generation (RAG) is widely assumed to improve
+LLM-generated unit tests, but evaluations rest on surface metrics and
+single models, leaving defect-detection capability untested. We ran a
+$4 \times 4$ factorial experiment crossing four generation techniques
+(Plain LLM, Random RAG, Simple RAG, Iterative Critique) with four
+open-weight LLMs of 3B to 30B parameters over 100 HumanEval and MBPP
+functions, yielding 1,443 valid observations and 9,660 mutants,
+analyzed with Type-III ANOVA and mixed-effects regression, alongside a
+three-annotator blinded human evaluation and a Pynguin baseline
+matched on the same functions. Technique choice has no detectable
+effect. The spread across all four techniques is 0.011 in mean kill
+rate against 0.232 across models, a factor of 21.7, and no pair
+separates under correction. Semantic retrieval beats a random-chunk
+placebo from the same corpus by 0.3 percentage points, so the ranking
+step itself contributes almost nothing. An apparent correlation
+between retrieval faithfulness and kill rate ($r = -0.907$) proves an
+artifact of the model factor, vanishing once model is controlled for
+($r = +0.079$). Annotators ranked Iterative Critique highest on all
+three rubric dimensions, significantly so on two once model and
+annotator are controlled for, yet their ratings do not predict kill
+rate ($r = +0.18$, $p = 0.30$). Against Pynguin, the LLM techniques
+lead overall, but only on operator families demanding relational or
+boundary reasoning. Model selection, not retrieval design, determines
+defect detection, and human-perceived quality is a separate construct
+from it.
 \keywords{Unit-test generation \and mutation testing \and retrieval-augmented generation \and Large language models \and search-based software testing}
 \end{abstract}
 
