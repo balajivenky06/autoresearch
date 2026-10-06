@@ -56,3 +56,6 @@ human_eval_annotations/
 SKILL.md
 # rebuild_tsv.py writes a .bak of the previous TSV before overwriting
 *.tsv.bak
+
+# EMSE submission bundle — generated, flattened copy of the manuscript
+emse_submission/

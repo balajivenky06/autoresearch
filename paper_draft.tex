@@ -1,19 +1,18 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% Information and Software Technology (Elsevier) submission
-%% Converted from Springer sn-jnl on 2026-10-04. The Springer version
-%% is recoverable with:  git show springer-sn-jnl-version:paper_draft.tex
+%% Empirical Software Engineering (Springer) submission
+%% Converted from Elsevier elsarticle on 2026-10-06. The Elsevier
+%% version is recoverable:  git show elsevier-ist-version:paper_draft.tex
 %%
-%% NOTE ON HIGHLIGHTS: Elsevier's submission system takes Highlights as
-%% a SEPARATE file, not inside the manuscript. highlights.txt in this
-%% repository holds the submittable copy; the in-manuscript block below
-%% is retained for the reviewers' benefit and can be deleted at
-%% submission without losing anything.
+%% Class and .bst are from the journal's own macro package
+%% (LaTeX_DL_468198_240419): svjour3 + spbasic, author-year citations.
+%% EMSE forbids subfolders in a LaTeX submission, so figures sit beside
+%% the source and no graphics path is set.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\RequirePackage{fix-cm}
+\documentclass[smallextended]{svjour3}
+\smartqed
 
-\documentclass[review,12pt]{elsarticle}
-
-%% graphicx and natbib are loaded by elsarticle.cls; loading them again
-%% risks an option clash, so they are not repeated here.
+\usepackage{graphicx}
 \usepackage{multirow}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{xcolor}
@@ -24,52 +23,47 @@
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
 
-%% Line numbers for the review version. The `review' class option sets
-%% 1.5 line spacing but does not number lines; elsarticle's own template
-%% directs authors to add lineno and call \linenumbers for that.
-\usepackage{lineno}
-\linenumbers
-
-\graphicspath{{./plots_mutation/}}
-\journal{Information and Software Technology}
+\journalname{Empirical Software Engineering}
 
 \raggedbottom
 
 \begin{document}
 
-\begin{frontmatter}
+\title{Mutation-Testing Quality of Language Models and RAG-based
+Unit Test Generators: A Cross-Model Empirical Study}
 
-\title{Mutation-Testing Quality of Language Models and RAG-based Unit
-Test Generators: A Cross-Model Empirical Study}
+\author{Balaji Venktesh \and
+        Amsaprabhaa M \and
+        Gireesh Sundaram}
 
-\author[snu]{Balaji Venktesh\corref{cor1}}
-\ead{balaji23610040@snuchennai.edu.in}
-\author[snu]{Amsaprabhaa M\corref{cor1}}
-\ead{amsaprabhaam@snuchennai.edu.in}
-\author[snu]{Gireesh Sundaram}
-\ead{gireesh23610036@snuchennai.edu.in}
-\cortext[cor1]{Corresponding author}
+\institute{B. Venktesh \at
+              Department of Computer Science and Engineering,
+              Shiv Nadar University, Chennai, Tamil Nadu, India \\
+              \email{balaji23610040@snuchennai.edu.in}
+           \and
+           A. M \at
+              Department of Computer Science and Engineering,
+              Shiv Nadar University, Chennai, Tamil Nadu, India \\
+              \email{amsaprabhaam@snuchennai.edu.in}
+           \and
+           G. Sundaram \at
+              Department of Computer Science and Engineering,
+              Shiv Nadar University, Chennai, Tamil Nadu, India \\
+              \email{gireesh23610036@snuchennai.edu.in}
+}
 
-%% AUTHOR ACTION: the Guide for Authors asks for the FULL postal
-%% address of each affiliation. Fill addressline= and postcode= below
-%% with the campus street address and PIN; they are deliberately left
-%% blank rather than guessed.
-\affiliation[snu]{organization={Department of Computer Science and
-                    Engineering, Shiv Nadar University},
-            addressline={},
-            city={Chennai},
-            postcode={},
-            state={Tamil Nadu},
-            country={India}}
+\date{Received: date / Accepted: date}
+
+\maketitle
 
 \begin{abstract}
 \textbf{Context.} Retrieval-augmented generation (RAG) is
 widely assumed to improve LLM-generated unit tests, but evaluations
 rely on surface metrics and single models, leaving defect-detection
-capability untested. \textbf{Objectives.} We quantify whether
+capability untested. \textbf{Objective.} We quantify whether
 retrieval augmentation improves the \emph{defect-detection} capability
 of generated tests, and whether any such effect transfers across
-LLMs. \textbf{Methods.} We ran a $4 \times 4$ factorial experiment
+LLMs. \textbf{Method.} We ran a $4 \times 4$ factorial experiment
 crossing four generation techniques (Plain LLM, Random RAG, Simple
 RAG, Iterative Critique) with four open-weight LLMs of 3B to 30B
 parameters, over 100 HumanEval and MBPP functions, yielding 1{,}443 valid observations and
@@ -84,24 +78,11 @@ faithfulness--kill-rate correlation ($r = -0.907$) vanishes once model
 is controlled ($r = +0.079$). Annotators ranked Iterative Critique
 highest on all three rubric dimensions, significantly so on two once
 model and annotator are controlled for, yet ratings do not predict
-kill rate ($r = +0.18$, $p = 0.30$). \textbf{Conclusion.} Model
+kill rate ($r = +0.18$, $p = 0.30$). \textbf{Conclusions.} Model
 selection, not retrieval design, determines defect detection, and
 human-perceived quality is a separate construct from it.
+\keywords{Unit-test generation \and mutation testing \and retrieval-augmented generation \and Large language models \and search-based software testing}
 \end{abstract}
-
-\begin{highlights}
-\item RAG technique choice has no effect on mutation kill rate across four LLMs
-\item Model choice moves defect detection 21.7x further than technique choice
-\item Semantic retrieval beats a random-chunk placebo by 0.3 percentage points
-\item A faithfulness-kill-rate correlation of -0.91 is a model confound
-\item Annotators prefer tests whose defect detection is no better
-\end{highlights}
-
-\begin{keyword}
-Unit-test generation \sep mutation testing \sep retrieval-augmented generation \sep Large language models \sep search-based software testing
-\end{keyword}
-
-\end{frontmatter}
 
 \section{Introduction}\label{sec:introduction}
 Automated unit-test generation has been a target of empirical
@@ -966,7 +947,7 @@ RQ6 & Pynguin 0.45.0 under a fixed budget, evaluated through the
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{methodology_overview.png}
+\includegraphics[width=\linewidth]{Fig1.png}
 \caption{End-to-end experimental methodology. Inputs (top: 100 functions from HumanEval + MBPP) feed a 4$\times$4 generation
 matrix (Plain LLM, Random RAG, Simple RAG, Iterative Critique RAG
 across llama3.2, phi4, qwen3.5, qwen3-coder; 1{,}600 cells total),
@@ -1517,6 +1498,46 @@ through exactly the same mutation-testing pipeline
 (\S\ref{sec:methods-mutation}) as the LLM-generated tests, yielding
 a directly-comparable kill-rate metric.
 
+\subsection{Use of generative AI in this study}
+\label{sec:methods-ai}
+
+% ====================================================================
+% AUTHOR ACTION REQUIRED - verify every clause below against your own
+% recollection of the workflow before submitting. EMSE requires LLM use
+% to be documented in the Methods section, and states that "AI assisted
+% copy editing" alone need not be declared; what is described here goes
+% beyond copy editing, so it is declared. A statement that understates
+% AI involvement is an integrity issue; one that overstates it is
+% merely conservative.
+% ====================================================================
+We document our use of a large language model here rather than as a
+closing declaration, following this journal's instruction that such
+use belongs in the Methods.
+
+During the preparation of this work the authors used Anthropic's
+Claude, through the Claude Code command-line interface, to draft and
+copy-edit manuscript prose and to write and refactor the analysis and
+plotting scripts in the replication package. All experimental design
+decisions, the choice of statistical tests, and all interpretations
+and conclusions are the authors' own, and no text was accepted into
+the manuscript without review.
+
+Two automated checks constrain what that assistance can introduce.
+\texttt{check\_paper\_consistency.py} asserts that every figure,
+table and in-text statistic traces to
+\texttt{results\_mutation.tsv}, so a number cannot appear in the
+prose unless the data support it; it also asserts that every included
+figure is newer than the results file, so a stale plot fails the
+build. \texttt{verify\_citations.py} resolves each bibliography entry
+against Crossref or DataCite and flags any whose registered subject
+matter disagrees with the use we make of it. Every reference was in
+addition checked against the primary source document. Both checks run
+clean on the submitted version, and both are in the replication
+package so a reader can re-run them.
+
+The authors reviewed and edited all content and take full
+responsibility for it.
+
 \section{Results}\label{sec:results}
 
 Each subsection below is tagged with the research question it answers
@@ -1584,7 +1605,7 @@ Appendix~\ref{app:percell}).
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{kill_rate_heatmap.png}
+\includegraphics[width=\linewidth]{Fig2.png}
 \caption{Mutation kill rate by technique $\times$ LLM. Mean kill rate
 scales with LLM capability (column means 0.72--0.95) and barely
 moves with technique choice (within-column spread 0.017--0.047).}
@@ -1723,7 +1744,7 @@ Pooled & 924 & 0.61 (0.606) & $\Delta=-0.058$, \newline $p_{\mathrm{adj}}=0.240$
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{kill_rate_boundary_heatmap.png}
+\includegraphics[width=\linewidth]{Fig3.png}
 \caption{Boundary mutation kill rate by technique $\times$ LLM.
 Iterative Critique has the highest boundary rate on three of the
 four models, but the technique factor is not significant on either
@@ -1780,7 +1801,7 @@ kill\_negate\_bool & $-0.40$ & $+0.23$ & Does NOT generalize \\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.85\linewidth]{mutation_rank_correlation.png}
+\includegraphics[width=0.85\linewidth]{Fig4.png}
 \caption{Spearman rank correlation between every pair of models on
 overall mean kill rate. Only one of the six pairs reaches
 $\rho \geq 0.8$, so the metric fails the generalization criterion,
@@ -1792,7 +1813,7 @@ llama3.2--qwen3-coder pair inverts almost perfectly
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{mutation_rank_stability.png}
+\includegraphics[width=\linewidth]{Fig5.png}
 \caption{Technique ranking trajectories across the four LLMs. The
 top-ranked technique differs on three of the four models and Iterative
 Critique is never rank 1; the trajectories cross repeatedly, which
@@ -2055,7 +2076,7 @@ Predictor & Pooled $r$ & $p$ & Partial $r \mid$ model & $p$ \\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{noise_vs_kill_scatter.png}
+\includegraphics[width=\linewidth]{Fig6.png}
 \caption{RAG-quality metrics vs mean mutation kill rate, with cells
 coloured by LLM. Left: \texttt{avg\_noise\_rate} is identically 0
 across all RAG cells (degenerate). Center:
@@ -2135,7 +2156,7 @@ Plain LLM & 3.22 & 3.82 & 3.63 \\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{human_eval_method_ranking.png}
+\includegraphics[width=\linewidth]{Fig7.png}
 \caption{Mean human rating by generation technique on each rubric
 dimension, averaged over three annotators and 40 blinded suites.
 Iterative Critique ranks highest on all three. Controlling for model
@@ -2231,7 +2252,7 @@ SA $\leftrightarrow$ BV & $-0.001$ & $-0.308$ & $+0.155$ \\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.85\linewidth]{human_eval_annotator_bias.png}
+\includegraphics[width=0.85\linewidth]{Fig8.png}
 \caption{Mean rating given by each annotator on each dimension, over all
 40 suites. Annotator SA rates roughly one scale point below GS and
 BV throughout. A constant per-rater offset of this kind drives
@@ -2257,7 +2278,7 @@ three annotator pooling.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{human_eval_correlations.png}
+\includegraphics[width=\linewidth]{Fig9.png}
 \caption{Per-suite mean human rating against mutation kill rate,
 one panel per rubric dimension and one point per rated suite,
 coloured by generation technique. Ratings are averaged over the three
@@ -2341,7 +2362,7 @@ Plain LLM (LLM, avg.) & 0.898 & 134 & 574 / 764 \\
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{pynguin_vs_llm_kill_rate.png}
+\includegraphics[width=\linewidth]{Fig10.png}
 \caption{Mutation kill rate: Pynguin vs LLM techniques (averaged
 across the four LLMs). All arms are matched on the 34 functions for
 which Pynguin produced a valid suite, so the bars describe the same
@@ -2352,7 +2373,7 @@ population of source problems. Every LLM technique exceeds Pynguin
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\linewidth]{pynguin_vs_llm_per_operator.png}
+\includegraphics[width=\linewidth]{Fig11.png}
 \caption{Per-operator mutation kill rate, Pynguin against the LLM
 techniques, matched on the 34 functions Pynguin could handle. The
 LLM advantage concentrates on comparison (Pynguin 0.250 vs Iterative
@@ -2860,16 +2881,16 @@ direction concerns the \emph{human-evaluation rubric}: a future
 replication should run a rubric-calibration session before
 annotation and increase the rater pool to five or more.
 
-\section*{Declarations}
+\section*{Statements and Declarations}
 
 \paragraph{Funding.}
 This research did not receive any specific grant from funding
 agencies in the public, commercial, or not-for-profit sectors.
 
-\paragraph{Declaration of competing interest.}
-The authors declare that they have no known competing financial
-interests or personal relationships that could have appeared to
-influence the work reported in this paper.
+\paragraph{Competing interests.}
+The authors have no relevant financial or non-financial interests to
+disclose, and no competing interests to declare that are relevant to
+the content of this article.
 
 \paragraph{Ethics approval.}
 The human-evaluation study did not require formal IRB review under
@@ -2931,56 +2952,20 @@ submission (\texttt{check\_paper\_consistency.py},
 \texttt{verify\_citations.py})—is released under the MIT license at
 the same URL.
 
-\paragraph{CRediT authorship contribution statement.}
+\paragraph{Author contributions.}
 \textbf{Balaji Venktesh:} Conceptualization, Methodology, Software,
 Investigation, Formal analysis, Data curation, Visualization,
-Writing -- original draft.
+Writing -- original draft preparation.
 \textbf{Amsaprabhaa M:} Conceptualization, Supervision,
 Writing -- review and editing.
 \textbf{Gireesh Sundaram:} Validation, Writing -- review and editing.
 
-\section*{Declaration of generative AI and AI-assisted
-technologies in the manuscript preparation process}
-% ====================================================================
-% AUTHOR ACTION REQUIRED — this statement replaces one that was
-% materially inaccurate in a previous submission of this work, which
-% claimed LLM use "solely for AI-assisted copy editing". Verify every
-% clause below against your own recollection of the workflow before
-% submitting, and amend anything that does not match. A declaration
-% that understates AI involvement is an integrity issue; one that
-% overstates it is merely conservative.
-% ====================================================================
-During the preparation of this work the authors used
-Anthropic's Claude (via the Claude Code command-line interface) in
-order to draft and copy-edit manuscript prose, and to write and
-refactor the analysis and plotting scripts in the replication
-package. All experimental design decisions, the choice of
-statistical tests, and all interpretations and conclusions are the
-authors' own. Every numeric result reported in this manuscript is
-generated by executable code in the replication package and is
-verified against it by an automated consistency check
-(\texttt{check\_paper\_consistency.py}), which confirms that each
-figure, table and in-text statistic traces to
-\texttt{results\_mutation.tsv}. Every reference was verified against
-the primary source document, and bibliographic metadata was checked
-against registered DOIs where available
-(\texttt{verify\_citations.py}). After using this tool, the authors reviewed and
-edited the content as needed and take full responsibility for the
-content of the published article. All experiments were conducted using publicly
-available, open-source code and datasets under their respective
-licenses. No private, sensitive, or personally-identifying data
-were used at any stage of the study.
-
-\bibliographystyle{elsarticle-num}
+\bibliographystyle{spbasic}
 \bibliography{references}
 
 \appendix
 % Guide for authors: appendices are lettered A, B, ... and their tables and
 % figures are numbered separately as Table A.1, Fig. A.1.
-\renewcommand{\thetable}{A.\arabic{table}}
-\renewcommand{\thefigure}{A.\arabic{figure}}
-\setcounter{table}{0}
-\setcounter{figure}{0}
 
 \section{Hardware and inference configuration}\label{app:hardware}
 

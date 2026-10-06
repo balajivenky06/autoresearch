@@ -181,7 +181,9 @@ def _check_figure_freshness(tex: str) -> None:
         warn("L2", "results_mutation.tsv not found; figure freshness unchecked")
         return
     data_mtime = results.stat().st_mtime
-    figdir = Path("plots_mutation")
+    # Figures were renamed Fig1..FigN and flattened for the Springer
+    # submission, which forbids subfolders. Look in both places.
+    figdir = Path("emse_submission") if Path("emse_submission").is_dir() else Path("plots_mutation")
     # Schematics carry no measured values, so their age means nothing.
     SCHEMATIC = {"methodology_overview.png"}
     stale, missing = [], []
