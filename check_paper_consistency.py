@@ -169,37 +169,68 @@ def layer1(tsv: dict, rep: dict) -> None:
 # ──────────────────────────────────────────────────────────────────────
 
 def _check_figure_freshness(tex: str) -> None:
-    """Every included figure must be newer than the results it derives from.
+    """Figures must be newer than the data AND match their canonical source.
 
-    The manuscript's numbers are gated against results_mutation.tsv, but a
-    figure is an opaque artefact: if it is not regenerated after the data
-    changes it will keep displaying superseded values and nothing in the text
-    will disagree with it. This check is the substitute for parsing a PNG.
+    Two failure modes, both of which have actually occurred here:
+
+      stale canonical   a figure is not regenerated after the data changes and
+                        keeps displaying superseded values
+
+      stale copy        a stale figure is copied into a submission folder. The
+                        copy gets a fresh mtime, so an mtime-only check passes
+                        while the pixels are months out of date. This is how
+                        methodology_overview.png reached the EMSE bundle still
+                        claiming "480 cells" and "first 30 used per cell".
+
+    So: compare the included figure byte-for-byte against the canonical file in
+    plots_mutation/, and check the canonical file against the data timestamp.
+    There is no exemption list; a schematic that carries counts is as
+    perishable as a plot.
     """
+    import hashlib
+
     results = Path("results_mutation.tsv")
     if not results.exists():
         warn("L2", "results_mutation.tsv not found; figure freshness unchecked")
         return
     data_mtime = results.stat().st_mtime
-    # Figures were renamed Fig1..FigN and flattened for the Springer
-    # submission, which forbids subfolders. Look in both places.
-    figdir = Path("emse_submission") if Path("emse_submission").is_dir() else Path("plots_mutation")
-    # Schematics carry no measured values, so their age means nothing.
-    SCHEMATIC = {"methodology_overview.png"}
-    stale, missing = [], []
-    for name in sorted(set(re.findall(r"\\includegraphics\[[^\]]*\]\{([^}]*)\}", tex))):
-        if name in SCHEMATIC:
+    canon = Path("plots_mutation")
+    subdir = Path("emse_submission")
+    # FigN.png in a submission folder maps back to its canonical name by order
+    # of first appearance in the manuscript.
+    order, seen = [], set()
+    for m in re.finditer(r"\\includegraphics\[[^\]]*\]\{([^}]*)\}", tex):
+        f = m.group(1)
+        if f not in seen:
+            seen.add(f); order.append(f)
+
+    def sha(p):
+        return hashlib.sha256(p.read_bytes()).hexdigest()[:16]
+
+    for i, name in enumerate(order, 1):
+        included = (subdir / name) if (subdir / name).exists() else (canon / name)
+        if not included.exists():
+            fail("L2", f"figure file missing: {name}")
             continue
-        f = figdir / name
-        if not f.exists():
-            missing.append(name)
-        elif f.stat().st_mtime < data_mtime:
-            stale.append((name, (data_mtime - f.stat().st_mtime) / 86400))
-    for name in missing:
-        fail("L2", f"figure file missing: plots_mutation/{name}")
-    for name, days in stale:
-        fail("L2", f"figure older than results_mutation.tsv by {days:.1f} days: "
-                   f"{name} — regenerate it")
+        # resolve the canonical twin
+        twin = canon / name
+        if not twin.exists() and re.fullmatch(r"Fig\d+\.png", name):
+            cands = sorted(canon.glob("*.png"), key=lambda q: q.stat().st_mtime)
+            twin = None
+            for c in canon.glob("*.png"):
+                if sha(c) == sha(included):
+                    twin = c; break
+            if twin is None:
+                fail("L2", f"{name} does not match any file in plots_mutation/ "
+                           f"- it was not produced by a plot script in this repo")
+                continue
+        if sha(twin) != sha(included):
+            fail("L2", f"{name} differs from its canonical source "
+                       f"plots_mutation/{twin.name} - one of them is stale")
+        age = (data_mtime - twin.stat().st_mtime) / 86400
+        if age > 0:
+            fail("L2", f"plots_mutation/{twin.name} is {age:.1f} days older than "
+                       f"results_mutation.tsv - regenerate it ({name})")
 
 
 def layer2(tsv: dict, tex: str) -> None:
