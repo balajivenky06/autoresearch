@@ -195,7 +195,16 @@ def ground_truth() -> set[float]:
 def main() -> int:
     G = ground_truth()
     s = Path("paper_draft.tex").read_text()
-    body = s[s.find(r"\begin{frontmatter}"):s.find(r"\bibliographystyle")]
+    # Anchor on the abstract rather than a class-specific wrapper: the
+    # manuscript has moved between elsarticle (\begin{frontmatter}) and
+    # svjour3 (\maketitle), and anchoring on either silently produced an
+    # empty body when the other was in use.
+    start = s.find(r"\begin{abstract}")
+    if start < 0:
+        start = s.find(r"\maketitle")
+    end = s.find(r"\bibliographystyle")
+    assert start > 0 and end > start, "cannot locate manuscript body"
+    body = s[start:end]
     txt = re.sub(r"\\(label|ref|cite[tp]?|includegraphics|texttt|verb)\*?(\[[^\]]*\])?\{[^}]*\}", " ", body)
     txt = re.sub(r"\\[a-zA-Z]+", " ", txt)
 

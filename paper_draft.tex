@@ -952,12 +952,16 @@ RQ6 & Pynguin 0.45.0 under a fixed budget, evaluated through the
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{Fig1.png}
-\caption{End-to-end experimental methodology. Inputs (top: 100 functions from HumanEval + MBPP) feed a 4$\times$4 generation
-matrix (Plain LLM, Random RAG, Simple RAG, Iterative Critique RAG
-across llama3.2, phi4, qwen3.5, qwen3-coder; 1{,}600 cells total),
-whose outputs feed three parallel evaluation tracks (mutation
-testing, human evaluation, Pynguin baseline) that all contribute
-to the statistical analyses (bottom).}
+\caption{The experimental pipeline, in four stages. A fixed corpus
+of 100 Python functions (65 MBPP, 35 HumanEval) is passed to all
+sixteen technique $\times$ model cells, producing 1{,}600 generated
+test suites. Every suite is then put through three independent
+evaluations: mutation testing over 9{,}660 mutants, a blinded
+three-annotator rating of 40 suites, and a Pynguin baseline on the
+34 of those 40 functions Pynguin could handle. The 1{,}443
+suite-level observations that survive the original-code filter
+(\S\ref{sec:results-attrition}) are the input to every statistical
+test reported in \S\ref{sec:results}.}
 \label{fig:methodology}
 \end{figure}
 
